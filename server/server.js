@@ -1,9 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/userRoutes');
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/userRoutes");
+
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("DB Connection Error:", err));
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -12,12 +19,12 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json()); // To parse JSON bodies
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes); // 2. Use the new routes
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes); // 2. Use the new routes
 
 // A simple test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Hello from the backend! 👋' });
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Hello from the backend! 👋" });
 });
 
 // Start the server
@@ -26,4 +33,3 @@ app.listen(PORT, () => {
 });
 //krisanu samanta
 // hello
-
