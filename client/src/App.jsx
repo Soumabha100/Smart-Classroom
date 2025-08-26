@@ -1,9 +1,15 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Register from './pages/Register.jsx';
-import Login from './pages/Login.jsx';
-import StudentDashboard from './pages/StudentDashboard.jsx';
-import ProtectedRoute from './components/ProtectedRoute.jsx';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Register from "./pages/Register.jsx";
+import Login from "./pages/Login.jsx";
+import StudentDashboard from "./pages/StudentDashboard.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 
 function App() {
   return (
@@ -20,6 +26,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/onboarding" element={<Onboarding />} />
       </Routes>
     </Router>
   );

@@ -19,6 +19,15 @@ const UserSchema = new mongoose.Schema({
     enum: ['student', 'teacher', 'admin'], // Role must be one of these values
     default: 'student', // If no role is provided, it defaults to 'student'
   },
+   profile: {
+    academicInterests: [String], 
+    careerGoals: [String],     
+    strengths: [String],
+    weaknesses: [String],
+  },
+  timetable: { // To be implemented later
+    type: Object,
+  },
 }, { timestamps: true }); // Automatically adds createdAt and updatedAt fields
 
 module.exports = mongoose.model('User', UserSchema);
