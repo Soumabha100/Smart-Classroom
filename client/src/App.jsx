@@ -1,23 +1,28 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Import Pages
+import HomePage from "./pages/HomePage"; // Create this page
+import AboutPage from "./pages/AboutPage"; // Create this page
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+
+// Import Components
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -26,7 +31,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/onboarding" element={<Onboarding />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
