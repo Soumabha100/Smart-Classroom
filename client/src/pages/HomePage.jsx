@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-// ✅ 1. Import the image from its new location inside src.
-import HeroBackgroundImage from '../assets/images/hero-background.jpg';
+//  1. Import the image from its location inside the `src` folder.
+import HeroBackgroundImage from "../assets/images/hero-background.jpg";
 
 const features = [
   {
@@ -32,13 +32,17 @@ export default function HomePage() {
     <div className="bg-white text-gray-800">
       <Navbar />
 
-      {/* Hero Section */}
-      <section
-        className="relative h-[600px] w-full bg-cover bg-center flex items-center justify-center text-white"
-        // ✅ 2. Use the imported variable. This is the most reliable method.
-        style={{ backgroundImage: `url(${HeroBackgroundImage})` }}
-      >
+      <section className="relative h-[600px] w-full flex items-center justify-center text-white">
+        {/* ✅ Using a standard <img> tag for the background */}
+        <img
+          src="/images/hero-background.jpg"
+          alt="Background of a modern classroom"
+          className="absolute top-0 left-0 w-full h-full object-cover z-0"
+        />
+        {/* This div creates the dark overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-60" />
+
+        {/* This div holds the text content */}
         <div className="relative z-10 text-center p-8 max-w-4xl">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
             The Future of Classroom Management is Here
@@ -56,7 +60,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Other sections remain the same */}
+      {/* Features Section and Call to Action... */}
 
       <Footer />
     </div>
