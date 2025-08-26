@@ -2,8 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Import Pages
-import HomePage from "./pages/HomePage"; // Create this page
-import AboutPage from "./pages/AboutPage"; // Create this page
+import HomePage from "./pages/HomePage.jsx";
+import AboutPage from "./pages/AboutPage.jsx";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
