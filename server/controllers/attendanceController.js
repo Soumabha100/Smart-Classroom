@@ -1,13 +1,13 @@
 const jwt = require("jsonwebtoken");
 const Attendance = require("../models/Attendance");
+const User = require("../models/User");
 
 // Teacher generates a token for the QR code
 exports.generateQrToken = (req, res) => {
   const payload = {
-    classId: req.body.classId, // e.g., "CSE-501"
+    classId: req.body.classId,
     timestamp: Date.now(),
   };
-  // This token is short-lived (e.g., 30 seconds)
   const qrToken = jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: "30s",
   });
@@ -18,8 +18,11 @@ exports.generateQrToken = (req, res) => {
 exports.markAttendance = async (req, res) => {
   const { qrToken } = req.body;
   try {
-    const decoded = jwt.verify(qrToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(qrToken, process.env.JWT_SECRET, {
+      clockTolerance: 10,
+    }); // 10 seconds grace period
 
+    // Check if already marked for this class recently (optional)
     const newAttendance = new Attendance({
       studentId: req.user.id,
       classId: decoded.classId,
@@ -29,7 +32,6 @@ exports.markAttendance = async (req, res) => {
     // Find the student's name to send in the payload
     const student = await User.findById(req.user.id).select("name");
 
-    // Prepare payload for WebSocket emission
     const attendanceData = {
       student_name: student.name,
       timestamp: newAttendance.timestamp.toLocaleString("en-US", {
@@ -38,7 +40,6 @@ exports.markAttendance = async (req, res) => {
       status: newAttendance.status,
     };
 
-    // ** Emit event to all connected clients
     req.io.emit("new_attendance", attendanceData);
 
     res.status(201).json({ message: "Attendance marked successfully!" });

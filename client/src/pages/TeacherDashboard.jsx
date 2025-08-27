@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import QRCode from "react-qr-code"; // ✅ 1. Use the new library's import
+import QRCodeWrapper from "../components/QRCodeWrapper";
 import Sidebar from "../components/Sidebar";
 import AttendanceChart from "../components/AttendanceChart";
 import io from "socket.io-client";
 
 const SOCKET_URL = "http://localhost:5001";
+const QR_CODE_VALIDITY_SECONDS = 30; // Central place to manage the countdown time
 
 export default function TeacherDashboard() {
   const [qrToken, setQrToken] = useState(null);
@@ -13,22 +14,39 @@ export default function TeacherDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [liveAttendance, setLiveAttendance] = useState([]);
+  const [countdown, setCountdown] = useState(QR_CODE_VALIDITY_SECONDS); // ✅ 1. State for the timer
 
+  // Effect for handling the countdown timer
+  useEffect(() => {
+    // Only start the timer if a QR token is present
+    if (!qrToken) return;
+
+    // Set the initial countdown value when a new token is generated
+    setCountdown(QR_CODE_VALIDITY_SECONDS);
+
+    const timer = setInterval(() => {
+      setCountdown((prevCountdown) => {
+        if (prevCountdown <= 1) {
+          clearInterval(timer);
+          setQrToken(null); // ✅ 2. Clear the QR token when the timer finishes
+          return 0;
+        }
+        return prevCountdown - 1;
+      });
+    }, 1000);
+
+    // Cleanup function to clear the interval when the component unmounts or qrToken changes
+    return () => clearInterval(timer);
+  }, [qrToken]); // This effect re-runs every time a new qrToken is generated
+
+  // Effect for WebSocket connection
   useEffect(() => {
     const socket = io(SOCKET_URL);
-
-    socket.on("connect", () => {
-      console.log("Teacher connected to WebSocket server!");
-    });
-
+    socket.on("connect", () => console.log("Teacher connected to WebSocket!"));
     socket.on("new_attendance", (newLog) => {
-      console.log("New attendance record received:", newLog);
       setLiveAttendance((prevLog) => [newLog, ...prevLog]);
     });
-
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, []);
 
   const generateQR = async () => {
@@ -102,12 +120,12 @@ export default function TeacherDashboard() {
                 <h3 className="text-lg font-semibold text-slate-800">
                   Scan this code to mark attendance
                 </h3>
-                <p className="text-sm text-red-600 mb-4">
-                  This code will expire in 30 seconds.
+                {/* ✅ 3. Display the live countdown timer */}
+                <p className="text-lg font-bold text-red-600 my-2">
+                  Expires in: {countdown}s
                 </p>
                 <div className="p-4 bg-white inline-block border rounded-lg">
-                  {/* ✅ 2. Use the new component's simple syntax */}
-                  <QRCode value={qrToken} size={256} />
+                  <QRCodeWrapper value={qrToken} size={256} />
                 </div>
               </div>
             )}
