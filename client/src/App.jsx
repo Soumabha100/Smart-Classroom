@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
+import TeacherDashboard from "./pages/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 
@@ -36,6 +37,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Onboarding />
+            </ProtectedRoute>
+          }
+        />
+        {/* Teacher Routes */}
+        <Route
+          path="/teacher-dashboard"
+          element={
+            <ProtectedRoute>
+              <TeacherDashboard />
             </ProtectedRoute>
           }
         />

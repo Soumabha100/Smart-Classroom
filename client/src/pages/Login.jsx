@@ -15,8 +15,16 @@ export default function Login() {
     setError("");
     try {
       const res = await axios.post("/api/auth/login", { email, password });
+      // 1. Store both the token and the user's role
       localStorage.setItem("token", res.data.token);
-      navigate("/dashboard");
+      localStorage.setItem("role", res.data.role);
+
+      // 2. Check the role and navigate to the correct dashboard
+      if (res.data.role === "teacher") {
+        navigate("/teacher-dashboard");
+      } else {
+        navigate("/dashboard"); // Default to student dashboard
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Login failed!");
     }
