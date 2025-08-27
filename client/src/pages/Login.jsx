@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import backgroundImage from "../assets/images/tree.jpg";
 
 export default function Login() {
@@ -24,18 +23,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900">
+    <div
+      className="relative min-h-screen w-full bg-cover bg-center"
+      style={{ backgroundImage: `url(${backgroundImage})` }}
+    >
       <Navbar />
-      <main
-        className="flex-grow w-full flex items-center justify-center bg-cover bg-center p-4"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      >
+      <main className="min-h-screen w-full flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl bg-black/20 p-8 shadow-2xl backdrop-blur-lg border border-white/20">
           <h1 className="text-3xl font-bold text-center text-white mb-6">
             Welcome Back
           </h1>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input & Icon */}
+            {/* Form content remains the same... */}
             <div className="relative">
               <input
                 type="email"
@@ -60,8 +59,6 @@ export default function Login() {
                 />
               </svg>
             </div>
-
-            {/* Password Input & Icon */}
             <div className="relative">
               <input
                 type="password"
@@ -86,18 +83,15 @@ export default function Login() {
                 />
               </svg>
             </div>
-
             {error && (
               <p className="text-red-400 text-sm text-center pt-2">{error}</p>
             )}
-
             <button
               type="submit"
               className="w-full h-12 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-blue-500/50"
             >
               Sign In
             </button>
-
             <p className="text-center text-gray-300 text-sm pt-4">
               Don't have an account?{" "}
               <Link
@@ -110,7 +104,11 @@ export default function Login() {
           </form>
         </div>
       </main>
-      <Footer />
+      <footer className="absolute bottom-0 left-0 w-full p-4 text-center">
+        <p className="text-sm text-white/60">
+          © {new Date().getFullYear()} Smart Classroom. All Rights Reserved.
+        </p>
+      </footer>
     </div>
   );
 }
