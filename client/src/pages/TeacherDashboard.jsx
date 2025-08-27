@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import QRCode from "qrcode.react";
+import * as QRCode from 'qrcode.react';
 import Sidebar from "../components/Sidebar";
 
 export default function TeacherDashboard() {
