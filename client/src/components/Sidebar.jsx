@@ -1,19 +1,18 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-// The Sidebar now accepts props to control its visibility
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("role"); // Also clear the role
+    localStorage.removeItem("role");
     navigate("/login");
   };
 
   return (
     <>
-      {/* Overlay for mobile - appears when menu is open */}
+      {/* Overlay for mobile */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -31,8 +30,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div className="text-2xl font-bold p-6 border-b border-slate-700">
           <Link to="/">Smart Classroom</Link>
         </div>
-        <div className="flex flex-col justify-between flex-grow p-4">
-        <nav className="flex-grow p-4">
+
+        {/* Navigation area with scrolling for smaller screens */}
+        <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
             <li className="mb-2">
               <Link
@@ -56,10 +56,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 Dashboard
               </Link>
             </li>
-            {/* Add more links here later */}
+            {/* Future links can be added here */}
           </ul>
         </nav>
-        </div>
+
+        {/* Logout button container - always at the bottom */}
         <div className="p-4 border-t border-slate-700">
           <button
             onClick={handleLogout}
