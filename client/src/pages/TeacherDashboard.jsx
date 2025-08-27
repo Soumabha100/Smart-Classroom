@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import AttendanceChart from "../components/AttendanceChart";
 import io from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:5001";
+const SOCKET_URL = "http://192.168.1.7:5001";
 const QR_CODE_VALIDITY_SECONDS = 30; // Central place to manage the countdown time
 
 export default function TeacherDashboard() {

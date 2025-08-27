@@ -15,21 +15,21 @@ exports.generateQrToken = (req, res) => {
 };
 
 // Student marks their attendance
+// Student marks their attendance
 exports.markAttendance = async (req, res) => {
   const { qrToken } = req.body;
   try {
+    // ✅ Add clockTolerance to the verification options
     const decoded = jwt.verify(qrToken, process.env.JWT_SECRET, {
-      clockTolerance: 10,
-    }); // 10 seconds grace period
+      clockTolerance: 10, // 10 seconds grace period
+    });
 
-    // Check if already marked for this class recently (optional)
     const newAttendance = new Attendance({
       studentId: req.user.id,
       classId: decoded.classId,
     });
     await newAttendance.save();
 
-    // Find the student's name to send in the payload
     const student = await User.findById(req.user.id).select("name");
 
     const attendanceData = {
@@ -44,6 +44,7 @@ exports.markAttendance = async (req, res) => {
 
     res.status(201).json({ message: "Attendance marked successfully!" });
   } catch (error) {
+    // This will now correctly catch actual expired tokens or other errors
     res.status(400).json({ message: "Invalid or expired QR code." });
   }
 };
