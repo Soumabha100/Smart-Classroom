@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import Navbar from "../components/Navbar"; // Import the Navbar
+import Sidebar from "../components/Sidebar";
 
 export default function StudentDashboard() {
   const [user, setUser] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
@@ -20,11 +21,18 @@ export default function StudentDashboard() {
         const api = axios.create({
           headers: { Authorization: `Bearer ${token}` },
         });
-        const res = await api.get("/api/users/profile");
-        setUser(res.data);
+        // Fetch user profile and activities in parallel
+        const [profileRes, activitiesRes] = await Promise.all([
+          api.get("/api/users/profile"),
+          api.get("/api/activities"),
+        ]);
+
+        setUser(profileRes.data);
+        setActivities(activitiesRes.data);
+
         if (
-          !res.data.profile ||
-          res.data.profile.academicInterests.length === 0
+          !profileRes.data.profile ||
+          profileRes.data.profile.academicInterests.length === 0
         ) {
           navigate("/onboarding");
         }
@@ -33,77 +41,108 @@ export default function StudentDashboard() {
         navigate("/login");
       }
     };
-    fetchProfile();
+    fetchData();
   }, [navigate]);
 
   const handleScan = async (data) => {
     if (data) {
       setShowScanner(false);
       const token = localStorage.getItem("token");
-      const api = axios.create({
-        headers: { Authorization: `Bearer ${token}` },
-      });
       try {
+        const api = axios.create({
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const res = await api.post("/api/attendance/mark", {
           qrToken: data.text,
         });
         alert(res.data.message);
       } catch (error) {
-        alert(error.response.data.message || "Failed to mark attendance.");
+        alert(error.response?.data?.message || "Failed to mark attendance.");
       }
     }
   };
 
-  if (!user)
+  if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <p>Loading your dashboard...</p>
       </div>
     );
+  }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <Navbar />
-      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          Welcome to your Dashboard, {user.name}
-        </h1>
+    <div className="flex bg-slate-100">
+      <Sidebar />
+      <main className="flex-grow ml-64 p-8">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-800">
+            Welcome back, {user.name}!
+          </h1>
+          <p className="text-slate-600">
+            Here's a look at what's happening today.
+          </p>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Attendance Section */}
-          <div className="md:col-span-1 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Attendance</h2>
-            <p className="text-gray-600 mb-4">
-              Scan the QR code in your classroom to mark your attendance for the
-              day.
-            </p>
-            <button
-              onClick={() => setShowScanner(!showScanner)}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-            >
-              {showScanner ? "Close Scanner" : "Scan Attendance QR Code"}
-            </button>
-            {showScanner && (
-              <div className="mt-4 border-2 border-dashed p-2 rounded-lg">
-                <Scanner
-                  onScan={handleScan}
-                  onError={(error) => console.log(error?.message)}
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4 text-slate-800">
+                Recommended For You
+              </h2>
+              <div className="space-y-4">
+                {activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <div
+                      key={activity._id}
+                      className="border p-4 rounded-lg flex justify-between items-center"
+                    >
+                      <div>
+                        <h3 className="font-bold">{activity.title}</h3>
+                        <p className="text-sm text-slate-600">
+                          {activity.description}
+                        </p>
+                      </div>
+                      <a
+                        href={activity.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Start
+                      </a>
+                    </div>
+                  ))
+                ) : (
+                  <p>No activities found. Check back later!</p>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Activities Section */}
-          <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">
-              Recommended Activities
-            </h2>
-            <div className="text-gray-600">
-              <p>
-                Personalized activities based on your interests and free periods
-                will appear here soon!
+          {/* Side Content Area */}
+          <div className="lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4 text-slate-800">
+                Attendance
+              </h2>
+              <p className="text-slate-600 mb-4">
+                Scan the QR code in your classroom to mark your attendance.
               </p>
-              {/* We will build the logic to fetch and display activities here */}
+              <button
+                onClick={() => setShowScanner(!showScanner)}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg"
+              >
+                {showScanner ? "Close Scanner" : "Scan QR Code"}
+              </button>
+              {showScanner && (
+                <div className="mt-4 border-2 border-dashed p-2 rounded-lg">
+                  <Scanner
+                    onScan={handleScan}
+                    onError={(error) => console.log(error?.message)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -5,6 +5,8 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/userRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
+const activityRoutes = require("./routes/activityRoutes")
 
 // Connect to MongoDB
 mongoose
@@ -20,7 +22,9 @@ app.use(cors());
 app.use(express.json()); // To parse JSON bodies
 
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes); // 2. Use the new routes
+app.use("/api/users", userRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/activities", activityRoutes);
 
 // A simple test route
 app.get("/api/test", (req, res) => {
