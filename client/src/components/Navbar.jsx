@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 
 export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem("token");
@@ -84,7 +85,10 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button className="text-white">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-white"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -101,6 +105,15 @@ export default function Navbar() {
               </svg>
             </button>
           </div>
+
+          {/* mobile menu */}
+          {isMenuOpen && (
+            <div className="md:hidden bg-slate-800 p-4">
+              <nav className="flex flex-col space-y-4">
+                {/* ... (Copy NavLink components from the desktop nav here) */}
+              </nav>
+            </div>
+          )}
         </div>
       </div>
     </header>
