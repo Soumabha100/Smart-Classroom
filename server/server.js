@@ -25,10 +25,11 @@ const server = http.createServer(app);
 // 4. Initialize Socket.IO and attach it to the server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // The origin of your React frontend
+    origin: ["http://localhost:5173", "https://192.168.1.7:5173"], 
     methods: ["GET", "POST"],
   },
 });
+
 
 const PORT = process.env.PORT || 5001;
 

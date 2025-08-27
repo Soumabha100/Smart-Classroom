@@ -44,17 +44,23 @@ export default function StudentDashboard() {
     fetchData();
   }, [navigate]);
 
-  const handleScan = async (data) => {
-    if (data) {
+   const handleScan = async (detectedCodes) => {
+    // 1. The scanner returns an array. Get the first result.
+    const scannedCode = detectedCodes[0];
+
+    if (scannedCode) {
       setShowScanner(false);
       const token = localStorage.getItem("token");
       try {
         const api = axios.create({
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // 2. Use scannedCode.rawValue to get the token string
         const res = await api.post("/api/attendance/mark", {
-          qrToken: data.text,
+          qrToken: scannedCode.rawValue, 
         });
+
         alert(res.data.message);
       } catch (error) {
         alert(error.response?.data?.message || "Failed to mark attendance.");
