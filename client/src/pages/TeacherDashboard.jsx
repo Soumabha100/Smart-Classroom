@@ -3,6 +3,7 @@ import axios from 'axios';
 import * as QRCode  from 'qrcode.react';
 import Sidebar from '../components/Sidebar';
 import io from 'socket.io-client'; // 1. Import socket.io-client
+import AttendanceChart from '../components/AttendanceChart';
 
 const SOCKET_URL = 'http://localhost:5001';
 
@@ -63,6 +64,11 @@ export default function TeacherDashboard() {
           <h1 className="text-4xl font-bold text-slate-800">Teacher Dashboard</h1>
           <p className="text-slate-600">Monitor live attendance as students check in.</p>
         </header>
+
+        {/* AttendanceChart */}
+        <div className="mb-8">
+            <AttendanceChart />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* QR Generation Card */}
