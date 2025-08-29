@@ -63,6 +63,33 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 Dashboard
               </Link>
             </li>
+
+            {/* ... other links */}
+            {userRole === "admin" && (
+              <li className="mb-2">
+                <Link
+                  to="/manage-classes"
+                  className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+                >
+                  {/* You can find a suitable SVG icon for classes */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 mr-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v11.494m-9-5.747h18"
+                    />
+                  </svg>
+                  Manage Classes
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 

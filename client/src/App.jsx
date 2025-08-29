@@ -9,6 +9,9 @@ import Login from "./pages/Login.jsx";
 import TeacherDashboard from "./pages/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
+import ClassManagementPage from './pages/ClassManagement.jsx';
+
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -46,6 +49,24 @@ function App() {
           element={
             <ProtectedRoute role="teacher">
               <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Admin Routes */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Manage Class Routes */}
+        <Route
+          path="/manage-classes"
+          element={
+            <ProtectedRoute role="admin">
+              <ClassManagementPage />
             </ProtectedRoute>
           }
         />
