@@ -4,9 +4,16 @@ import { Link, useNavigate } from "react-router-dom";
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
 
+  // Get the user's role directly from localStorage
+  const userRole = localStorage.getItem("role");
+
+  // Determine the correct dashboard path based on the role
+  const dashboardPath =
+    userRole === "teacher" ? "/teacher-dashboard" : "/dashboard";
+
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    localStorage.removeItem("role"); // Ensure role is cleared on logout
     navigate("/login");
   };
 
@@ -31,12 +38,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           <Link to="/">Smart Classroom</Link>
         </div>
 
-        {/* Navigation area with scrolling for smaller screens */}
         <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
             <li className="mb-2">
+              {/* This link now correctly points to the user's specific dashboard */}
               <Link
-                to="/dashboard"
+                to={dashboardPath}
                 className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
               >
                 <svg
@@ -56,7 +63,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 Dashboard
               </Link>
             </li>
-            {/* Future links can be added here */}
           </ul>
         </nav>
 

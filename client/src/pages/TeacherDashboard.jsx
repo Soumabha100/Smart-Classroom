@@ -5,7 +5,12 @@ import AttendanceChart from "../components/AttendanceChart";
 import io from "socket.io-client";
 import DashboardLayout from "../components/DashboardLayout";
 
-const SOCKET_URL = "http://192.168.1.7:5001";
+const SOCKET_URL =
+  process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : `http://${window.location.hostname}:5001`;
+
+    
 const QR_CODE_VALIDITY_SECONDS = 30; // Central place to manage the countdown time
 
 export default function TeacherDashboard() {

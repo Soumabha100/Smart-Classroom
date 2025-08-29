@@ -24,6 +24,19 @@ exports.markAttendance = async (req, res) => {
       clockTolerance: 10, // 10 seconds grace period
     });
 
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const existingAttendance = await Attendance.findOne({
+      studentId: req.user.id,
+      classId: decoded.classId,
+      timestamp: { $gte: twoHoursAgo },
+    });
+
+    if (existingAttendance) {
+      return res
+        .status(409)
+        .json({ message: "Attendance already marked for this session." });
+    }
+
     const newAttendance = new Attendance({
       studentId: req.user.id,
       classId: decoded.classId,

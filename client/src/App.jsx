@@ -27,7 +27,7 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute role="student">
               <StudentDashboard />
             </ProtectedRoute>
           }
@@ -35,7 +35,7 @@ function App() {
         <Route
           path="/onboarding"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute role="student">
               <Onboarding />
             </ProtectedRoute>
           }
@@ -44,7 +44,7 @@ function App() {
         <Route
           path="/teacher-dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute role="teacher">
               <TeacherDashboard />
             </ProtectedRoute>
           }
