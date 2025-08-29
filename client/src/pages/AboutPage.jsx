@@ -1,69 +1,180 @@
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import aboutImage from "../assets/images/classroom.jpg"; // Main image for the about section
-import heroImage from "../assets/images/home.jpg"; // Background for the header
 
+// Import images from your assets folder
+import aboutImage from "../assets/images/classroom.jpg";
+import studentsImage from "../assets/images/class2.jpg";
+import teachersImage from "../assets/images/class1.jpg";
+import schoolsImage from "../assets/images/facility1.jpg";
+
+// Helper component for animated tab content
+const TabContent = ({ children }) => (
+  <div className="animate-fadeIn">{children}</div>
+);
+
+// Main About Page Component
 export default function AboutPage() {
-  return (
-    <div className="bg-slate-50 text-slate-800">
-      <Navbar />
+  const [activeTab, setActiveTab] = useState("about");
 
-      {/* Sub-Header Section */}
-      <header
-        className="h-64 w-full bg-cover bg-center flex items-center justify-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
-        <div className="bg-black/60 h-full w-full flex items-center justify-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white">
-            About Us
-          </h1>
-        </div>
-      </header>
-
-      {/* Main Content Section */}
-      <main className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column: Text Content */}
-            <div className="text-center lg:text-left">
-              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mb-6">
-                The Best Smart Classroom Solution
-              </h2>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                A smart classroom integrates modern technology, like interactive
-                displays, projectors, and educational software, to enhance
-                teaching and student engagement. It transforms passive learning
-                into an active, multimedia-rich experience, fostering a more
-                dynamic and effective educational atmosphere.
-              </p>
-              <p className="text-slate-600 mb-8 leading-relaxed">
-                For teachers, it improves efficiency with tools for lesson
-                preparation, automated grading, and attendance tracking. For
-                students, it increases engagement through interactive content
-                and personalized learning paths. Both gain from a more
-                collaborative and resource-rich environment.
-              </p>
-              <a
-                href="#features" // You can link this to your features section on the homepage later
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 inline-block"
-              >
-                Explore Features
-              </a>
-            </div>
-
-            {/* Right Column: Image */}
-            <div className="flex justify-center">
-              <img
-                src={aboutImage}
-                alt="Students in a modern classroom"
-                className="rounded-2xl shadow-2xl w-full max-w-md object-cover"
-              />
-            </div>
+  const tabs = [
+    {
+      id: "about",
+      title: "About Us",
+      icon: "🏢",
+      content: (
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="order-2 md:order-1">
+            <h3 className="text-3xl font-bold text-indigo-700 mb-4">
+              Who We Are
+            </h3>
+            <p className="text-gray-700 leading-relaxed mb-6">
+              We are a team of passionate innovators dedicated to transforming
+              education through technology. Our <b>Smart Classroom</b> project
+              aims to create a seamless, efficient, and engaging learning
+              environment for students and teachers alike.
+            </p>
+          </div>
+          <div className="order-1 md:order-2">
+            <img
+              src={aboutImage}
+              alt="Modern classroom"
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform duration-300"
+            />
           </div>
         </div>
-      </main>
+      ),
+    },
+    {
+      id: "students",
+      title: "Students",
+      icon: "🎓",
+      content: (
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h3 className="text-3xl font-bold text-blue-600 mb-4">
+              Student Impact
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              Our solutions have already impacted over <b>5,000+ students</b> by
+              making education more interactive, accessible, and personalized.
+              With smart tools, students enjoy learning and perform better
+              academically.
+            </p>
+          </div>
+          <div>
+            <img
+              src={studentsImage}
+              alt="Students learning"
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "teachers",
+      title: "Teachers",
+      icon: "👩‍🏫",
+      content: (
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="order-2 md:order-1">
+            <h3 className="text-3xl font-bold text-orange-600 mb-4">
+              Teacher Empowerment
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              More than <b>300+ teachers</b> have been empowered with smart
+              classroom tools. They can automate attendance, track performance,
+              and spend more time doing what they love — <b>teaching</b>.
+            </p>
+          </div>
+          <div className="order-1 md:order-2">
+            <img
+              src={teachersImage}
+              alt="Teacher presenting"
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "schools",
+      title: "Schools",
+      icon: "🏫",
+      content: (
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h3 className="text-3xl font-bold text-purple-600 mb-4">
+              Schools Connected
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              We are proud to have connected <b>50+ schools</b>, creating a
+              network of smart classrooms that share innovation and best
+              practices. Together, we are shaping the <b>future of education</b>
+              .
+            </p>
+          </div>
+          <div>
+            <img
+              src={schoolsImage}
+              alt="School library"
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        </div>
+      ),
+    },
+  ];
 
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
+      <main className="pt-20">
+        {" "}
+        {/* Add padding to offset the fixed navbar */}
+        {/* Hero Section */}
+        <section className="bg-gradient-to-b from-blue-100 to-slate-50 py-20 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900">
+              Our Mission
+            </h1>
+            <p className="mt-4 text-lg text-slate-600">
+              Learn more about our vision, our achievements, and the impact we
+              are making in the world of education.
+            </p>
+          </div>
+        </section>
+        {/* Tab Section */}
+        <section className="max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+          {/* Tab Bar */}
+          <div className="flex justify-center border-b border-gray-200 mb-12">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-base md:text-lg font-semibold transition-all duration-300 ease-in-out border-b-4 ${
+                  activeTab === tab.id
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-500 hover:text-indigo-500 hover:border-gray-300"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.title}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 min-h-[300px]">
+            {tabs.map((tab) =>
+              activeTab === tab.id ? (
+                <TabContent key={tab.id}>{tab.content}</TabContent>
+              ) : null
+            )}
+          </div>
+        </section>
+      </main>
       <Footer />
     </div>
   );
