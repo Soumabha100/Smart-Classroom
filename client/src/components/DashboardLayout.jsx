@@ -10,12 +10,12 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex bg-slate-100 min-h-screen">
+    <div className="flex h-screen bg-slate-100">
       {/* Pass state and the toggle function to the Sidebar */}
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       {/* Main content area */}
-      <main className="flex-grow lg:ml-64 p-4 md:p-8">
+      <main className="flex h-screen bg-slate-100">
         {/* Hamburger Menu Button - visible only on mobile */}
         <button
           onClick={toggleSidebar}

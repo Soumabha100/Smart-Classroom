@@ -11,6 +11,7 @@ const userRoutes = require("./routes/userRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const classRoutes = require("./routes/classRoutes");
+const parentRoutes = require('./routes/parentRoutes');
 
 // Connect to MongoDB
 mongoose
@@ -50,6 +51,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/classes", classRoutes);
+app.use('/api/parents', parentRoutes);
 
 // Socket.IO connection logic
 io.on("connection", (socket) => {

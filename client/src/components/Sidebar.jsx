@@ -92,6 +92,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   </svg>
                   Manage Classes
                 </Link>
+                <Link
+                  to="/manage-parents"
+                  className="flex items-center p-3 rounded-lg hover:bg-slate-700"
+                >
+                  {/* Add an icon here */}
+                  Manage Parents
+                </Link>
               </li>
             )}
           </ul>

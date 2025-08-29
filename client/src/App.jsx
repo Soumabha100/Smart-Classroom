@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ClassManagement from "./pages/ClassManagement.jsx";
 import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
+import ParentManagementPage from "./pages/ParentManagementPage";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -76,6 +77,14 @@ function App() {
           element={
             <ProtectedRoute role="admin">
               <ClassDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-parents"
+          element={
+            <ProtectedRoute role="admin">
+              <ParentManagementPage />
             </ProtectedRoute>
           }
         />
