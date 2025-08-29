@@ -8,8 +8,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const userRole = localStorage.getItem("role");
 
   // Determine the correct dashboard path based on the role
-  const dashboardPath =
-    userRole === "teacher" ? "/teacher-dashboard" : "/dashboard";
+  let dashboardPath = "/dashboard"; // Default for student
+  if (userRole === "teacher") {
+    dashboardPath = "/teacher-dashboard";
+  } else if (userRole === "admin") {
+    dashboardPath = "/admin-dashboard";
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token");

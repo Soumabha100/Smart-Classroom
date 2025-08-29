@@ -23,10 +23,6 @@ const AdminDashboard = () => {
               <AttendanceChartContainer />
             </div>
           </div>
-          {/* Bottom Chart */}
-          <div className="w-full h-[500px]">
-            <FinanceChart />
-          </div>
         </div>
       </div>
     </DashboardLayout>
