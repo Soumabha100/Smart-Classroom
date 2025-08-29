@@ -10,8 +10,8 @@ import TeacherDashboard from "./pages/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
-import ClassManagementPage from './pages/ClassManagement.jsx';
-
+import ClassManagement from "./pages/ClassManagement.jsx";
+import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -26,7 +26,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected Routes */}
+        {/* Student Routes */}
         <Route
           path="/dashboard"
           element={
@@ -43,6 +43,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* Teacher Routes */}
         <Route
           path="/teacher-dashboard"
@@ -52,6 +53,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* Admin Routes */}
         <Route
           path="/admin-dashboard"
@@ -61,12 +63,19 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Manage Class Routes */}
         <Route
           path="/manage-classes"
           element={
             <ProtectedRoute role="admin">
-              <ClassManagementPage />
+              <ClassManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/class/:classId"
+          element={
+            <ProtectedRoute role="admin">
+              <ClassDetailsPage />
             </ProtectedRoute>
           }
         />

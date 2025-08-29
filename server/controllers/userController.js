@@ -44,3 +44,23 @@ exports.getUserCount = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 };
+
+// Get All the User Count
+exports.getTeachers = async (req, res) => {
+  try {
+    const teachers = await User.find({ role: 'teacher' }).select('name');
+    res.status(200).json(teachers);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};
+
+// @desc    Get all students
+exports.getStudents = async (req, res) => {
+  try {
+    const students = await User.find({ role: 'student' }).select('name email');
+    res.status(200).json(students);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};

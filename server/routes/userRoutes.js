@@ -2,7 +2,9 @@ const router = require("express").Router();
 const {
   getUserProfile,
   updateUserProfile,
-  getUserCount, // 1. Import the new controller function
+  getUserCount,
+  getTeachers,
+  getStudents
 } = require("../controllers/userController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
@@ -12,5 +14,8 @@ router.post("/profile", verifyToken, updateUserProfile);
 
 // 2. Add the new route for getting user counts
 router.get("/count", verifyToken, getUserCount);
+
+router.get("/teachers", verifyToken, getTeachers);
+router.get('/students', verifyToken, getStudents);
 
 module.exports = router;

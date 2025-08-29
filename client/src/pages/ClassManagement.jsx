@@ -2,6 +2,68 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DashboardLayout from "../components/DashboardLayout";
+import ClassForm from "../components/ClassForm";
+import { Link } from "react-router-dom";
+
+// A new component for managing students in a single class
+const StudentManager = ({ classItem, onStudentAdded }) => {
+  const [studentId, setStudentId] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const token = localStorage.getItem("token");
+
+  const handleAddStudent = async (e) => {
+    e.preventDefault();
+    if (!studentId) {
+      setError("Please enter a student ID.");
+      return;
+    }
+    try {
+      const api = axios.create({
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const res = await api.post(`/api/classes/${classItem._id}/students`, {
+        studentId,
+      });
+      setSuccess("Student added successfully!");
+      setStudentId("");
+      onStudentAdded(res.data); // Update the parent component state
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add student.");
+    }
+  };
+
+  return (
+    <div className="mt-4 border-t pt-4">
+      <h4 className="font-semibold text-slate-700">Enrolled Students:</h4>
+      <ul className="list-disc pl-5 text-slate-600">
+        {classItem.students.map((student) => (
+          <li key={student._id}>{student.name}</li>
+        ))}
+      </ul>
+      <form
+        onSubmit={handleAddStudent}
+        className="flex items-center gap-2 mt-4"
+      >
+        <input
+          type="text"
+          value={studentId}
+          onChange={(e) => setStudentId(e.target.value)}
+          placeholder="Enter Student ID"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+        />
+        <button
+          type="submit"
+          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg"
+        >
+          Add
+        </button>
+      </form>
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
+    </div>
+  );
+};
 
 const ClassManagementPage = () => {
   const [classes, setClasses] = useState([]);
@@ -25,6 +87,16 @@ const ClassManagementPage = () => {
     };
     fetchClasses();
   }, [token]);
+
+  const handleNewClass = (newClass) => {
+    // To show the new class instantly, we need to get the full teacher info
+    const updatedClass = {
+      ...newClass,
+      teacher: { name: "New Teacher" }, // This is a placeholder, ideally the API would return the populated teacher
+      students: [],
+    };
+    setClasses((prevClasses) => [...prevClasses, updatedClass]);
+  };
 
   return (
     <DashboardLayout>
@@ -54,11 +126,19 @@ const ClassManagementPage = () => {
                   Students: {classItem.students.length}
                 </p>
               </div>
-              {/* Add Edit/Delete buttons here later */}
+              <Link
+                to={`/class/${classItem._id}`}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
+              >
+                Manage
+              </Link>
             </div>
           ))}
         </div>
       </div>
+
+      {/* ClassForm component */}
+      <ClassForm onClassAdded={handleNewClass} />
     </DashboardLayout>
   );
 };
