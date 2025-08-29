@@ -2,6 +2,8 @@ import React from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import UserCard from "../components/UserCard";
 import AttendanceChartContainer from "../components/AttendanceChart";
+import TeacherList from '../components/TeacherList';
+import ClassList from '../components/ClassList';
 
 const AdminDashboard = () => {
   return (
@@ -24,6 +26,10 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+        <div className="mt-8">
+        <TeacherList />
+        <ClassList /> 
+      </div>
       </div>
     </DashboardLayout>
   );
