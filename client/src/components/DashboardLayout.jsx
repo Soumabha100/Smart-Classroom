@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ✨ NEW: Import useEffect
 import Sidebar from "./Sidebar";
+import { Link } from "react-router-dom";
 
-// This component will manage the state for the sidebar and provide the overall structure
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
@@ -9,36 +9,59 @@ export default function DashboardLayout({ children }) {
     setSidebarOpen(!isSidebarOpen);
   };
 
-  return (
-    <div className="flex h-screen bg-slate-100">
-      {/* Pass state and the toggle function to the Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+  // ✨ NEW: Add this effect to control body scrolling
+  useEffect(() => {
+    // When the sidebar is open, prevent the body from scrolling
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      // When the sidebar is closed, restore body scrolling
+      document.body.style.overflow = "unset";
+    }
 
-      {/* Main content area */}
-      <main className="flex h-screen bg-slate-100">
-        {/* Hamburger Menu Button - visible only on mobile */}
-        <button
-          onClick={toggleSidebar}
-          className="lg:hidden p-2 mb-4 rounded-md bg-gray-200 hover:bg-gray-300"
-          aria-label="Open sidebar"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-            />
-          </svg>
-        </button>
-        {children}
-      </main>
+    // Cleanup function to restore scrolling if the component unmounts
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isSidebarOpen]); // This effect runs whenever `isSidebarOpen` changes
+
+  return (
+    <div className="min-h-screen bg-slate-100">
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <div className="transition-all duration-300 ease-in-out lg:ml-64">
+        {/* Mobile Header with Hamburger Menu */}
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg shadow-sm lg:hidden">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <Link to="/" className="text-xl font-bold text-slate-800">
+                Smart Classroom
+              </Link>
+              <button
+                onClick={toggleSidebar}
+                className="rounded-md p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                aria-label="Open sidebar"
+              >
+                <svg
+                  className="h-6 w-6"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16M4 18h7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="p-6 sm:p-8">{children}</main>
+      </div>
     </div>
   );
 }

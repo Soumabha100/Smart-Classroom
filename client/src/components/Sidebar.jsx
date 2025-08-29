@@ -3,11 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
-
-  // Get the user's role directly from localStorage
   const userRole = localStorage.getItem("role");
 
-  // Determine the correct dashboard path based on the role
   let dashboardPath = "/dashboard"; // Default for student
   if (userRole === "teacher") {
     dashboardPath = "/teacher-dashboard";
@@ -17,7 +14,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("role"); // Ensure role is cleared on logout
+    localStorage.removeItem("role");
     navigate("/login");
   };
 
@@ -34,7 +31,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Sidebar */}
       <div
-        className={`w-64 h-screen bg-slate-900 text-white flex flex-col fixed z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`w-64 h-dvh bg-slate-900 text-white flex flex-col fixed z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
@@ -45,7 +42,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
             <li className="mb-2">
-              {/* This link now correctly points to the user's specific dashboard */}
               <Link
                 to={dashboardPath}
                 className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
@@ -68,47 +64,62 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               </Link>
             </li>
 
-            {/* ... other links */}
             {userRole === "admin" && (
-              <li className="mb-2">
-                <Link
-                  to="/manage-classes"
-                  className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                >
-                  {/* You can find a suitable SVG icon for classes */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mr-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <>
+                <li className="mb-2">
+                  <Link
+                    to="/manage-classes"
+                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6.253v11.494m-9-5.747h18"
-                    />
-                  </svg>
-                  Manage Classes
-                </Link>
-                <Link
-                  to="/manage-parents"
-                  className="flex items-center p-3 rounded-lg hover:bg-slate-700"
-                >
-                  {/* Add an icon here */}
-                  Manage Parents
-                </Link>
-              </li>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                    Manage Classes
+                  </Link>
+                </li>
+                <li className="mb-2">
+                  <Link
+                    to="/manage-parents"
+                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    Manage Parents
+                  </Link>
+                </li>
+              </>
             )}
           </ul>
         </nav>
 
-        {/* Logout button container - always at the bottom */}
-        <div className="p-4 border-t border-slate-700">
+        {/* Logout button container */}
+        <div className="p-4 mt-auto border-t border-slate-700">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center p-3 rounded-lg hover:bg-red-600 transition-colors"
+            className="w-full flex items-center p-3 rounded-lg hover:bg-red-600/90 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

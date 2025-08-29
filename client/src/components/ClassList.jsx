@@ -1,54 +1,73 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getClasses } from "../api/apiService"; // 1. Import the specific function
+import { getClasses } from "../api/apiService"; 
 
 const ClassList = () => {
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [classes, setClasses] = useState([]); 
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(""); 
 
   useEffect(() => {
     const fetchClasses = async () => {
       try {
-        const res = await getClasses(); // 2. Use the simplified, centralized function
-        setClasses(res.data);
+        const res = await getClasses(); 
+        setClasses(res.data); 
       } catch (err) {
-        setError("Failed to fetch classes.");
-        console.error(err);
+        setError("Failed to fetch classes."); 
       } finally {
-        setLoading(false);
+        setLoading(false); 
       }
     };
     fetchClasses();
-  }, []);
+  }, []); 
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold text-slate-800">Classes</h2>
+    <div className="h-full rounded-2xl bg-white p-6 shadow-lg">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-800">Classes Overview</h2>
         <Link
           to="/manage-classes"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm"
+          className="rounded-lg bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-200"
         >
-          Manage
+          Manage All
         </Link>
       </div>
-      {loading && <p>Loading...</p>}
+      {loading && <p className="text-slate-500">Loading classes...</p>}
       {error && <p className="text-red-500">{error}</p>}
-      <div className="space-y-4 max-h-60 overflow-y-auto">
-        {classes.length > 0
-          ? classes.map((classItem) => (
-              <div key={classItem._id} className="border p-4 rounded-lg">
-                <h3 className="font-bold text-lg">{classItem.name}</h3>
-                <p className="text-sm text-slate-600">
-                  Teacher: {classItem.teacher.name}
-                </p>
-                <p className="text-sm text-slate-500">
-                  Students: {classItem.students.length}
-                </p>
+      <div className="max-h-96 space-y-3 overflow-y-auto pr-2">
+        {!loading && classes.length === 0 ? (
+          <div className="flex h-48 flex-col items-center justify-center text-center">
+            <p className="text-slate-500">No classes found.</p>
+            <Link
+              to="/manage-classes"
+              className="mt-1 font-semibold text-blue-600 hover:underline"
+            >
+              Create one now!
+            </Link>
+          </div>
+        ) : (
+          classes.map((classItem) => (
+            <div
+              key={classItem._id}
+              className="rounded-lg bg-slate-50 p-4 transition-colors hover:bg-slate-100"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-900">{classItem.name}</h3>
+                  <p className="text-sm text-slate-500">
+                    Teacher: {classItem.teacher.name}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-slate-800">
+                    {classItem.students.length}
+                  </p>
+                  <p className="text-xs text-slate-500">Students</p>
+                </div>
               </div>
-            ))
-          : !loading && <p className="text-slate-500">No classes found.</p>}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
