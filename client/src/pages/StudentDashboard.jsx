@@ -8,32 +8,82 @@ import {
   XCircle,
   QrCode,
   BookOpen,
-  ExternalLink,
-  ShieldCheck,
+  CalendarCheck,
   Trophy,
   Activity,
+  ArrowRight,
+  Clock,
+  FileText,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 
-// Reusable Stat Card Component
+// --- Reusable Components for the New Design ---
+
+// Re-designed Stat Card
 const StatCard = ({ icon, label, value, color }) => (
-  <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl flex items-center gap-4">
-    <div className={`p-3 rounded-lg bg-${color}-500/10 text-${color}-400`}>
+  <motion.div
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0 },
+    }}
+    className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-5 transition-transform duration-300 hover:-translate-y-1"
+  >
+    <div className={`p-3 rounded-xl bg-${color}-100 text-${color}-600`}>
       {icon}
     </div>
     <div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="text-2xl font-bold text-slate-800">{value}</p>
+      <p className="text-sm text-slate-500">{label}</p>
     </div>
-  </div>
+  </motion.div>
 );
+
+// New Assignment Card Component
+const AssignmentCard = ({ title, subject, dueDate }) => (
+  <a
+    href="#"
+    className="block p-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 group"
+  >
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-white rounded-lg border border-slate-200">
+          <FileText className="w-5 h-5 text-blue-600" />
+        </div>
+        <div>
+          <h3 className="font-bold text-slate-800">{title}</h3>
+          <p className="text-sm text-slate-500">
+            {subject} • <span className="text-red-500">Due: {dueDate}</span>
+          </p>
+        </div>
+      </div>
+      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+    </div>
+  </a>
+);
+
+// --- Main Student Dashboard Component ---
 
 export default function StudentDashboard() {
   const [user, setUser] = useState(null);
-  const [activities, setActivities] = useState([]);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanResult, setScanResult] = useState(null); // To show success/error message
+  const [scanResult, setScanResult] = useState(null);
   const navigate = useNavigate();
+
+  // Mock data for assignments - you can replace this with an API call
+  const assignments = [
+    {
+      id: 1,
+      title: "React Hooks In-depth",
+      subject: "Web Development",
+      dueDate: "Sep 5, 2025",
+    },
+    {
+      id: 2,
+      title: "AI Ethics Essay",
+      subject: "Artificial Intelligence",
+      dueDate: "Sep 8, 2025",
+    },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,14 +96,10 @@ export default function StudentDashboard() {
         const api = axios.create({
           headers: { Authorization: `Bearer ${token}` },
         });
-        const [profileRes, activitiesRes] = await Promise.all([
-          api.get("/api/users/profile"),
-          api.get("/api/activities"),
-        ]);
-
+        const profileRes = await api.get("/api/users/profile");
         setUser(profileRes.data);
-        setActivities(activitiesRes.data);
 
+        // Redirect to onboarding if profile is incomplete
         if (
           !profileRes.data.profile ||
           profileRes.data.profile.academicInterests.length === 0
@@ -85,14 +131,15 @@ export default function StudentDashboard() {
         message: error.response?.data?.message || "Failed to mark attendance.",
       });
     }
-    // Hide the result message after 3 seconds
     setTimeout(() => setScanResult(null), 3000);
   };
 
   if (!user) {
     return (
       <DashboardLayout>
-        <div className="text-center p-10">Loading dashboard...</div>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-slate-500">Loading dashboard...</p>
+        </div>
       </DashboardLayout>
     );
   }
@@ -107,127 +154,89 @@ export default function StudentDashboard() {
         className="mb-8"
       >
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-          Welcome back, {user.name}!
+          Welcome back, {user.name.split(" ")[0]}!
         </h1>
         <p className="mt-2 text-slate-500">
-          Here's a look at what's happening today. Seize the day!
+          Here is your summary for today. Keep up the great work!
         </p>
       </motion.header>
 
       {/* At-a-Glance Stats */}
       <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         initial="hidden"
         animate="visible"
-        variants={{
-          visible: { transition: { staggerChildren: 0.1 } },
-        }}
+        variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
       >
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<ShieldCheck size={24} />}
-            label="Attendance"
-            value="95%"
-            color="green"
-          />
-        </motion.div>
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<Trophy size={24} />}
-            label="Avg. Grade"
-            value="A-"
-            color="yellow"
-          />
-        </motion.div>
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<BookOpen size={24} />}
-            label="Assignments Due"
-            value="2"
-            color="blue"
-          />
-        </motion.div>
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<Activity size={24} />}
-            label="Activities Done"
-            value="12"
-            color="purple"
-          />
-        </motion.div>
+        <StatCard
+          icon={<CalendarCheck size={24} />}
+          label="Attendance"
+          value="95%"
+          color="green"
+        />
+        <StatCard
+          icon={<Trophy size={24} />}
+          label="Avg. Grade"
+          value="A-"
+          color="yellow"
+        />
+        <StatCard
+          icon={<BookOpen size={24} />}
+          label="Assignments Due"
+          value={assignments.length}
+          color="blue"
+        />
+        <StatCard
+          icon={<Activity size={24} />}
+          label="Activities Done"
+          value="12"
+          color="purple"
+        />
       </motion.div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Recommended Activities */}
+        {/* Left Column: Upcoming Assignments */}
         <motion.div
-          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg"
+          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <h2 className="text-2xl font-bold mb-4 text-slate-800">
-            Recommended For You
+            Upcoming Assignments
           </h2>
-          <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-            {activities.length > 0 ? (
-              activities.map((activity) => (
-                <a
-                  key={activity._id}
-                  href={activity.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-4 rounded-lg bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 group"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-bold text-slate-800">
-                        {activity.title}
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        {activity.description}
-                      </p>
-                    </div>
-                    <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
-                </a>
+          <div className="space-y-4">
+            {assignments.length > 0 ? (
+              assignments.map((assignment) => (
+                <AssignmentCard key={assignment.id} {...assignment} />
               ))
             ) : (
               <p className="text-center py-10 text-slate-500">
-                No activities found. Check back later!
+                You're all caught up! No assignments due.
               </p>
             )}
           </div>
         </motion.div>
 
-        {/* Right Column: Attendance */}
+        {/* Right Column: Quick Actions & Attendance */}
         <motion.div
-          className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg"
+          className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <h2 className="text-2xl font-bold mb-4 text-slate-800">Attendance</h2>
+          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+            Quick Actions
+          </h2>
+
+          <button
+            onClick={() => setShowScanner(!showScanner)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4"
+          >
+            <QrCode className="w-5 h-5" />
+            {showScanner ? "Close Scanner" : "Scan Attendance QR"}
+          </button>
 
           <AnimatePresence>
             {showScanner && (
@@ -235,7 +244,7 @@ export default function StudentDashboard() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-4 mt-4 border-2 border-dashed p-2 rounded-lg overflow-hidden"
+                className="mb-4 border-2 border-dashed p-2 rounded-lg overflow-hidden"
               >
                 <Scanner
                   onScan={handleScan}
@@ -244,14 +253,6 @@ export default function StudentDashboard() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          <button
-            onClick={() => setShowScanner(!showScanner)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
-          >
-            <QrCode className="w-5 h-5" />
-            {showScanner ? "Close Scanner" : "Scan QR Code"}
-          </button>
 
           <AnimatePresence>
             {scanResult && (
