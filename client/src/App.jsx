@@ -13,6 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ClassManagement from "./pages/ClassManagement.jsx";
 import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
 import ParentManagementPage from "./pages/ParentManagementPage";
+import ParentLogin from "./pages/ParentLogin"; // ✨ ADD THIS
+import ParentDashboard from "./pages/ParentDashboard"; // ✨ ADD THIS
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -85,6 +87,15 @@ function App() {
           element={
             <ProtectedRoute role="admin">
               <ParentManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* PARENT ROUTES */}
+        <Route
+          path="/parent-dashboard"
+          element={
+            <ProtectedRoute role="parent">
+              <ParentDashboard />
             </ProtectedRoute>
           }
         />

@@ -13,10 +13,13 @@ const ProtectedRoute = ({ children, role }) => {
 
   // If a role is required and the user's role doesn't match, redirect
   if (role && userRole !== role) {
-    // Send them to their own correct dashboard
-    const homePath = userRole === 'teacher' ? '/teacher-dashboard' : '/dashboard';
-    return <Navigate to={homePath} />;
-  }
+  // Send them to their own correct dashboard
+  let homePath = '/dashboard'; // default student
+  if (userRole === 'teacher') homePath = '/teacher-dashboard';
+  if (userRole === 'admin') homePath = '/admin-dashboard';
+  if (userRole === 'parent') homePath = '/parent-dashboard'; // ✨ ADD THIS
+  return <Navigate to={homePath} />;
+}
 
   // If authenticated and (no role required OR role matches), render the component
   return children;

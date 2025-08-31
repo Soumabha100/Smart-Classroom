@@ -4,7 +4,8 @@ const {
   updateUserProfile,
   getUserCount,
   getTeachers,
-  getStudents
+  getStudents,
+  getStudentDataForParent,
 } = require("../controllers/userController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
@@ -17,5 +18,6 @@ router.get("/count", verifyToken, getUserCount);
 
 router.get("/teachers", verifyToken, getTeachers);
 router.get('/students', verifyToken, getStudents);
+router.get('/parent', verifyToken, getStudentDataForParent);
 
 module.exports = router;

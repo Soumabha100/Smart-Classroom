@@ -64,3 +64,18 @@ exports.getStudents = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err });
   }
 };
+
+exports.getStudentDataForParent = async (req, res) => {
+  try {
+    // req.user.students comes from the parent's JWT token
+    const studentIds = req.user.students;
+    if (!studentIds || studentIds.length === 0) {
+      return res.json([]);
+    }
+    const students = await User.find({ '_id': { $in: studentIds } }).select('-password');
+    // You can also populate attendance records here later
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
