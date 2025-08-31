@@ -57,3 +57,24 @@ code {
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+.scroller {
+  -webkit-mask: linear-gradient(
+    90deg,
+    transparent,
+    white 20%,
+    white 80%,
+    transparent
+  );
+  mask: linear-gradient(90deg, transparent, white 20%, white 80%, transparent);
+}
+
+@keyframes scroll {
+  to {
+    transform: translate(calc(-50% - 0.5rem));
+  }
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+}
