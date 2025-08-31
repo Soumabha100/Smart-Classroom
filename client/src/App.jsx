@@ -13,8 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ClassManagement from "./pages/ClassManagement.jsx";
 import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
 import ParentManagementPage from "./pages/ParentManagementPage";
-import ParentLogin from "./pages/ParentLogin"; // ✨ ADD THIS
-import ParentDashboard from "./pages/ParentDashboard"; // ✨ ADD THIS
+import ParentDashboard from "./pages/ParentDashboard"; 
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";

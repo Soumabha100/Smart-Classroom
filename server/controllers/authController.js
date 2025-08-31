@@ -1,9 +1,8 @@
-// server/controllers/authController.js
 const User = require("../models/User");
+const Parent = require("../models/Parent");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// Register Logic
 exports.register = async (req, res) => {
   try {
     const existingUser = await User.findOne({ email: req.body.email });
@@ -25,28 +24,46 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login Logic
+// NEW UNIFIED LOGIN LOGIC
 exports.login = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+    let user = await User.findOne({ email });
+    let isParent = false;
+
+    // If not found in Users, check Parents collection
+    if (!user) {
+      user = await Parent.findOne({ email });
+      isParent = true;
+    }
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const validPassword = await bcrypt.compare(
-      req.body.password,
-      user.password
-    );
-    if (!validPassword) {
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET, // Use the secret from your .env file
-      { expiresIn: "1h" }
-    );
-    const { password, ...others } = user._doc;
-    res.status(200).json({ ...others, token });
+
+    // Create JWT payload
+    const payload = {
+      id: user._id,
+      role: user.role,
+      // Add student IDs to token if the user is a parent
+      ...(isParent && { students: user.students }),
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({
+      token,
+      role: user.role,
+      name: user.name,
+    });
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ message: "Server Error", error: err });
   }
 };
