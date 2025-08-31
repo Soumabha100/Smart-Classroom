@@ -2,25 +2,48 @@ const User = require("../models/User");
 const Parent = require("../models/Parent");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const InvitationCode = require('../models/InvitationCode');
 
 exports.register = async (req, res) => {
+  const { name, email, password, invitationCode } = req.body;
+
   try {
-    const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) {
+    if (await User.findOne({ email })) {
       return res.status(400).json({ message: "Email already in use." });
     }
+
+    let role = 'student'; // Default role
+
+    // If an invitation code is provided, validate it
+    if (invitationCode) {
+      const code = await InvitationCode.findOne({
+        code: invitationCode,
+        used: false,
+        expiresAt: { $gt: new Date() }, // Check if not expired
+      });
+
+      if (!code) {
+        return res.status(400).json({ message: "Invalid or expired invitation code." });
+      }
+
+      role = code.role; // Assign role from the code
+      code.used = true; // Mark code as used
+      await code.save();
+    }
+
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    const newUser = new User({
-      name: req.body.name,
-      email: req.body.email,
-      password: hashedPassword,
-      role: req.body.role,
-    });
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new User({ name, email, password: hashedPassword, role });
     const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
+
+    res.status(201).json({
+        message: `Registration successful! You have been registered as a ${role}.`,
+        user: savedUser
+    });
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: 'Server error during registration.' });
   }
 };
 

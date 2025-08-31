@@ -13,7 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ClassManagement from "./pages/ClassManagement.jsx";
 import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
 import ParentManagementPage from "./pages/ParentManagementPage";
-import ParentDashboard from "./pages/ParentDashboard"; 
+import ParentDashboard from "./pages/ParentDashboard";
+import InvitationManagement from "./pages/InvitationManagement";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -95,6 +96,14 @@ function App() {
           element={
             <ProtectedRoute role="parent">
               <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-invites"
+          element={
+            <ProtectedRoute role="admin">
+              <InvitationManagement />
             </ProtectedRoute>
           }
         />

@@ -110,6 +110,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     Manage Parents
                   </Link>
                 </li>
+                <li className="mb-2">
+                  <Link to="/manage-invites" className="...">
+                    {/* Add an icon here */}
+                    Manage Invitations
+                  </Link>
+                </li>
               </>
             )}
           </ul>
