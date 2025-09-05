@@ -1,57 +1,36 @@
-import React, { useEffect, useState, useCallback } from "react"; // <-- 1. Import useCallback
+import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Button, Text } from "react-native-paper";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "../../hooks/useRouter";
-import api from "../../api";
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { Button, Text, ActivityIndicator } from "react-native-paper";
+import { useAuth } from "../../context/AuthContext"; // <-- Import useAuth
 
 export default function StudentDashboard() {
-  const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
+  // Get the user and logout function directly from our context
+  const { user, logout } = useAuth();
 
-  // 2. Wrap handleLogout in useCallback
-  // This memoizes the function, so it doesn't change on every render.
-  // 'router' is its dependency.
-  const handleLogout = useCallback(async () => {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("role");
-    router.replace("/login");
-  }, [router]);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/users/profile");
-        setUser(res.data);
-      } catch (error) {
-        console.error("Failed to fetch profile", error);
-        handleLogout();
-      }
-    };
-    fetchProfile();
-    // 3. Add the now-stable handleLogout function to the dependency array
-  }, [handleLogout]);
+  // If for some reason the user data isn't loaded yet, show a spinner
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator animating={true} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text variant="headlineMedium" style={styles.title}>
-        Welcome, {user ? user.name : "Student"}!
+        Welcome, {user.name}!
       </Text>
       <Text style={styles.subtitle}>This is your dashboard.</Text>
-      <Button mode="contained" onPress={handleLogout} style={styles.button}>
+      {/* The logout button now simply calls the logout function from the context */}
+      <Button mode="contained" onPress={logout} style={styles.button}>
         Logout
       </Button>
     </View>
   );
 }
 
+// Styles remain the same
 const styles = StyleSheet.create({
   container: {
     flex: 1,
