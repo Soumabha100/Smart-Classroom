@@ -1,29 +1,38 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useEffect } from "react";
+import { PaperProvider } from "react-native-paper";
+import { Stack, useSegments } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "../hooks/useRouter";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const router = useRouter();
+  const segments = useSegments();
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem("token");
+
+      // Check if the user is in one of the main app screens
+      const inApp = segments[0] === "(tabs)";
+
+      if (token && !inApp) {
+        // User has a token but is not in the app, so redirect them into the app.
+        router.replace("/(tabs)");
+      } else if (!token && inApp) {
+        // User does not have a token but is trying to access the app, so redirect to login.
+        router.replace("/login");
+      }
+    };
+    checkAuth();
+  }, [segments, router]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+    <PaperProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* These definitions tell the Stack about the route groups */}
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </PaperProvider>
   );
 }
