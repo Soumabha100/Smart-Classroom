@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../api'; // The path is now '../../'
-import { useRouter } from '../hooks/useRouter'; // <-- FIX: Import our custom hook
+import { useAuth } from '../../context/AuthContext'; // <-- Import useAuth
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Use the custom hook
+  const { login } = useAuth(); // <-- Get the login function from context
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -18,26 +16,16 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', { email, password });
-      await AsyncStorage.setItem('token', res.data.token);
-      await AsyncStorage.setItem('role', res.data.role);
-
-      // This call will now work without a TypeScript error
-      router.replace('/(tabs)');
-
-    } catch (err) {
-      // This will now show more specific backend errors if the API call fails
-      let message = 'An error occurred.';
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const response = (err as any).response;
-        message = response?.data?.message || message;
-      }
-      Alert.alert('Login Failed', message);
+      await login(email, password); // <-- Use the context's login function
+      // Navigation will be handled automatically by the RootLayout
+    } catch (err: any) {
+      Alert.alert('Login Failed', err.response?.data?.message || 'An error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
+  // The UI (return statement) remains the same as before
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Smart Classroom</Text>
@@ -69,7 +57,7 @@ export default function LoginScreen() {
   );
 }
 
-// Styles remain the same
+// Styles also remain the same
 const styles = StyleSheet.create({
   container: {
     flex: 1,
