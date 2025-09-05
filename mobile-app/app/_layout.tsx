@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import { PaperProvider } from "react-native-paper";
-import { Stack, useSegments } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "../hooks/useRouter";
+import { useEffect } from 'react';
+import { PaperProvider } from 'react-native-paper';
+import { Stack, useSegments } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from '../hooks/useRouter'; // Using our custom hook
 
 export default function RootLayout() {
   const router = useRouter();
@@ -10,17 +10,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem('token');
+      const inAuthGroup = segments[0] === 'auth';
 
-      // Check if the user is in one of the main app screens
-      const inApp = segments[0] === "(tabs)";
-
-      if (token && !inApp) {
-        // User has a token but is not in the app, so redirect them into the app.
-        router.replace("/(tabs)");
-      } else if (!token && inApp) {
-        // User does not have a token but is trying to access the app, so redirect to login.
-        router.replace("/login");
+      if (!token && !inAuthGroup) {
+        // If there's no token and we're not in the auth group, go to login.
+        router.replace('/login');
+      } else if (token && inAuthGroup) {
+        // If there is a token but we're somehow in the auth group, go to the main app.
+        router.replace('/(tabs)');
       }
     };
     checkAuth();
@@ -29,7 +27,6 @@ export default function RootLayout() {
   return (
     <PaperProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        {/* These definitions tell the Stack about the route groups */}
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
