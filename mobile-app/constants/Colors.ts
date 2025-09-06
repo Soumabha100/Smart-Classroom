@@ -1,5 +1,5 @@
 const tintColorLight = '#4f46e5';
-const tintColorDark = '#818cf8'; // A lighter indigo for dark mode text/icons
+const tintColorDark = '#818cf8'; // A lighter, vibrant indigo for dark mode accents
 
 export const Colors = {
   light: {
@@ -13,14 +13,14 @@ export const Colors = {
     border: '#e5e7eb',
   },
   dark: {
-    // NEW "NAVY" THEME
-    text: '#e2e8f0', // Lighter text for contrast
-    background: '#0f172a', // Deep navy blue
+    // NEW "NAVY" THEME, inspired by your screenshot
+    text: '#e2e8f0', // A soft off-white for text
+    background: '#0f172a', // Deep navy blue background
     tint: tintColorDark,
     icon: '#94a3b8',
     tabIconDefault: '#94a3b8',
     tabIconSelected: tintColorDark,
-    card: '#1e293b', // Slate blue for cards
-    border: '#334155', // Slightly lighter border
+    card: '#1e293b', // Rich slate blue for cards and surfaces
+    border: '#334155', // A subtle border color
   },
 };

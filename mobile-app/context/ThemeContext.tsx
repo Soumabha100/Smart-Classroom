@@ -7,30 +7,20 @@ import React, {
 } from "react";
 import { useColorScheme as useDeviceColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  MD3LightTheme,
-  MD3DarkTheme,
-  PaperProvider,
-} from "react-native-paper";
+import { MD3LightTheme, MD3DarkTheme, PaperProvider } from "react-native-paper";
 import { Colors } from "../constants/Colors";
 
-// Define the custom theme properties we want to add
-const customProperties = {
-  card: "string",
-  border: "string",
-};
-
-// Augment the PaperTheme type to include our custom properties
+// Augment the PaperTheme type to include our custom colors for type safety
 declare global {
   namespace ReactNativePaper {
     interface ThemeColors {
-      card: typeof customProperties.card;
-      border: typeof customProperties.border;
+      card: string;
+      border: string;
     }
   }
 }
 
-// Create our custom themes by extending the defaults from React Native Paper
+// Create our custom, fully-typed themes
 const LightTheme = {
   ...MD3LightTheme,
   colors: {
@@ -38,7 +28,6 @@ const LightTheme = {
     primary: Colors.light.tint,
     background: Colors.light.background,
     surface: Colors.light.card,
-    // Custom colors
     card: Colors.light.card,
     border: Colors.light.border,
   },
@@ -51,19 +40,18 @@ const DarkTheme = {
     primary: Colors.dark.tint,
     background: Colors.dark.background,
     surface: Colors.dark.card,
-    // Custom colors
     card: Colors.dark.card,
     border: Colors.dark.border,
   },
 };
 
-// Export the theme type for our custom hook
-export type AppTheme = typeof LightTheme;
+// Define the precise type of our theme
+type AppTheme = typeof LightTheme;
 
 interface ThemeContextType {
   colorScheme: "light" | "dark";
   toggleColorScheme: () => void;
-  paperTheme: AppTheme;
+  theme: AppTheme; // The theme object is now fully typed
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -90,19 +78,19 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     await AsyncStorage.setItem("colorScheme", newScheme);
   };
 
-  const paperTheme = useMemo(() => {
-    return colorScheme === "light" ? LightTheme : DarkTheme;
-  }, [colorScheme]);
+  const theme = useMemo(
+    () => (colorScheme === "light" ? LightTheme : DarkTheme),
+    [colorScheme]
+  );
 
   return (
-    <ThemeContext.Provider
-      value={{ colorScheme, toggleColorScheme, paperTheme }}
-    >
-      <PaperProvider theme={paperTheme}>{children}</PaperProvider>
+    <ThemeContext.Provider value={{ colorScheme, toggleColorScheme, theme }}>
+      <PaperProvider theme={theme}>{children}</PaperProvider>
     </ThemeContext.Provider>
   );
 };
 
+// This is now the ONLY theme hook for the entire app. It's clean and type-safe.
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {

@@ -1,36 +1,43 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { useTheme } from '../../context/ThemeContext'; 
+import { Tabs } from "expo-router";
+import React from "react";
+import { TabBarIcon } from "@/components/navigation/TabBarIcon";
+import { useTheme } from "../../context/ThemeContext"; // The one true hook
 
 export default function TabLayout() {
-  const { paperTheme } = useTheme(); 
+  const { theme } = useTheme(); // Get the current theme
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: paperTheme.colors.primary,
+        tabBarActiveTintColor: theme.colors.primary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: paperTheme.colors.surface, 
-          borderTopColor: paperTheme.colors.border,
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
         },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <TabBarIcon
+              name={focused ? "home" : "home-outline"}
+              color={color}
+            />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile" 
+        name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'person-circle' : 'person-circle-outline'} color={color} />
+            <TabBarIcon
+              name={focused ? "person-circle" : "person-circle-outline"}
+              color={color}
+            />
           ),
         }}
       />
