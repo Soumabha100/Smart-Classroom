@@ -1,25 +1,26 @@
-const tintColorLight = '#4f46e5'; // A nice indigo color
-const tintColorDark = '#c7d2fe'; // A lighter indigo for dark mode
+const tintColorLight = '#4f46e5';
+const tintColorDark = '#818cf8'; // A lighter indigo for dark mode text/icons
 
 export const Colors = {
   light: {
     text: '#111827',
-    background: '#f8fafc', // Light gray background
+    background: '#f8fafc',
     tint: tintColorLight,
     icon: '#68798a',
     tabIconDefault: '#68798a',
     tabIconSelected: tintColorLight,
-    card: '#ffffff', // Card backgrounds
+    card: '#ffffff',
     border: '#e5e7eb',
   },
   dark: {
-    text: '#ecf0f1',
-    background: '#121212', // A standard dark background
+    // NEW "NAVY" THEME
+    text: '#e2e8f0', // Lighter text for contrast
+    background: '#0f172a', // Deep navy blue
     tint: tintColorDark,
-    icon: '#9ba1a6',
-    tabIconDefault: '#9ba1a6',
+    icon: '#94a3b8',
+    tabIconDefault: '#94a3b8',
     tabIconSelected: tintColorDark,
-    card: '#1e1e1e', // Darker card background
-    border: '#2c2c2c',
+    card: '#1e293b', // Slate blue for cards
+    border: '#334155', // Slightly lighter border
   },
 };

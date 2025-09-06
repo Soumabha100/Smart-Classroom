@@ -16,7 +16,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <Text
             variant="headlineLarge"
-            style={{ color: paperTheme.colors.text }}
+            style={{ color: paperTheme.colors.onSurface }}
           >
             Profile & Settings
           </Text>
