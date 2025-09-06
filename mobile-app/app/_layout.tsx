@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { PaperProvider } from "react-native-paper";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { theme } from '../constants/theme';
+import { ThemeProvider } from '../context/ThemeContext';
 
 // Prevent the splash screen from auto-hiding before we can check auth status
 SplashScreen.preventAutoHideAsync();
@@ -60,10 +60,10 @@ export default function RootLayout() {
 
 return (
     <AuthProvider>
-      {/* Pass the custom theme to the PaperProvider */}
-      <PaperProvider theme={theme}>
+      {/* Wrap everything with the ThemeProvider */}
+      <ThemeProvider>
         <RootLayoutNav />
-      </PaperProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
