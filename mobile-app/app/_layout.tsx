@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
-import { PaperProvider } from 'react-native-paper';
-import { Stack, useRouter, useSegments, SplashScreen } from 'expo-router';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import { useEffect } from "react";
+import { PaperProvider } from "react-native-paper";
+import { Stack, useRouter, useSegments, SplashScreen } from "expo-router";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Prevent the splash screen from auto-hiding before we can check auth status
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
@@ -12,31 +12,39 @@ function RootLayoutNav() {
   const segments = useSegments();
 
   useEffect(() => {
-    if (isLoading) return; // Don't do anything until the auth state is loaded
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!token && !inAuthGroup) {
-      // If the user is not signed in and the initial segment is not anything in the auth group,
-      // redirect to the login page.
-      router.replace('/login');
-    } else if (token && inAuthGroup) {
-      // Redirect away from the login page if the user is signed in.
-      router.replace('/');
+    // Wait until the auth state is fully loaded from AsyncStorage
+    if (isLoading) {
+      return;
     }
-    // Hide the splash screen now that we're done checking
+
+    const inTabsGroup = segments[0] === "(tabs)";
+
+    if (token && !inTabsGroup) {
+      // If the user has a token but is NOT in the main '(tabs)' group,
+      // navigate them to the main dashboard screen.
+      router.replace("/(tabs)");
+    } else if (!token && inTabsGroup) {
+      // If the user does NOT have a token but is trying to access
+      // a screen inside the '(tabs)' group, send them to login.
+      router.replace("/login");
+    }
+
+    // Now that we have determined the correct route, hide the splash screen.
     SplashScreen.hideAsync();
   }, [token, isLoading, segments, router]);
-  
-  // Render nothing until the auth state is determined
+
+  // While the token is loading, return null to prevent screen flashing
   if (isLoading) {
-    return null; 
+    return null;
   }
 
+  // Once loaded, this Stack navigator will manage showing either the auth
+  // screens or the main app tabs, based on the logic in the useEffect.
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="scanner" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
