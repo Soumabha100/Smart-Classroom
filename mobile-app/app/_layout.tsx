@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { PaperProvider } from "react-native-paper";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { useColorScheme } from "@/hooks/useColorScheme"; // Import this for PaperProvider
+import { theme } from '../constants/theme';
 
 // Prevent the splash screen from auto-hiding before we can check auth status
 SplashScreen.preventAutoHideAsync();
@@ -57,12 +57,11 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme(); // Get the color scheme for PaperProvider theme
 
-  return (
+return (
     <AuthProvider>
-      {/* PaperProvider is what enables the styled components from React Native Paper */}
-      <PaperProvider>
+      {/* Pass the custom theme to the PaperProvider */}
+      <PaperProvider theme={theme}>
         <RootLayoutNav />
       </PaperProvider>
     </AuthProvider>

@@ -1,23 +1,19 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Alert } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
-import { useAuth } from '../../context/AuthContext'; // <-- Import useAuth
+import React from 'react';
+import { StyleSheet, View, Alert, SafeAreaView, Image } from 'react-native';
+import { TextInput, Button, Text } from 'react-native-paper';
+import { useAuth } from '../../context/AuthContext';
+import { theme } from '../../constants/theme';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth(); // <-- Get the login function from context
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
-      return;
-    }
     setLoading(true);
     try {
-      await login(email, password); // <-- Use the context's login function
-      // Navigation will be handled automatically by the RootLayout
+      await login(email, password);
     } catch (err: any) {
       Alert.alert('Login Failed', err.response?.data?.message || 'An error occurred.');
     } finally {
@@ -25,58 +21,90 @@ export default function LoginScreen() {
     }
   };
 
-  // The UI (return statement) remains the same as before
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Smart Classroom</Text>
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        style={styles.input}
-        secureTextEntry
-      />
-      <Button
-        mode="contained"
-        onPress={handleLogin}
-        loading={loading}
-        disabled={loading}
-        style={styles.button}
-      >
-        Login
-      </Button>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Image 
+          source={require('../../assets/images/logo1.jpg')} 
+          style={styles.logo} 
+        />
+        <Text variant="headlineLarge" style={styles.title}>Welcome Back</Text>
+        <Text variant="bodyLarge" style={styles.subtitle}>Sign in to continue to your classroom</Text>
+        
+        <TextInput
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          mode="outlined"
+          left={<TextInput.Icon icon="email-outline" />}
+        />
+        <TextInput
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+          secureTextEntry
+          mode="outlined"
+          left={<TextInput.Icon icon="lock-outline" />}
+        />
+        <Button
+          mode="contained"
+          onPress={handleLogin}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          labelStyle={styles.buttonLabel}
+        >
+          Sign In
+        </Button>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// Styles also remain the same
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 24,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginBottom: 24,
+    borderRadius: 20,
   },
   title: {
-    fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 40,
-    color: '#333',
+    color: theme.colors.text,
+  },
+  subtitle: {
+    textAlign: 'center',
+    marginBottom: 32,
+    color: theme.colors.placeholder,
   },
   input: {
     marginBottom: 16,
   },
   button: {
-    marginTop: 10,
-    paddingVertical: 8,
+    marginTop: 16,
+    borderRadius: 12,
+  },
+  buttonContent: {
+    paddingVertical: 10,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
