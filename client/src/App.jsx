@@ -16,6 +16,10 @@ import ParentManagementPage from "./pages/ParentManagementPage";
 import ParentDashboard from "./pages/ParentDashboard";
 import InvitationManagement from "./pages/InvitationManagement";
 
+// ✅ Import newly added pages
+import DrivePage from "./pages/DrivePage.jsx";
+import LearningPath from "./pages/LearningPath.jsx";
+
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
@@ -43,6 +47,26 @@ function App() {
           element={
             <ProtectedRoute role="student">
               <Onboarding />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ Drive Page (Students) */}
+        <Route
+          path="/drive"
+          element={
+            <ProtectedRoute role="student">
+              <DrivePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ Learning Path Page (Students) */}
+        <Route
+          path="/learning-path"
+          element={
+            <ProtectedRoute role="student">
+              <LearningPath />
             </ProtectedRoute>
           }
         />
@@ -90,7 +114,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* PARENT ROUTES */}
+
+        {/* Parent Routes */}
         <Route
           path="/parent-dashboard"
           element={

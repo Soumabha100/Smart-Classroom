@@ -12,33 +12,43 @@ import {
   Trophy,
   Activity,
   ArrowRight,
-  Clock,
   FileText,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 
-// --- Reusable Components for the New Design ---
+// Import extra pages
+import DrivePage from "./DrivePage";
+import LearningPath from "./LearningPath";
 
-// Re-designed Stat Card
-const StatCard = ({ icon, label, value, color }) => (
-  <motion.div
-    variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 },
-    }}
-    className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-5 transition-transform duration-300 hover:-translate-y-1"
-  >
-    <div className={`p-3 rounded-xl bg-${color}-100 text-${color}-600`}>
-      {icon}
-    </div>
-    <div>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
-      <p className="text-sm text-slate-500">{label}</p>
-    </div>
-  </motion.div>
-);
+// ---------------- Reusable Components ----------------
 
-// New Assignment Card Component
+// Stat Card (cleaned)
+const StatCard = ({ icon, label, value, color }) => {
+  const bgColor = {
+    green: "bg-green-100 text-green-600",
+    yellow: "bg-yellow-100 text-yellow-600",
+    blue: "bg-blue-100 text-blue-600",
+    purple: "bg-purple-100 text-purple-600",
+  }[color];
+
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 },
+      }}
+      className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex items-center gap-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+    >
+      <div className={`p-3 rounded-xl ${bgColor}`}>{icon}</div>
+      <div>
+        <p className="text-2xl font-bold text-slate-800">{value}</p>
+        <p className="text-sm text-slate-500">{label}</p>
+      </div>
+    </motion.div>
+  );
+};
+
+// Assignment Card
 const AssignmentCard = ({ title, subject, dueDate }) => (
   <a
     href="#"
@@ -50,9 +60,10 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
           <FileText className="w-5 h-5 text-blue-600" />
         </div>
         <div>
-          <h3 className="font-bold text-slate-800">{title}</h3>
+          <h3 className="font-semibold text-slate-800">{title}</h3>
           <p className="text-sm text-slate-500">
-            {subject} • <span className="text-red-500">Due: {dueDate}</span>
+            {subject} •{" "}
+            <span className="text-red-500 font-medium">Due: {dueDate}</span>
           </p>
         </div>
       </div>
@@ -61,7 +72,7 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
   </a>
 );
 
-// --- Main Student Dashboard Component ---
+// ---------------- Main Student Dashboard ----------------
 
 export default function StudentDashboard() {
   const [user, setUser] = useState(null);
@@ -69,7 +80,7 @@ export default function StudentDashboard() {
   const [scanResult, setScanResult] = useState(null);
   const navigate = useNavigate();
 
-  // Mock data for assignments - you can replace this with an API call
+  // Example assignments (replace with API later)
   const assignments = [
     {
       id: 1,
@@ -99,7 +110,7 @@ export default function StudentDashboard() {
         const profileRes = await api.get("/api/users/profile");
         setUser(profileRes.data);
 
-        // Redirect to onboarding if profile is incomplete
+        // Redirect to onboarding if profile incomplete
         if (
           !profileRes.data.profile ||
           profileRes.data.profile.academicInterests.length === 0
@@ -154,14 +165,14 @@ export default function StudentDashboard() {
         className="mb-8"
       >
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-          Welcome back, {user.name.split(" ")[0]}!
+          Welcome back, {user.name.split(" ")[0]} 👋
         </h1>
         <p className="mt-2 text-slate-500">
           Here is your summary for today. Keep up the great work!
         </p>
       </motion.header>
 
-      {/* At-a-Glance Stats */}
+      {/* Stats Section */}
       <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         initial="hidden"
@@ -194,11 +205,11 @@ export default function StudentDashboard() {
         />
       </motion.div>
 
-      {/* Main Content Grid */}
+      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Upcoming Assignments */}
+        {/* Assignments Section */}
         <motion.div
-          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80"
+          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md border border-slate-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -213,15 +224,15 @@ export default function StudentDashboard() {
               ))
             ) : (
               <p className="text-center py-10 text-slate-500">
-                You're all caught up! No assignments due.
+                🎉 You're all caught up! No assignments due.
               </p>
             )}
           </div>
         </motion.div>
 
-        {/* Right Column: Quick Actions & Attendance */}
+        {/* Quick Actions */}
         <motion.div
-          className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80"
+          className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-md border border-slate-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -236,6 +247,21 @@ export default function StudentDashboard() {
           >
             <QrCode className="w-5 h-5" />
             {showScanner ? "Close Scanner" : "Scan Attendance QR"}
+          </button>
+
+          {/* Extra navigation buttons */}
+          <button
+            onClick={() => navigate("/drive")}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 mb-3"
+          >
+            📂 Go to Drive
+          </button>
+
+          <button
+            onClick={() => navigate("/learning-path")}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 mb-3"
+          >
+            📘 Learning Path
           </button>
 
           <AnimatePresence>
@@ -254,6 +280,7 @@ export default function StudentDashboard() {
             )}
           </AnimatePresence>
 
+          {/* Attendance Scan Result */}
           <AnimatePresence>
             {scanResult && (
               <motion.div
