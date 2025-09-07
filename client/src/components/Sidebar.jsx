@@ -41,6 +41,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
         <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
+            {/* Dashboard */}
             <li className="mb-2">
               <Link
                 to={dashboardPath}
@@ -64,6 +65,57 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               </Link>
             </li>
 
+            {/* Student-only extra links */}
+            {userRole === "student" && (
+              <>
+                <li className="mb-2">
+                  <Link
+                    to="/drive"
+                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 7h18M3 12h18M3 17h18"
+                      />
+                    </svg>
+                    Drive
+                  </Link>
+                </li>
+                <li className="mb-2">
+                  <Link
+                    to="/learning-path"
+                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6l4 2m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2z"
+                      />
+                    </svg>
+                    Learning Path
+                  </Link>
+                </li>
+              </>
+            )}
+
+            {/* Admin-only links */}
             {userRole === "admin" && (
               <>
                 <li className="mb-2">
@@ -111,8 +163,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   </Link>
                 </li>
                 <li className="mb-2">
-                  <Link to="/manage-invites" className="...">
-                    {/* Add an icon here */}
+                  <Link
+                    to="/manage-invites"
+                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 10h.01M12 14h.01M16 10h.01M21 16H3M21 12H3M21 8H3"
+                      />
+                    </svg>
                     Manage Invitations
                   </Link>
                 </li>
