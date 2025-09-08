@@ -15,27 +15,27 @@ const dynamicTexts = [
 ];
 
 const dynamicBackgrounds = [
-  "/images/Dark-Abstract.jpg",
-  "/images/Student-Collaborating.jpg",
-  "/images/Software-2.jpg",
-  "/images/Abstract-Background.jpg",
+  "https://i.ibb.co/4Z1YJYdt/Dark-Abstract.jpg",
+  "https://i.ibb.co/Myn3d0bm/Student-Collaborating.jpg",
+  "https://i.ibb.co/KYcLfVX/Software-2.jpg",
+  "https://i.ibb.co/ks6R2XGP/Abstract-Background.jpg",
 ];
 
 const facilities = [
-  { img: "/images/facility1.jpg", title: "State-of-the-Art Library" },
-  { img: "/images/facility2.jpg", title: "Advanced Computer Labs" },
-  { img: "/images/facility3.jpg", title: "Creative & AV Rooms" },
-  { img: "/images/facility4.jpg", title: "Collaborative Study Zones" },
-  { img: "/images/facility5.jpg", title: "Robotics & Tech Hub" },
-  { img: "/images/facility6.jpg", title: "Outdoor Learning Spaces" },
-  { img: "/images/facility1.jpg", title: "State-of-the-Art Library" },
-  { img: "/images/facility2.jpg", title: "Advanced Computer Labs" },
+  { img: "https://i.ibb.co/qFY22Nbh/facility1.jpg", title: "State-of-the-Art Library" },
+  { img: "https://i.ibb.co/SD3R5LCb/facility2.jpg", title: "Advanced Computer Labs" },
+  { img: "https://i.ibb.co/99G0p4WH/facility3.jpg", title: "Creative & AV Rooms" },
+  { img: "https://i.ibb.co/P70vgsN/facility4.jpg", title: "Collaborative Study Zones" },
+  { img: "https://i.ibb.co/Mkp1wBpL/facility5.jpg", title: "Robotics & Tech Hub" },
+  { img: "https://i.ibb.co/7JcB1jgM/facility6.jpg", title: "Outdoor Learning Spaces" },
+  { img: "https://i.ibb.co/qFY22Nbh/facility1.jpg", title: "State-of-the-Art Library" },
+  { img: "https://i.ibb.co/SD3R5LCb/facility2.jpg", title: "Advanced Computer Labs" },
 ];
 
 const classrooms = [
-  { img: "/images/class1.jpg", title: "Interactive Learning" },
-  { img: "/images/class2.jpg", title: "Real-time Collaboration" },
-  { img: "/images/class3.jpg", title: "Data-Driven Insights" },
+  { img: "https://i.ibb.co/1YtBymP9/class1.jpg", title: "Interactive Learning" },
+  { img: "https://i.ibb.co/ccZgQZ2X/class2.jpg", title: "Real-time Collaboration" },
+  { img: "https://i.ibb.co/DPxPHdsx/class3.jpg", title: "Data-Driven Insights" },
 ];
 
 export default function HomePage() {
