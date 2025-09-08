@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { User, Settings } from "lucide-react";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -62,6 +63,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   />
                 </svg>
                 Dashboard
+              </Link>
+            </li>
+            <li className="mb-2">
+              <Link
+                to="/profile"
+                className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                <User className="h-6 w-6 mr-3" />
+                Profile
+              </Link>
+            </li>
+            <li className="mb-2">
+              <Link
+                to="/settings"
+                className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                <Settings className="h-6 w-6 mr-3" />
+                Settings
               </Link>
             </li>
 
