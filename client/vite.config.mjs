@@ -4,13 +4,13 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(),],
+  plugins: [react(), tailwindcss()],
   server: {
-    host: "0.0.0.0",
-    https: false,
-
+    // This is the part that was missing
+    host: "0.0.0.0", 
+    
+    // Your proxy settings are preserved here
     proxy: {
-      // Proxying API requests to the backend server
       "/api": {
         target: "http://localhost:5001",
         changeOrigin: true,
