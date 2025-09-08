@@ -15,6 +15,8 @@ import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
 import ParentManagementPage from "./pages/ParentManagementPage";
 import ParentDashboard from "./pages/ParentDashboard";
 import InvitationManagement from "./pages/InvitationManagement";
+import ProfilePage from "./pages/ProfilePage.jsx";
+import SettingsPage from "./pages/SettingsPage.jsx";
 
 // ✅ Import newly added pages
 import DrivePage from "./pages/DrivePage.jsx";
@@ -129,6 +131,22 @@ function App() {
           element={
             <ProtectedRoute role="admin">
               <InvitationManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />
