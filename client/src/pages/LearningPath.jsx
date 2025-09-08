@@ -6,6 +6,7 @@ import Quiz from "../components/Learning/Quiz";
 import PuzzleGame from "../components/Learning/PuzzleGame"; // ✅ Added Puzzle Game
 import { motion, AnimatePresence } from "framer-motion";
 import Confetti from "react-dom-confetti"; // ✅ Import burst confetti
+import { Link } from "react-router-dom"; 
 
 export default function LearningPath() {
   const [modules, setModules] = useState([]);
@@ -125,7 +126,13 @@ export default function LearningPath() {
           ))}
         </AnimatePresence>
       </div>
-
+      {/* ✅ Floating Back to Dashboard Button */}
+<Link
+  to="/dashboard"
+  className="fixed bottom-6 left-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full text-white font-semibold shadow-lg transition-transform transform hover:scale-105"
+>
+  ⬅ Back to Dashboard
+</Link>
       {/* Lesson / Challenge / Puzzle Modal */}
       <AnimatePresence>
         {activeModule && (

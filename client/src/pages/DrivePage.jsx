@@ -3,6 +3,7 @@ import FileCard from "../components/Drive/FileCard";
 import UploadModal from "../components/Drive/UploadModal";
 import * as fileService from "../services/fileService";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom"; // ✅ Import Link
 
 export default function DrivePage() {
   const [files, setFiles] = useState([]);
@@ -146,6 +147,14 @@ export default function DrivePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ✅ Floating Back to Dashboard Button */}
+      <Link
+        to="/dashboard"
+        className="fixed bottom-6 left-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full text-white font-semibold shadow-lg transition-transform transform hover:scale-105"
+      >
+        ⬅ Back to Dashboard
+      </Link>
     </div>
   );
 }
