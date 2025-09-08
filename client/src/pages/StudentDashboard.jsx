@@ -12,6 +12,9 @@ import {
   Activity,
   ArrowRight,
   FileText,
+  LayoutGrid,
+  Bot,
+  Briefcase,
 } from "lucide-react";
 
 import DashboardLayout from "../components/DashboardLayout.jsx";
@@ -26,9 +29,10 @@ import QuickWins from "../components/learning/QuickWins.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/apiService.js";
 
-// ---------------- Reusable Components (with Dark Mode Fixes) ----------------
+// --- Reusable Components (Slightly updated for new design) ---
 
 const StatCard = ({ icon, label, value, color }) => {
+  // This component remains the same as your original
   const colorClasses = {
     green:
       "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
@@ -38,18 +42,17 @@ const StatCard = ({ icon, label, value, color }) => {
     purple:
       "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
   };
-
   return (
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
-      className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center gap-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
       <div className={`p-3 rounded-xl ${colorClasses[color]}`}>{icon}</div>
       <div>
-        <p className="text-2xl font-bold text-slate-800 dark:text-white">
+        <p className="text-xl font-bold text-slate-800 dark:text-white">
           {value}
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
@@ -59,9 +62,10 @@ const StatCard = ({ icon, label, value, color }) => {
 };
 
 const AssignmentCard = ({ title, subject, dueDate }) => (
+  // This component also remains the same
   <a
     href="#"
-    className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300 transition-all duration-300 group"
+    className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/60 hover:border-blue-300 transition-all duration-300 group"
   >
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-4">
@@ -83,12 +87,13 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
   </a>
 );
 
-// ---------------- Main Student Dashboard ----------------
+// --- Main Student Dashboard Component ---
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [activeTab, setActiveTab] = useState("feed");
   const navigate = useNavigate();
 
   const assignments = [
@@ -96,13 +101,19 @@ export default function StudentDashboard() {
       id: 1,
       title: "React Hooks In-depth",
       subject: "Web Development",
-      dueDate: "Sep 5, 2025",
+      dueDate: "Sep 15, 2025",
     },
     {
       id: 2,
       title: "AI Ethics Essay",
       subject: "Artificial Intelligence",
-      dueDate: "Sep 8, 2025",
+      dueDate: "Sep 18, 2025",
+    },
+    {
+      id: 3,
+      title: "Calculus Problem Set",
+      subject: "Mathematics",
+      dueDate: "Sep 22, 2025",
     },
   ];
 
@@ -120,16 +131,28 @@ export default function StudentDashboard() {
         message: error.response?.data?.message || "Failed to mark attendance.",
       });
     }
-    setTimeout(() => setScanResult(null), 4000);
+    setTimeout(() => setScanResult(null), 5000);
   };
+
+  const TabButton = ({ id, label, icon }) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${
+        activeTab === id
+          ? "bg-blue-600 text-white shadow-md"
+          : "text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
 
   if (!user) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-full">
-          <p className="text-slate-500 dark:text-slate-400">
-            Loading dashboard...
-          </p>
+          <p>Loading dashboard...</p>
         </div>
       </DashboardLayout>
     );
@@ -137,157 +160,193 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-          Welcome back, {user.name.split(" ")[0]} 👋
-        </h1>
-        <p className="mt-2 text-slate-500 dark:text-slate-400">
-          Here is your summary for today. Keep up the great work!
-        </p>
-      </header>
+      <div className="space-y-8">
+        {/* Header */}
+        <header>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
+            Welcome back, {user.name.split(" ")[0]} 👋
+          </h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
+            Ready to learn something new today? Let's get started.
+          </p>
+        </header>
 
-      {/* Stats Section */}
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-      >
-        <StatCard
-          icon={<CalendarCheck size={24} />}
-          label="Attendance"
-          value="95%"
-          color="green"
-        />
-        <StatCard
-          icon={<Trophy size={24} />}
-          label="Avg. Grade"
-          value="A-"
-          color="yellow"
-        />
-        <StatCard
-          icon={<BookOpen size={24} />}
-          label="Assignments Due"
-          value={assignments.length}
-          color="blue"
-        />
-        <StatCard
-          icon={<Activity size={24} />}
-          label="Activities Done"
-          value="12"
-          color="purple"
-        />
-      </motion.div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content Area (Assignments, Learning Path etc.) */}
-        <div className="lg:col-span-2 space-y-8">
-          <motion.div
-            className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
-              Upcoming Assignments
-            </h2>
-            <div className="space-y-4">
-              {assignments.length > 0 ? (
-                assignments.map((assignment) => (
-                  <AssignmentCard key={assignment.id} {...assignment} />
-                ))
-              ) : (
-                <p className="text-center py-10 text-slate-500 dark:text-slate-400">
-                  🎉 You're all caught up! No assignments due.
-                </p>
-              )}
-            </div>
-          </motion.div>
-
-          <PersonalizedLearningPath
-            onOpenLesson={(lesson) => console.log("Open", lesson)}
-          />
-          <SmartProgressInsights />
-          <QuizGenerator />
-          <StudyPlanner assignments={assignments} />
-          <CareerRecommendations
-            strengths={user.profile?.strengths || ["AI", "Algorithms"]}
-          />
-          <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
-          <QuickWins onMood={(m) => console.log("Mood:", m)} />
-        </div>
-
-        {/* Sidebar Actions */}
+        {/* Top Stats Section - Kept from original */}
         <motion.div
-          className="lg:col-span-1"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
-          <div className="sticky top-24 space-y-8">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700">
-              <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
-                Quick Actions
-              </h2>
-              <button
-                onClick={() => setShowScanner(!showScanner)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4"
-              >
-                <QrCode className="w-5 h-5" />
-                {showScanner ? "Close Scanner" : "Scan Attendance QR"}
-              </button>
-              <AnimatePresence>
-                {showScanner && (
+          <StatCard
+            icon={<CalendarCheck size={24} />}
+            label="Attendance"
+            value="95%"
+            color="green"
+          />
+          <StatCard
+            icon={<Trophy size={24} />}
+            label="Avg. Grade"
+            value="A-"
+            color="yellow"
+          />
+          <StatCard
+            icon={<BookOpen size={24} />}
+            label="Assignments Due"
+            value={assignments.length}
+            color="blue"
+          />
+          <StatCard
+            icon={<Activity size={24} />}
+            label="Activities Done"
+            value="12"
+            color="purple"
+          />
+        </motion.div>
+
+        {/* --- Main Content Grid --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Feed (Left Column) */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2 p-2">
+                <TabButton
+                  id="feed"
+                  label="My Feed"
+                  icon={<LayoutGrid size={16} />}
+                />
+                <TabButton
+                  id="tools"
+                  label="AI Learning Tools"
+                  icon={<Bot size={16} />}
+                />
+                <TabButton
+                  id="career"
+                  label="Career Hub"
+                  icon={<Briefcase size={16} />}
+                />
+              </div>
+
+              <div className="p-2 md:p-4">
+                <AnimatePresence mode="wait">
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-4 border-2 border-dashed border-slate-300 dark:border-slate-600 p-2 rounded-lg overflow-hidden"
-                  >
-                    <Scanner
-                      onScan={handleScan}
-                      onError={(error) => console.log(error?.message)}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <AnimatePresence>
-                {scanResult && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className={`mt-4 p-3 rounded-lg flex items-center gap-2 text-sm font-semibold ${
-                      scanResult.type === "success"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                    }`}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-8"
                   >
-                    {scanResult.type === "success" ? (
-                      <CheckCircle2 size={18} />
-                    ) : (
-                      <XCircle size={18} />
+                    {activeTab === "feed" && (
+                      <div className="space-y-8">
+                        <div>
+                          <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
+                            Upcoming Assignments
+                          </h2>
+                          <div className="space-y-4">
+                            {assignments.map((assignment) => (
+                              <AssignmentCard
+                                key={assignment.id}
+                                {...assignment}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <PersonalizedLearningPath
+                          onOpenLesson={(lesson) => console.log("Open", lesson)}
+                        />
+                      </div>
                     )}
-                    {scanResult.message}
+
+                    {activeTab === "tools" && (
+                      <div className="space-y-8">
+                        <SmartProgressInsights />
+                        <StudyPlanner assignments={assignments} />
+                        <QuizGenerator />
+                      </div>
+                    )}
+
+                    {activeTab === "career" && (
+                      <div>
+                        <CareerRecommendations
+                          strengths={
+                            user.profile?.strengths || ["AI", "Algorithms"]
+                          }
+                        />
+                      </div>
+                    )}
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700">
-              <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
-                My Drive
-              </h2>
-              <button
-                onClick={() => navigate("/drive")}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300"
-              >
-                📂 Go to Drive
-              </button>
+                </AnimatePresence>
+              </div>
             </div>
           </div>
-        </motion.div>
+
+          {/* Sidebar (Right Column) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
+                    Quick Actions
+                  </h2>
+                  <button
+                    onClick={() => setShowScanner(!showScanner)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4"
+                  >
+                    <QrCode className="w-5 h-5" />
+                    {showScanner ? "Close Scanner" : "Scan Attendance"}
+                  </button>
+                  <AnimatePresence>
+                    {showScanner && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 border-2 border-dashed border-slate-300 dark:border-slate-600 p-2 rounded-lg overflow-hidden"
+                      >
+                        <Scanner
+                          onScan={handleScan}
+                          onError={(error) => console.log(error?.message)}
+                        />
+                      </motion.div>
+                    )}
+                    {scanResult && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className={`mt-4 p-3 rounded-lg flex items-center gap-2 text-sm font-semibold ${
+                          scanResult.type === "success"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                        }`}
+                      >
+                        {scanResult.type === "success" ? (
+                          <CheckCircle2 size={18} />
+                        ) : (
+                          <XCircle size={18} />
+                        )}
+                        {scanResult.message}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <button
+                    onClick={() => navigate("/drive")}
+                    className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300"
+                  >
+                    📂 My Drive
+                  </button>
+                </div>
+              </motion.div>
+              <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
+              <QuickWins onMood={(m) => console.log("Mood:", m)} />
+            </div>
+          </div>
+        </div>
       </div>
       <AIAssistant />
     </DashboardLayout>
