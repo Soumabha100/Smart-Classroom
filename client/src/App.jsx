@@ -24,6 +24,8 @@ import LearningPath from "./pages/LearningPath.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
+  // This component now only defines the routes.
+  // The Router and AuthProvider are correctly placed in index.jsx.
   return (
     <Routes>
       {/* Public Routes */}

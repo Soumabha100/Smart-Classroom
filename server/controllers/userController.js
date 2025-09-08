@@ -22,6 +22,7 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // ✨ UPDATE to merge profile data correctly
     // This allows updating any part of the profile, including the new 'theme'
     const updatedProfile = { ...user.profile, ...req.body };
     user.profile = updatedProfile;

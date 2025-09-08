@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema(
       careerGoals: [String],
       strengths: [String],
       weaknesses: [String],
+      // ✨ ADD a theme preference field
       theme: {
         type: String,
         enum: ["light", "dark"],

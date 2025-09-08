@@ -7,6 +7,9 @@ import { BrowserRouter as Router } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
+// The Router must be the top-level provider.
+// AuthProvider, which uses navigation hooks, must be inside it.
 root.render(
   <React.StrictMode>
     <Router>

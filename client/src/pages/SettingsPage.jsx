@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { Moon, Sun, Bell, Lock, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
+// ✨ Import the new useAuth hook
 import { useAuth } from "../context/AuthContext.jsx";
 
 const SettingsPage = () => {
+  // ✨ Get theme and updater function from our new AuthContext
   const { theme, updateTheme } = useAuth();
   const isDarkMode = theme === "dark";
 
@@ -15,6 +17,7 @@ const SettingsPage = () => {
     setNotificationsEnabled(!notificationsEnabled);
   };
 
+  // ✨ Create a new handler for the theme toggle
   const handleThemeToggle = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     updateTheme(newTheme);
@@ -64,6 +67,7 @@ const SettingsPage = () => {
               )}
               <span>Theme</span>
             </div>
+            {/* ✨ Connect the toggle to our new handler */}
             <button
               onClick={handleThemeToggle}
               className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"
