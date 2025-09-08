@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Moon, Sun, Bell, Lock } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
+import { useTheme } from "../context/ThemeContext";
 
 const SettingsPage = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme(); // ✅ 2. Use the theme context
+  const isDarkMode = theme === "dark";
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   useEffect(() => {
@@ -14,17 +16,6 @@ const SettingsPage = () => {
       setIsDarkMode(true);
     }
   }, []);
-
-  const toggleTheme = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    }
-    setIsDarkMode(!isDarkMode);
-  };
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
