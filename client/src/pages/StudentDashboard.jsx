@@ -20,6 +20,20 @@ import DashboardLayout from "../components/DashboardLayout";
 import DrivePage from "./DrivePage";
 import LearningPath from "./LearningPath";
 
+// ✅ Import AI Assistant component
+import AIAssistant from "../components/AIAssistant";
+import PersonalizedLearningPath from "../components/Learning/PersonalizedLearningPath";
+import SmartProgressInsights from "../components/Learning/SmartProgressInsights";
+import QuizGenerator from "../components/learning/QuizGenerator";
+import CareerRecommendations from "../components/learning/CareerRecommendations";
+import StudyPlanner from "../components/learning/StudyPlanner";
+import GamificationPanel from "../components/learning/GamificationPanel";
+import QuickWins from "../components/learning/QuickWins";
+
+
+
+
+
 // ---------------- Reusable Components ----------------
 
 // Stat Card (cleaned)
@@ -304,6 +318,16 @@ export default function StudentDashboard() {
           </AnimatePresence>
         </motion.div>
       </div>
+
+      {/* ✅ AI Assistant Floating Chatbot */}
+      <AIAssistant />
+      <PersonalizedLearningPath onOpenLesson={(lesson) => console.log("Open", lesson)} />
+        <SmartProgressInsights />
+        <QuizGenerator />
+        <StudyPlanner assignments={assignments} />
+        <CareerRecommendations strengths={["C", "Algorithms"]} />
+        <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
+        <QuickWins onMood={m => console.log("Mood:", m)} />
     </DashboardLayout>
   );
 }
