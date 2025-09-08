@@ -1,29 +1,127 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { User, Settings } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  LayoutDashboard,
+  BookUser,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  Presentation,
+  UserPlus,
+  FileArchive,
+  GraduationCap,
+  Mail,
+} from "lucide-react";
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const navigate = useNavigate();
-  const userRole = localStorage.getItem("role");
+// ✅ Reusable Sub-component for Navigation Links
+// This makes the code cleaner and handles the "active" state logic automatically.
+const SidebarLink = ({ to, icon, children, currentPath }) => {
+  const isActive = currentPath.startsWith(to);
+  return (
+    <li>
+      <Link
+        to={to}
+        // ✅ FIX: Fully theme-aware classes for background, text, and hover states.
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-base
+          ${
+            isActive
+              ? "bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white"
+              : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          }`}
+      >
+        {icon}
+        {children}
+      </Link>
+    </li>
+  );
+};
 
-  let dashboardPath = "/dashboard"; // Default for student
-  if (userRole === "teacher") {
-    dashboardPath = "/teacher-dashboard";
-  } else if (userRole === "admin") {
-    dashboardPath = "/admin-dashboard";
-  }
+export default function Sidebar({ isOpen, toggleSidebar }) {
+  // ✅ OPTIMIZATION: Get user and logout function from the global context.
+  // No more direct localStorage access.
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/login");
+  // A clean, declarative way to generate the correct links based on user role.
+  const getLinks = (role) => {
+    const commonLinks = [
+      {
+        to: "/profile",
+        icon: <BookUser className="h-4 w-4" />,
+        label: "Profile",
+      },
+      {
+        to: "/settings",
+        icon: <Settings className="h-4 w-4" />,
+        label: "Settings",
+      },
+    ];
+
+    switch (role) {
+      case "admin":
+        return [
+          {
+            to: "/admin-dashboard",
+            icon: <LayoutDashboard className="h-4 w-4" />,
+            label: "Dashboard",
+          },
+          {
+            to: "/manage-classes",
+            icon: <Presentation className="h-4 w-4" />,
+            label: "Classes",
+          },
+          {
+            to: "/manage-parents",
+            icon: <UserPlus className="h-4 w-4" />,
+            label: "Parents",
+          },
+          {
+            to: "/manage-invites",
+            icon: <Mail className="h-4 w-4" />,
+            label: "Invitations",
+          },
+          ...commonLinks,
+        ];
+      case "teacher":
+        return [
+          {
+            to: "/teacher-dashboard",
+            icon: <LayoutDashboard className="h-4 w-4" />,
+            label: "Dashboard",
+          },
+          ...commonLinks,
+        ];
+      case "student":
+      default: // Default to student links
+        return [
+          {
+            to: "/dashboard",
+            icon: <LayoutDashboard className="h-4 w-4" />,
+            label: "Dashboard",
+          },
+          {
+            to: "/learning-path",
+            icon: <GraduationCap className="h-4 w-4" />,
+            label: "Learning Path",
+          },
+          {
+            to: "/drive",
+            icon: <FileArchive className="h-4 w-4" />,
+            label: "My Drive",
+          },
+          ...commonLinks,
+        ];
+    }
   };
+
+  const navLinks = user ? getLinks(user.role) : [];
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Mobile Overlay */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-20 bg-black/60 transition-opacity lg:hidden ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={toggleSidebar}
@@ -31,209 +129,55 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       ></div>
 
       {/* Sidebar */}
-      <div
-        className={`w-64 h-dvh bg-slate-900 text-white flex flex-col fixed z-40 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+      <aside
+        id="sidebar"
+        className={`fixed inset-y-0 left-0 z-30 flex h-full w-64 flex-col border-r transition-transform duration-300 ease-in-out 
+          lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          
+          // ✅ FIX: Changed from hardcoded colors to responsive, theme-aware colors.
+          bg-white text-slate-800 dark:bg-slate-900 dark:border-r-slate-800 dark:text-white`}
       >
-        <div className="text-2xl font-bold p-6 border-b border-slate-700">
-          <Link to="/">Smart Classroom</Link>
+        <div className="flex h-16 shrink-0 items-center justify-between border-b px-6 dark:border-b-slate-800">
+          <Link to="/" className="text-xl font-bold">
+            Smart Classroom
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="rounded-md p-2 text-slate-500 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
         </div>
 
-        <nav className="flex-grow p-4 overflow-y-auto">
-          <ul>
-            {/* Dashboard */}
-            <li className="mb-2">
-              <Link
-                to={dashboardPath}
-                className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
+        {/* Navigation Links */}
+        <nav className="flex-1 overflow-y-auto px-4 py-4">
+          <ul className="grid gap-1 font-medium">
+            {navLinks.map((link) => (
+              <SidebarLink
+                key={link.to}
+                to={link.to}
+                icon={link.icon}
+                currentPath={location.pathname}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 mr-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
-                Dashboard
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link
-                to="/profile"
-                className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-              >
-                <User className="h-6 w-6 mr-3" />
-                Profile
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link
-                to="/settings"
-                className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-              >
-                <Settings className="h-6 w-6 mr-3" />
-                Settings
-              </Link>
-            </li>
-
-            {/* Student-only extra links */}
-            {userRole === "student" && (
-              <>
-                <li className="mb-2">
-                  <Link
-                    to="/drive"
-                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 7h18M3 12h18M3 17h18"
-                      />
-                    </svg>
-                    Drive
-                  </Link>
-                </li>
-                <li className="mb-2">
-                  <Link
-                    to="/learning-path"
-                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6l4 2m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2z"
-                      />
-                    </svg>
-                    Learning Path
-                  </Link>
-                </li>
-              </>
-            )}
-
-            {/* Admin-only links */}
-            {userRole === "admin" && (
-              <>
-                <li className="mb-2">
-                  <Link
-                    to="/manage-classes"
-                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                    Manage Classes
-                  </Link>
-                </li>
-                <li className="mb-2">
-                  <Link
-                    to="/manage-parents"
-                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    Manage Parents
-                  </Link>
-                </li>
-                <li className="mb-2">
-                  <Link
-                    to="/manage-invites"
-                    className="flex items-center p-3 rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 10h.01M12 14h.01M16 10h.01M21 16H3M21 12H3M21 8H3"
-                      />
-                    </svg>
-                    Manage Invitations
-                  </Link>
-                </li>
-              </>
-            )}
+                {link.label}
+              </SidebarLink>
+            ))}
           </ul>
         </nav>
 
-        {/* Logout button container */}
-        <div className="p-4 mt-auto border-t border-slate-700">
+        {/* Logout Button */}
+        <div className="border-t p-4 dark:border-t-slate-800">
+          {/* ✅ OPTIMIZATION: Calls the central logout function from AuthContext. */}
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center p-3 rounded-lg hover:bg-red-600/90 transition-colors"
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-500 transition-all hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/50 dark:hover:text-red-400"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 mr-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
+            <LogOut className="h-4 w-4" />
             Logout
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
-};
-
-export default Sidebar;
+}

@@ -14,24 +14,21 @@ import {
   FileText,
 } from "lucide-react";
 
-import DashboardLayout from "../components/DashboardLayout";
-import AIAssistant from "../components/AIAssistant";
-import PersonalizedLearningPath from "../components/Learning/PersonalizedLearningPath";
-import SmartProgressInsights from "../components/Learning/SmartProgressInsights";
-import QuizGenerator from "../components/learning/QuizGenerator";
-import CareerRecommendations from "../components/learning/CareerRecommendations";
-import StudyPlanner from "../components/learning/StudyPlanner";
-import GamificationPanel from "../components/learning/GamificationPanel";
-import QuickWins from "../components/learning/QuickWins";
-
-// ✅ HOOK IMPORT: We will get the user directly from our global context
-import { useAuth } from "../context/AuthContext";
-import api from "../api/apiService";
+import DashboardLayout from "../components/DashboardLayout.jsx";
+import AIAssistant from "../components/AIAssistant.jsx";
+import PersonalizedLearningPath from "../components/Learning/PersonalizedLearningPath.jsx";
+import SmartProgressInsights from "../components/Learning/SmartProgressInsights.jsx";
+import QuizGenerator from "../components/learning/QuizGenerator.jsx";
+import CareerRecommendations from "../components/learning/CareerRecommendations.jsx";
+import StudyPlanner from "../components/learning/StudyPlanner.jsx";
+import GamificationPanel from "../components/learning/GamificationPanel.jsx";
+import QuickWins from "../components/learning/QuickWins.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import api from "../api/apiService.js";
 
 // ---------------- Reusable Components (with Dark Mode Fixes) ----------------
 
 const StatCard = ({ icon, label, value, color }) => {
-  // ✅ FIX: Added dark mode variants for background and text colors
   const colorClasses = {
     green:
       "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
@@ -52,7 +49,6 @@ const StatCard = ({ icon, label, value, color }) => {
     >
       <div className={`p-3 rounded-xl ${colorClasses[color]}`}>{icon}</div>
       <div>
-        {/* ✅ FIX: Added dark mode text color */}
         <p className="text-2xl font-bold text-slate-800 dark:text-white">
           {value}
         </p>
@@ -69,12 +65,10 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
   >
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-4">
-        {/* ✅ FIX: Added dark mode styles */}
         <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          {/* ✅ FIX: Added dark mode text colors */}
           <h3 className="font-semibold text-slate-800 dark:text-slate-200">
             {title}
           </h3>
@@ -92,9 +86,7 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
 // ---------------- Main Student Dashboard ----------------
 
 export default function StudentDashboard() {
-  // ✅ OPTIMIZATION: Get user state from the global AuthContext
   const { user } = useAuth();
-
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const navigate = useNavigate();
@@ -114,9 +106,6 @@ export default function StudentDashboard() {
     },
   ];
 
-  // ✅ OPTIMIZATION: Removed the local useEffect for fetching user data.
-  // The AuthContext now handles this globally, making this component cleaner.
-
   const handleScan = async (result) => {
     if (!result || result.length === 0) return;
     setShowScanner(false);
@@ -134,7 +123,6 @@ export default function StudentDashboard() {
     setTimeout(() => setScanResult(null), 4000);
   };
 
-  // ✅ Show a loading state while AuthContext is fetching the user.
   if (!user) {
     return (
       <DashboardLayout>
@@ -194,7 +182,7 @@ export default function StudentDashboard() {
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Assignments & Learning Path Section */}
+        {/* Main Content Area (Assignments, Learning Path etc.) */}
         <div className="lg:col-span-2 space-y-8">
           <motion.div
             className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700"
@@ -218,7 +206,6 @@ export default function StudentDashboard() {
             </div>
           </motion.div>
 
-          {/* Learning Path & other components */}
           <PersonalizedLearningPath
             onOpenLesson={(lesson) => console.log("Open", lesson)}
           />
@@ -232,7 +219,7 @@ export default function StudentDashboard() {
           <QuickWins onMood={(m) => console.log("Mood:", m)} />
         </div>
 
-        {/* Quick Actions */}
+        {/* Sidebar Actions */}
         <motion.div
           className="lg:col-span-1"
           initial={{ opacity: 0, y: 20 }}
@@ -244,7 +231,6 @@ export default function StudentDashboard() {
               <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
                 Quick Actions
               </h2>
-
               <button
                 onClick={() => setShowScanner(!showScanner)}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4"
@@ -252,7 +238,6 @@ export default function StudentDashboard() {
                 <QrCode className="w-5 h-5" />
                 {showScanner ? "Close Scanner" : "Scan Attendance QR"}
               </button>
-
               <AnimatePresence>
                 {showScanner && (
                   <motion.div
@@ -268,7 +253,6 @@ export default function StudentDashboard() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
               <AnimatePresence>
                 {scanResult && (
                   <motion.div
@@ -305,8 +289,6 @@ export default function StudentDashboard() {
           </div>
         </motion.div>
       </div>
-
-      {/* AI Assistant Floating Chatbot */}
       <AIAssistant />
     </DashboardLayout>
   );

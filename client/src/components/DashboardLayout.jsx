@@ -21,7 +21,8 @@ export default function DashboardLayout({ children }) {
   }, [isSidebarOpen]);
 
   return (
-    // ✨ FIX: Added dark mode classes to the main layout container
+    // ✅ FIX: Added dark mode class to the main layout container.
+    // This will change the background of all dashboard pages.
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <div className="transition-all duration-300 ease-in-out lg:ml-64">
