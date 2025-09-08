@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
@@ -39,32 +39,21 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth(); // Import the login function from our context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const res = await axios.post("/api/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
-
-      switch (res.data.role) {
-        case "admin":
-          navigate("/admin-dashboard");
-          break;
-        case "teacher":
-          navigate("/teacher-dashboard");
-          break;
-        case "parent":
-          navigate("/parent-dashboard");
-          break;
-        default:
-          navigate("/dashboard");
-          break;
-      }
+      // The login function from the context now handles everything:
+      // 1. Makes the API call
+      // 2. Sets the token in localStorage and state
+      // 3. Fetches the user profile
+      // 4. Navigates to the correct dashboard
+      await login(email, password);
     } catch (err) {
+      // The context will re-throw the error if login fails
       setError(err.response?.data?.message || "Login failed!");
     } finally {
       setLoading(false);
