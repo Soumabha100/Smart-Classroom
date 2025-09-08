@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema(
       careerGoals: [String],
       strengths: [String],
       weaknesses: [String],
+      theme: {
+        type: String,
+        enum: ["light", "dark"],
+        default: "light",
+      },
     },
     timetable: {
       // To be implemented later

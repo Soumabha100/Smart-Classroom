@@ -26,8 +26,10 @@ export const getClasses = () => api.get("/classes");
 // Makes a GET request to your backend's /api/users/profile route
 export const getUserProfile = () => api.get("/users/profile");
 
+// ✨ UPDATED to send the entire profile object
 // Makes a POST request to your backend's /api/users/profile route to update data
-export const updateUserProfile = (profileData) => api.post("/users/profile", profileData);
+export const updateUserProfile = (profileData) =>
+  api.post("/users/profile", profileData);
 
 // You can still have a default export if you want to use the raw `api` instance elsewhere
 export default api;

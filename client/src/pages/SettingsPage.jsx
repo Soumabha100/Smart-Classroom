@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { Moon, Sun, Bell, Lock, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
-import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const SettingsPage = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, updateTheme } = useAuth();
   const isDarkMode = theme === "dark";
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -13,6 +13,11 @@ const SettingsPage = () => {
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
+  };
+
+  const handleThemeToggle = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    updateTheme(newTheme);
   };
 
   return (
@@ -60,7 +65,7 @@ const SettingsPage = () => {
               <span>Theme</span>
             </div>
             <button
-              onClick={toggleTheme}
+              onClick={handleThemeToggle}
               className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"
             >
               <span

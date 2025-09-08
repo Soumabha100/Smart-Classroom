@@ -22,10 +22,15 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.profile = { ...user.profile, ...req.body };
+    // This allows updating any part of the profile, including the new 'theme'
+    const updatedProfile = { ...user.profile, ...req.body };
+    user.profile = updatedProfile;
+
     await user.save();
 
-    res.status(200).json(user.profile);
+    // Return the updated user object (excluding password)
+    const updatedUser = await User.findById(req.user.id).select("-password");
+    res.status(200).json(updatedUser);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
   }
@@ -48,20 +53,20 @@ exports.getUserCount = async (req, res) => {
 // Get All the User Count
 exports.getTeachers = async (req, res) => {
   try {
-    const teachers = await User.find({ role: 'teacher' }).select('name');
+    const teachers = await User.find({ role: "teacher" }).select("name");
     res.status(200).json(teachers);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err });
+    res.status(500).json({ message: "Server error", error: err });
   }
 };
 
 // @desc    Get all students
 exports.getStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: 'student' }).select('name email');
+    const students = await User.find({ role: "student" }).select("name email");
     res.status(200).json(students);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err });
+    res.status(500).json({ message: "Server error", error: err });
   }
 };
 
@@ -72,7 +77,9 @@ exports.getStudentDataForParent = async (req, res) => {
     if (!studentIds || studentIds.length === 0) {
       return res.json([]);
     }
-    const students = await User.find({ '_id': { $in: studentIds } }).select('-password');
+    const students = await User.find({ _id: { $in: studentIds } }).select(
+      "-password"
+    );
     // You can also populate attendance records here later
     res.json(students);
   } catch (err) {
