@@ -4,10 +4,10 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 // Import images
-import aboutImage from "../assets/images/classroom.jpg";
-import studentsImage from "../assets/images/class2.jpg";
-import teachersImage from "../assets/images/class1.jpg";
-import schoolsImage from "../assets/images/facility1.jpg";
+import aboutImage from "https://i.ibb.co/ZRrxXZJ2/classroom.jpg";
+import studentsImage from "https://i.ibb.co/ccZgQZ2X/class2.jpg";
+import teachersImage from "https://i.ibb.co/twTnjJvb/class1.jpg";
+import schoolsImage from "https://i.ibb.co/0VyzzCP1/facility1.jpg";
 
 // Animated tab content wrapper
 const TabContent = ({ children }) => (
