@@ -16,6 +16,8 @@ import {
   Bot,
   Briefcase,
   ExternalLink,
+  GraduationCap, // ✨ ICON IMPORT
+  FileArchive, // ✨ ICON IMPORT
 } from "lucide-react";
 
 import DashboardLayout from "../components/DashboardLayout.jsx";
@@ -33,7 +35,6 @@ import api from "../api/apiService.js";
 // --- Reusable Components ---
 
 const StatCardSkeleton = () => (
-  // ✨ FIX: Added fixed height `h-28` to match the real card and prevent layout shift.
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
     <div className="p-3 rounded-xl bg-slate-200 dark:bg-slate-700 h-12 w-12 shrink-0"></div>
     <div className="space-y-2 flex-grow">
@@ -72,7 +73,6 @@ const StatCard = ({ icon, label, value, color, to }) => {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
-      // ✨ FIX: Added fixed height `h-28` to solve overlapping text and layout shifts.
       className={`w-full bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 h-28 ${
         to ? "group" : ""
       }`}
@@ -131,8 +131,6 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
   </a>
 );
 
-// --- Main Student Dashboard Component ---
-
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
@@ -146,9 +144,7 @@ export default function StudentDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, you would fetch data from your API here
-        // e.g., const response = await api.get('/student/dashboard');
-        await new Promise((res) => setTimeout(res, 1500)); // Simulate network delay
+        await new Promise((res) => setTimeout(res, 1500));
         setDashboardData({
           stats: {
             attendance: "95%",
@@ -179,7 +175,6 @@ export default function StudentDashboard() {
         });
       } catch (error) {
         console.error("Failed to load dashboard:", error);
-        // Optionally set an error state here to show a message to the user
       } finally {
         setIsLoading(false);
       }
@@ -345,7 +340,6 @@ export default function StudentDashboard() {
                         />
                       </div>
                     )}
-
                     {activeTab === "tools" && (
                       <div className="space-y-8">
                         <SmartProgressInsights />
@@ -355,7 +349,6 @@ export default function StudentDashboard() {
                         <QuizGenerator />
                       </div>
                     )}
-
                     {activeTab === "career" && (
                       <div>
                         <CareerRecommendations
@@ -382,13 +375,34 @@ export default function StudentDashboard() {
                   <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
                     Quick Actions
                   </h2>
-                  <button
-                    onClick={() => setShowScanner(!showScanner)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4"
-                  >
-                    <QrCode className="w-5 h-5" />
-                    {showScanner ? "Close Scanner" : "Scan Attendance"}
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowScanner(!showScanner)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      {showScanner ? "Close Scanner" : "Scan Attendance"}
+                    </button>
+
+                    {/* ✨ LEARNING PATH BUTTON ADDED */}
+                    <Link
+                      to="/learning-path"
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                    >
+                      <GraduationCap className="w-5 h-5" />
+                      <span>My Learning Path</span>
+                    </Link>
+
+                    {/* ✨ "MY DRIVE" BUTTON CONVERTED TO A LINK FOR CONSISTENCY */}
+                    <Link
+                      to="/drive"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                    >
+                      <FileArchive className="w-5 h-5" />
+                      <span>My Drive</span>
+                    </Link>
+                  </div>
+
                   <AnimatePresence>
                     {showScanner && (
                       <motion.div
@@ -423,12 +437,6 @@ export default function StudentDashboard() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <button
-                    onClick={() => navigate("/drive")}
-                    className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300"
-                  >
-                    📂 My Drive
-                  </button>
                 </div>
               </motion.div>
               <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
