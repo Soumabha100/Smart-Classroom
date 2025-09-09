@@ -33,9 +33,10 @@ import api from "../api/apiService.js";
 // --- Reusable Components ---
 
 const StatCardSkeleton = () => (
-  <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse">
-    <div className="p-3 rounded-xl bg-slate-200 dark:bg-slate-700 h-12 w-12"></div>
-    <div className="space-y-2">
+  // ✨ FIX: Added fixed height `h-28` to match the real card and prevent layout shift.
+  <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
+    <div className="p-3 rounded-xl bg-slate-200 dark:bg-slate-700 h-12 w-12 shrink-0"></div>
+    <div className="space-y-2 flex-grow">
       <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
       <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
     </div>
@@ -45,8 +46,8 @@ const StatCardSkeleton = () => (
 const AssignmentCardSkeleton = () => (
   <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 animate-pulse">
     <div className="flex items-center gap-4">
-      <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 h-12 w-12"></div>
-      <div className="space-y-2">
+      <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 h-12 w-12 shrink-0"></div>
+      <div className="space-y-2 flex-grow">
         <div className="h-4 w-48 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
         <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
       </div>
@@ -71,27 +72,38 @@ const StatCard = ({ icon, label, value, color, to }) => {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
-      className="w-full bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 group"
+      // ✨ FIX: Added fixed height `h-28` to solve overlapping text and layout shifts.
+      className={`w-full bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 h-28 ${
+        to ? "group" : ""
+      }`}
     >
-      <div className={`p-3 rounded-xl ${colorClasses[color]}`}>{icon}</div>
+      <div className={`p-3 rounded-xl shrink-0 ${colorClasses[color]}`}>
+        {icon}
+      </div>
       <div className="flex-grow">
         <p className="text-xl font-bold text-slate-800 dark:text-white">
           {value}
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
       </div>
-      <ExternalLink className="w-6 h-6 text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-transform transform group-hover:translate-x-1" />
+      {to && (
+        <ExternalLink className="w-5 h-5 text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
+      )}
     </motion.div>
   );
 
-  return (
-    <Link
-      to={to}
-      className="hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
-    >
-      {cardContent}
-    </Link>
-  );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
+      >
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return <div className="block rounded-2xl">{cardContent}</div>;
 };
 
 const AssignmentCard = ({ title, subject, dueDate }) => (
@@ -100,12 +112,12 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
     className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/60 hover:border-blue-300 transition-all duration-300 group"
   >
     <div className="flex justify-between items-center">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 shrink-0">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
-        <div>
-          <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-200 truncate">
             {title}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -114,7 +126,7 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
           </p>
         </div>
       </div>
-      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1 shrink-0 ml-4" />
     </div>
   </a>
 );
@@ -134,12 +146,8 @@ export default function StudentDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Mock API calls - replace with real ones
-        // const statsPromise = api.get('/student/stats');
-        // const assignmentsPromise = api.get('/student/assignments');
-        // const [statsRes, assignmentsRes] = await Promise.all([statsPromise, assignmentsPromise]);
-
-        // MOCK DATA until API is ready
+        // In a real app, you would fetch data from your API here
+        // e.g., const response = await api.get('/student/dashboard');
         await new Promise((res) => setTimeout(res, 1500)); // Simulate network delay
         setDashboardData({
           stats: {
@@ -171,7 +179,7 @@ export default function StudentDashboard() {
         });
       } catch (error) {
         console.error("Failed to load dashboard:", error);
-        // Handle error state if necessary
+        // Optionally set an error state here to show a message to the user
       } finally {
         setIsLoading(false);
       }
@@ -249,21 +257,18 @@ export default function StudentDashboard() {
                 label="Avg. Grade"
                 value={dashboardData.stats.grade}
                 color="yellow"
-                to="/grades"
               />
               <StatCard
                 icon={<BookOpen size={24} />}
                 label="Assignments Due"
                 value={dashboardData.stats.assignmentsDue}
                 color="blue"
-                to="/assignments"
               />
               <StatCard
                 icon={<Activity size={24} />}
                 label="Activities Done"
                 value={dashboardData.stats.activitiesDone}
                 color="purple"
-                to="/activities"
               />
             </>
           )}
@@ -320,8 +325,12 @@ export default function StudentDashboard() {
                                 />
                               ))
                             ) : (
-                              <div className="text-center py-10">
-                                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+                              <div className="text-center py-10 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <CheckCircle2
+                                  size={40}
+                                  className="mx-auto text-green-500"
+                                />
+                                <h3 className="mt-4 text-lg font-semibold text-slate-700 dark:text-slate-300">
                                   All caught up!
                                 </h3>
                                 <p className="text-slate-500 dark:text-slate-400">
