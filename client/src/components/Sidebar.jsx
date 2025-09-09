@@ -12,17 +12,16 @@ import {
   FileArchive,
   GraduationCap,
   Mail,
+  CalendarCheck, // ✨ IMPORTED ICON
 } from "lucide-react";
 
 // ✅ Reusable Sub-component for Navigation Links
-// This makes the code cleaner and handles the "active" state logic automatically.
 const SidebarLink = ({ to, icon, children, currentPath }) => {
   const isActive = currentPath.startsWith(to);
   return (
     <li>
       <Link
         to={to}
-        // ✅ FIX: Fully theme-aware classes for background, text, and hover states.
         className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-base
           ${
             isActive
@@ -38,12 +37,9 @@ const SidebarLink = ({ to, icon, children, currentPath }) => {
 };
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
-  // ✅ OPTIMIZATION: Get user and logout function from the global context.
-  // No more direct localStorage access.
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  // A clean, declarative way to generate the correct links based on user role.
   const getLinks = (role) => {
     const commonLinks = [
       {
@@ -93,12 +89,18 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           ...commonLinks,
         ];
       case "student":
-      default: // Default to student links
+      default:
         return [
           {
             to: "/dashboard",
             icon: <LayoutDashboard className="h-4 w-4" />,
             label: "Dashboard",
+          },
+          // ✨ ADDED ATTENDANCE LINK FOR STUDENTS
+          {
+            to: "/attendance",
+            icon: <CalendarCheck className="h-4 w-4" />,
+            label: "Attendance",
           },
           {
             to: "/learning-path",
@@ -133,8 +135,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         id="sidebar"
         className={`fixed inset-y-0 left-0 z-30 flex h-full w-64 flex-col border-r transition-transform duration-300 ease-in-out 
           lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          
-          // ✅ FIX: Changed from hardcoded colors to responsive, theme-aware colors.
           bg-white text-slate-800 dark:bg-slate-900 dark:border-r-slate-800 dark:text-white`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-6 dark:border-b-slate-800">
@@ -168,7 +168,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
         {/* Logout Button */}
         <div className="border-t p-4 dark:border-t-slate-800">
-          {/* ✅ OPTIMIZATION: Calls the central logout function from AuthContext. */}
           <button
             onClick={logout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-500 transition-all hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/50 dark:hover:text-red-400"
