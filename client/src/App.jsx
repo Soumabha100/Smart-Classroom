@@ -19,13 +19,12 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import DrivePage from "./pages/DrivePage.jsx";
 import LearningPath from "./pages/LearningPath.jsx";
+import AttendancePage from "./pages/AttendancePage.jsx"; // ✨ Import the new page
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
-  // This component now only defines the routes.
-  // The Router and AuthProvider are correctly placed in index.jsx.
   return (
     <Routes>
       {/* Public Routes */}
@@ -40,6 +39,15 @@ function App() {
         element={
           <ProtectedRoute role="student">
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      {/* New route for the attendance page */}
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute role="student">
+            <AttendancePage />
           </ProtectedRoute>
         }
       />

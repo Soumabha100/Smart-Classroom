@@ -29,7 +29,7 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.content}>
         <Image
-          source={require("https://i.ibb.co/1J2rJx31/logo1.jpg")}
+          source={{ uri: "https://i.ibb.co/1J2rJx31/logo1.jpg" }}
           style={styles.logo}
         />
         <Text

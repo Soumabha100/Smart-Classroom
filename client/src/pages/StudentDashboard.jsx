@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import {
@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   Bot,
   Briefcase,
+  ExternalLink,
 } from "lucide-react";
 
 import DashboardLayout from "../components/DashboardLayout.jsx";
@@ -29,10 +30,31 @@ import QuickWins from "../components/learning/QuickWins.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/apiService.js";
 
-// --- Reusable Components (Slightly updated for new design) ---
+// --- Reusable Components ---
 
-const StatCard = ({ icon, label, value, color }) => {
-  // This component remains the same as your original
+const StatCardSkeleton = () => (
+  <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse">
+    <div className="p-3 rounded-xl bg-slate-200 dark:bg-slate-700 h-12 w-12"></div>
+    <div className="space-y-2">
+      <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+      <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+    </div>
+  </div>
+);
+
+const AssignmentCardSkeleton = () => (
+  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 animate-pulse">
+    <div className="flex items-center gap-4">
+      <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 h-12 w-12"></div>
+      <div className="space-y-2">
+        <div className="h-4 w-48 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+        <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const StatCard = ({ icon, label, value, color, to }) => {
   const colorClasses = {
     green:
       "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
@@ -42,27 +64,37 @@ const StatCard = ({ icon, label, value, color }) => {
     purple:
       "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
   };
-  return (
+
+  const cardContent = (
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
-      className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="w-full bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-all duration-300 group"
     >
       <div className={`p-3 rounded-xl ${colorClasses[color]}`}>{icon}</div>
-      <div>
+      <div className="flex-grow">
         <p className="text-xl font-bold text-slate-800 dark:text-white">
           {value}
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
       </div>
+      <ExternalLink className="w-6 h-6 text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-transform transform group-hover:translate-x-1" />
     </motion.div>
+  );
+
+  return (
+    <Link
+      to={to}
+      className="hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
+    >
+      {cardContent}
+    </Link>
   );
 };
 
 const AssignmentCard = ({ title, subject, dueDate }) => (
-  // This component also remains the same
   <a
     href="#"
     className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/60 hover:border-blue-300 transition-all duration-300 group"
@@ -94,28 +126,58 @@ export default function StudentDashboard() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [activeTab, setActiveTab] = useState("feed");
+  const [dashboardData, setDashboardData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const assignments = [
-    {
-      id: 1,
-      title: "React Hooks In-depth",
-      subject: "Web Development",
-      dueDate: "Sep 15, 2025",
-    },
-    {
-      id: 2,
-      title: "AI Ethics Essay",
-      subject: "Artificial Intelligence",
-      dueDate: "Sep 18, 2025",
-    },
-    {
-      id: 3,
-      title: "Calculus Problem Set",
-      subject: "Mathematics",
-      dueDate: "Sep 22, 2025",
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Mock API calls - replace with real ones
+        // const statsPromise = api.get('/student/stats');
+        // const assignmentsPromise = api.get('/student/assignments');
+        // const [statsRes, assignmentsRes] = await Promise.all([statsPromise, assignmentsPromise]);
+
+        // MOCK DATA until API is ready
+        await new Promise((res) => setTimeout(res, 1500)); // Simulate network delay
+        setDashboardData({
+          stats: {
+            attendance: "95%",
+            grade: "A-",
+            assignmentsDue: 3,
+            activitiesDone: 12,
+          },
+          assignments: [
+            {
+              id: 1,
+              title: "React Hooks In-depth",
+              subject: "Web Development",
+              dueDate: "Sep 15, 2025",
+            },
+            {
+              id: 2,
+              title: "AI Ethics Essay",
+              subject: "Artificial Intelligence",
+              dueDate: "Sep 18, 2025",
+            },
+            {
+              id: 3,
+              title: "Calculus Problem Set",
+              subject: "Mathematics",
+              dueDate: "Sep 22, 2025",
+            },
+          ],
+        });
+      } catch (error) {
+        console.error("Failed to load dashboard:", error);
+        // Handle error state if necessary
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleScan = async (result) => {
     if (!result || result.length === 0) return;
@@ -148,65 +210,66 @@ export default function StudentDashboard() {
     </button>
   );
 
-  if (!user) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-full">
-          <p>Loading dashboard...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
         <header>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-            Welcome back, {user.name.split(" ")[0]} 👋
+            Welcome back, {user?.name.split(" ")[0]} 👋
           </h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">
             Ready to learn something new today? Let's get started.
           </p>
         </header>
 
-        {/* Top Stats Section - Kept from original */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
-          <StatCard
-            icon={<CalendarCheck size={24} />}
-            label="Attendance"
-            value="95%"
-            color="green"
-          />
-          <StatCard
-            icon={<Trophy size={24} />}
-            label="Avg. Grade"
-            value="A-"
-            color="yellow"
-          />
-          <StatCard
-            icon={<BookOpen size={24} />}
-            label="Assignments Due"
-            value={assignments.length}
-            color="blue"
-          />
-          <StatCard
-            icon={<Activity size={24} />}
-            label="Activities Done"
-            value="12"
-            color="purple"
-          />
+          {isLoading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard
+                icon={<CalendarCheck size={24} />}
+                label="Attendance"
+                value={dashboardData.stats.attendance}
+                color="green"
+                to="/attendance"
+              />
+              <StatCard
+                icon={<Trophy size={24} />}
+                label="Avg. Grade"
+                value={dashboardData.stats.grade}
+                color="yellow"
+                to="/grades"
+              />
+              <StatCard
+                icon={<BookOpen size={24} />}
+                label="Assignments Due"
+                value={dashboardData.stats.assignmentsDue}
+                color="blue"
+                to="/assignments"
+              />
+              <StatCard
+                icon={<Activity size={24} />}
+                label="Activities Done"
+                value={dashboardData.stats.activitiesDone}
+                color="purple"
+                to="/activities"
+              />
+            </>
+          )}
         </motion.div>
 
-        {/* --- Main Content Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Feed (Left Column) */}
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2 p-2">
@@ -244,12 +307,28 @@ export default function StudentDashboard() {
                             Upcoming Assignments
                           </h2>
                           <div className="space-y-4">
-                            {assignments.map((assignment) => (
-                              <AssignmentCard
-                                key={assignment.id}
-                                {...assignment}
-                              />
-                            ))}
+                            {isLoading ? (
+                              <>
+                                <AssignmentCardSkeleton />
+                                <AssignmentCardSkeleton />
+                              </>
+                            ) : dashboardData?.assignments.length > 0 ? (
+                              dashboardData.assignments.map((assignment) => (
+                                <AssignmentCard
+                                  key={assignment.id}
+                                  {...assignment}
+                                />
+                              ))
+                            ) : (
+                              <div className="text-center py-10">
+                                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+                                  All caught up!
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400">
+                                  You have no pending assignments. 🎉
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <PersonalizedLearningPath
@@ -261,7 +340,9 @@ export default function StudentDashboard() {
                     {activeTab === "tools" && (
                       <div className="space-y-8">
                         <SmartProgressInsights />
-                        <StudyPlanner assignments={assignments} />
+                        <StudyPlanner
+                          assignments={dashboardData?.assignments || []}
+                        />
                         <QuizGenerator />
                       </div>
                     )}
@@ -270,7 +351,7 @@ export default function StudentDashboard() {
                       <div>
                         <CareerRecommendations
                           strengths={
-                            user.profile?.strengths || ["AI", "Algorithms"]
+                            user?.profile?.strengths || ["AI", "Algorithms"]
                           }
                         />
                       </div>
@@ -281,7 +362,6 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Sidebar (Right Column) */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-8">
               <motion.div
