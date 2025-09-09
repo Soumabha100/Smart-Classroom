@@ -1,15 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import ssl from "@vitejs/plugin-basic-ssl"; // ✅ IMPORT THE SSL PLUGIN
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    ssl(), // ✅ ADD THE PLUGIN HERE
+  ],
   server: {
-    // This is the part that was missing
-    host: "0.0.0.0", 
-    
-    // Your proxy settings are preserved here
+    host: "0.0.0.0",
+    https: true, // ✅ ENABLE HTTPS FOR CAMERA ACCESS
     proxy: {
       "/api": {
         target: "http://localhost:5001",

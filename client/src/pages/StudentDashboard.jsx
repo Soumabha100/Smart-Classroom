@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import {
@@ -16,8 +16,10 @@ import {
   Bot,
   Briefcase,
   ExternalLink,
-  GraduationCap, // ✨ ICON IMPORT
-  FileArchive, // ✨ ICON IMPORT
+  GraduationCap,
+  FileArchive,
+  X,
+  CameraOff, // ✨ IMPORTED ICON FOR ERROR STATE
 } from "lucide-react";
 
 import DashboardLayout from "../components/DashboardLayout.jsx";
@@ -40,18 +42,6 @@ const StatCardSkeleton = () => (
     <div className="space-y-2 flex-grow">
       <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
       <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
-    </div>
-  </div>
-);
-
-const AssignmentCardSkeleton = () => (
-  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 animate-pulse">
-    <div className="flex items-center gap-4">
-      <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 h-12 w-12 shrink-0"></div>
-      <div className="space-y-2 flex-grow">
-        <div className="h-4 w-48 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
-        <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
-      </div>
     </div>
   </div>
 );
@@ -92,18 +82,16 @@ const StatCard = ({ icon, label, value, color, to }) => {
     </motion.div>
   );
 
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className="block hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
-      >
-        {cardContent}
-      </Link>
-    );
-  }
-
-  return <div className="block rounded-2xl">{cardContent}</div>;
+  return to ? (
+    <Link
+      to={to}
+      className="block hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
+    >
+      {cardContent}
+    </Link>
+  ) : (
+    <div className="block rounded-2xl">{cardContent}</div>
+  );
 };
 
 const AssignmentCard = ({ title, subject, dueDate }) => (
@@ -131,14 +119,16 @@ const AssignmentCard = ({ title, subject, dueDate }) => (
   </a>
 );
 
+// --- Main Student Dashboard Component ---
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [scannerError, setScannerError] = useState(null);
   const [activeTab, setActiveTab] = useState("feed");
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,12 +155,6 @@ export default function StudentDashboard() {
               subject: "Artificial Intelligence",
               dueDate: "Sep 18, 2025",
             },
-            {
-              id: 3,
-              title: "Calculus Problem Set",
-              subject: "Mathematics",
-              dueDate: "Sep 22, 2025",
-            },
           ],
         });
       } catch (error) {
@@ -183,12 +167,10 @@ export default function StudentDashboard() {
   }, []);
 
   const handleScan = async (result) => {
-    if (!result || result.length === 0) return;
+    if (!result) return;
     setShowScanner(false);
     try {
-      const res = await api.post("/attendance/mark", {
-        qrToken: result[0]?.rawValue,
-      });
+      const res = await api.post("/attendance/mark", { qrToken: result });
       setScanResult({ type: "success", message: res.data.message });
     } catch (error) {
       setScanResult({
@@ -197,6 +179,18 @@ export default function StudentDashboard() {
       });
     }
     setTimeout(() => setScanResult(null), 5000);
+  };
+
+  const handleScannerError = (error) => {
+    console.error("Scanner Error:", error);
+    setScannerError(
+      "Could not access camera. Please grant permission and ensure you are on a secure (HTTPS) connection."
+    );
+  };
+
+  const openScanner = () => {
+    setScannerError(null);
+    setShowScanner(true);
   };
 
   const TabButton = ({ id, label, icon }) => (
@@ -208,8 +202,7 @@ export default function StudentDashboard() {
           : "text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
       }`}
     >
-      {icon}
-      {label}
+      {icon} {label}
     </button>
   );
 
@@ -232,12 +225,9 @@ export default function StudentDashboard() {
           variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
           {isLoading ? (
-            <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-            </>
+            Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))
           ) : (
             <>
               <StatCard
@@ -270,6 +260,48 @@ export default function StudentDashboard() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 lg:order-last">
+            <div className="lg:sticky top-24 space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
+                    Quick Actions
+                  </h2>
+                  <div className="space-y-3">
+                    <button
+                      onClick={openScanner}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      <span>Scan Attendance</span>
+                    </button>
+                    <Link
+                      to="/learning-path"
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                    >
+                      <GraduationCap className="w-5 h-5" />
+                      <span>My Learning Path</span>
+                    </Link>
+                    <Link
+                      to="/drive"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                    >
+                      <FileArchive className="w-5 h-5" />
+                      <span>My Drive</span>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+              {/* ✅ COMPONENT RESTORED */}
+              <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
+              <QuickWins onMood={(m) => console.log("Mood:", m)} />
+            </div>
+          </div>
+
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2 p-2">
@@ -289,7 +321,6 @@ export default function StudentDashboard() {
                   icon={<Briefcase size={16} />}
                 />
               </div>
-
               <div className="p-2 md:p-4">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -308,10 +339,12 @@ export default function StudentDashboard() {
                           </h2>
                           <div className="space-y-4">
                             {isLoading ? (
-                              <>
-                                <AssignmentCardSkeleton />
-                                <AssignmentCardSkeleton />
-                              </>
+                              Array.from({ length: 2 }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="h-20 bg-slate-100 dark:bg-slate-700/50 rounded-xl animate-pulse"
+                                ></div>
+                              ))
                             ) : dashboardData?.assignments.length > 0 ? (
                               dashboardData.assignments.map((assignment) => (
                                 <AssignmentCard
@@ -335,6 +368,7 @@ export default function StudentDashboard() {
                             )}
                           </div>
                         </div>
+                        {/* ✅ COMPONENT RESTORED */}
                         <PersonalizedLearningPath
                           onOpenLesson={(lesson) => console.log("Open", lesson)}
                         />
@@ -342,6 +376,7 @@ export default function StudentDashboard() {
                     )}
                     {activeTab === "tools" && (
                       <div className="space-y-8">
+                        {/* ✅ COMPONENT RESTORED */}
                         <SmartProgressInsights />
                         <StudyPlanner
                           assignments={dashboardData?.assignments || []}
@@ -351,6 +386,7 @@ export default function StudentDashboard() {
                     )}
                     {activeTab === "career" && (
                       <div>
+                        {/* ✅ COMPONENT RESTORED */}
                         <CareerRecommendations
                           strengths={
                             user?.profile?.strengths || ["AI", "Algorithms"]
@@ -363,88 +399,96 @@ export default function StudentDashboard() {
               </div>
             </div>
           </div>
-
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
-                    Quick Actions
-                  </h2>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => setShowScanner(!showScanner)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
-                    >
-                      <QrCode className="w-5 h-5" />
-                      {showScanner ? "Close Scanner" : "Scan Attendance"}
-                    </button>
-
-                    {/* ✨ LEARNING PATH BUTTON ADDED */}
-                    <Link
-                      to="/learning-path"
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
-                    >
-                      <GraduationCap className="w-5 h-5" />
-                      <span>My Learning Path</span>
-                    </Link>
-
-                    {/* ✨ "MY DRIVE" BUTTON CONVERTED TO A LINK FOR CONSISTENCY */}
-                    <Link
-                      to="/drive"
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
-                    >
-                      <FileArchive className="w-5 h-5" />
-                      <span>My Drive</span>
-                    </Link>
-                  </div>
-
-                  <AnimatePresence>
-                    {showScanner && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-4 border-2 border-dashed border-slate-300 dark:border-slate-600 p-2 rounded-lg overflow-hidden"
-                      >
-                        <Scanner
-                          onScan={handleScan}
-                          onError={(error) => console.log(error?.message)}
-                        />
-                      </motion.div>
-                    )}
-                    {scanResult && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className={`mt-4 p-3 rounded-lg flex items-center gap-2 text-sm font-semibold ${
-                          scanResult.type === "success"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                        }`}
-                      >
-                        {scanResult.type === "success" ? (
-                          <CheckCircle2 size={18} />
-                        ) : (
-                          <XCircle size={18} />
-                        )}
-                        {scanResult.message}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-              <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
-              <QuickWins onMood={(m) => console.log("Mood:", m)} />
-            </div>
-          </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showScanner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowScanner(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-slate-800 p-6 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl"
+            >
+              <button
+                onClick={() => setShowScanner(false)}
+                className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-transform transform hover:scale-110"
+              >
+                <X size={20} />
+              </button>
+              <div className="w-full overflow-hidden rounded-lg aspect-square bg-slate-900 flex items-center justify-center">
+                {scannerError ? (
+                  <div className="text-center text-red-400 p-4">
+                    <CameraOff size={48} className="mx-auto" />
+                    <p className="mt-4 font-semibold">Camera Error</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {scannerError}
+                    </p>
+                  </div>
+                ) : (
+                  <Scanner
+                    onScan={handleScan}
+                    onError={handleScannerError}
+                    components={{ finder: false }}
+                    constraints={{ facingMode: "environment" }}
+                    styles={{
+                      container: {
+                        width: "100%",
+                        paddingTop: "100%",
+                        position: "relative",
+                      },
+                      video: {
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      },
+                    }}
+                  />
+                )}
+              </div>
+              <p className="text-center text-slate-400 mt-4 text-sm font-semibold">
+                {scannerError
+                  ? "Please try again."
+                  : "Point the camera at the QR code"}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {scanResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className={`fixed bottom-6 right-6 p-4 rounded-lg flex items-center gap-3 text-sm font-semibold shadow-2xl z-50 ${
+              scanResult.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {scanResult.type === "success" ? (
+              <CheckCircle2 size={18} />
+            ) : (
+              <XCircle size={18} />
+            )}
+            {scanResult.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AIAssistant />
     </DashboardLayout>
   );
