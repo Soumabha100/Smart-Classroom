@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import QRCodeWrapper from "../components/QRCodeWrapper";
 import AttendanceChart from "../components/AttendanceChart";
 import io from "socket.io-client";
 import DashboardLayout from "../components/DashboardLayout";
+import api from "../api/apiService"; // ✅ 1. Import the configured api instance
 
-const SOCKET_URL =
-  process.env.NODE_ENV === "production"
-    ? window.location.origin
-    : `http://${window.location.hostname}:5001`;
+// ✅ 2. Dynamically determine the secure WebSocket URL
+const isSecure = window.location.protocol === "https:";
+const SOCKET_URL = `${isSecure ? "wss" : "ws"}://${
+  window.location.hostname
+}:5001`;
 
-    
-const QR_CODE_VALIDITY_SECONDS = 30; // Central place to manage the countdown time
+const QR_CODE_VALIDITY_SECONDS = 120; // Central place to manage the countdown time
 
 export default function TeacherDashboard() {
   const [qrToken, setQrToken] = useState(null);
@@ -19,30 +19,24 @@ export default function TeacherDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [liveAttendance, setLiveAttendance] = useState([]);
-  const [countdown, setCountdown] = useState(QR_CODE_VALIDITY_SECONDS); // ✅ 1. State for the timer
+  const [countdown, setCountdown] = useState(QR_CODE_VALIDITY_SECONDS);
 
   // Effect for handling the countdown timer
   useEffect(() => {
-    // Only start the timer if a QR token is present
     if (!qrToken) return;
-
-    // Set the initial countdown value when a new token is generated
     setCountdown(QR_CODE_VALIDITY_SECONDS);
-
     const timer = setInterval(() => {
       setCountdown((prevCountdown) => {
         if (prevCountdown <= 1) {
           clearInterval(timer);
-          setQrToken(null); // ✅ 2. Clear the QR token when the timer finishes
+          setQrToken(null);
           return 0;
         }
         return prevCountdown - 1;
       });
     }, 1000);
-
-    // Cleanup function to clear the interval when the component unmounts or qrToken changes
     return () => clearInterval(timer);
-  }, [qrToken]); // This effect re-runs every time a new qrToken is generated
+  }, [qrToken]);
 
   // Effect for WebSocket connection
   useEffect(() => {
@@ -58,13 +52,10 @@ export default function TeacherDashboard() {
     setIsLoading(true);
     setError("");
     setQrToken(null);
-    const token = localStorage.getItem("token");
 
     try {
-      const api = axios.create({
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const res = await api.post("/api/attendance/generate-qr", { classId });
+      // ✅ 3. Use the imported 'api' service directly. No need to create a new axios instance.
+      const res = await api.post("/attendance/generate-qr", { classId });
       setQrToken(res.data.qrToken);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate QR code.");
@@ -121,7 +112,6 @@ export default function TeacherDashboard() {
               <h3 className="text-lg font-semibold text-slate-800">
                 Scan this code to mark attendance
               </h3>
-              {/* ✅ 3. Display the live countdown timer */}
               <p className="text-lg font-bold text-red-600 my-2">
                 Expires in: {countdown}s
               </p>

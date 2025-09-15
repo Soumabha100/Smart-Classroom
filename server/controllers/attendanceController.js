@@ -9,7 +9,7 @@ exports.generateQrToken = (req, res) => {
     timestamp: Date.now(),
   };
   const qrToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "30s",
+    expiresIn: "2m",
   });
   res.json({ qrToken });
 };

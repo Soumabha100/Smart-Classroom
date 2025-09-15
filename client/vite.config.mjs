@@ -1,18 +1,22 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import ssl from "@vitejs/plugin-basic-ssl"; // ✅ IMPORT THE SSL PLUGIN
+import ssl from "@vitejs/plugin-basic-ssl";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    ssl(), // ✅ ADD THE PLUGIN HERE
+    ssl(), // Your original SSL plugin
   ],
   server: {
-    host: "0.0.0.0",
-    https: true, // ✅ ENABLE HTTPS FOR CAMERA ACCESS
+    // ✅ FIX: Use 'true' to automatically expose the network URL.
+    // This is the modern equivalent of '0.0.0.0'.
+    host: true,
+
+    // Your https and proxy settings are correct and remain the same.
+    https: true,
     proxy: {
       "/api": {
         target: "http://localhost:5001",

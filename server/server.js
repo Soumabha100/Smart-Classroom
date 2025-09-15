@@ -1,8 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const http = require("http"); 
-const { Server } = require("socket.io"); 
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 // Define Routes
@@ -11,8 +11,8 @@ const userRoutes = require("./routes/userRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const classRoutes = require("./routes/classRoutes");
-const parentRoutes = require('./routes/parentRoutes');
-const inviteRoutes = require('./routes/inviteRoutes');
+const parentRoutes = require("./routes/parentRoutes");
+const inviteRoutes = require("./routes/inviteRoutes");
 
 // Connect to MongoDB
 mongoose
@@ -22,17 +22,17 @@ mongoose
 
 const app = express();
 
-// 3. Create an HTTP server from the Express app
+// Create an HTTP server from the Express app
 const server = http.createServer(app);
 
-// 4. Initialize Socket.IO and attach it to the server
+// Initialize Socket.IO and attach it to the server
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", `https://192.168.1.7:5173`],
+    // Allow connections from your frontend development server
+    origin: ["https://localhost:5173", `https://192.168.1.5:5173`],
     methods: ["GET", "POST"],
   },
 });
-
 
 const PORT = process.env.PORT || 5001;
 
@@ -40,7 +40,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// 5. Make `io` accessible to your routes by attaching it to the request object
+// Make `io` accessible to your routes by attaching it to the request object
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -52,8 +52,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/classes", classRoutes);
-app.use('/api/parents', parentRoutes);
-app.use('/api/invites', inviteRoutes);
+app.use("/api/parents", parentRoutes);
+app.use("/api/invites", inviteRoutes);
 
 // Socket.IO connection logic
 io.on("connection", (socket) => {
@@ -69,7 +69,7 @@ app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
 
-// 6. Start the server using the http server instance, not app
+// Start the server using the http server instance
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
