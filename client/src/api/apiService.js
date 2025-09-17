@@ -30,4 +30,11 @@ export const updateUserProfile = (profileData) =>
   api.post("/users/profile", profileData);
 export const getStudentAttendance = () => api.get("/attendance/student");
 
+
+// --- ADDED: New function for the AI Dashboard ---
+export const generateAIDashboard = (mode) => {
+    return api.post('/ai/generate-dashboard', { mode });
+};
+
+
 export default api;

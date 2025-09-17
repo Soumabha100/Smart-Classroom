@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
+
+// --- ICONS ---
 import {
   CheckCircle2,
   XCircle,
@@ -10,20 +12,18 @@ import {
   CalendarCheck,
   Trophy,
   Activity,
-  ArrowRight,
-  FileText,
-  LayoutGrid,
-  Bot,
-  Briefcase,
   ExternalLink,
   GraduationCap,
   FileArchive,
   X,
-  CameraOff, // ✨ IMPORTED ICON FOR ERROR STATE
+  CameraOff,
+  Zap,
 } from "lucide-react";
 
+// --- COMPONENT IMPORTS ---
 import DashboardLayout from "../components/DashboardLayout.jsx";
-import AIAssistant from "../components/AIAssistant.jsx";
+import AIAssistant from "../components/AIAssistant.jsx"; // Floating Chatbot
+import AIDrivenDashboard from "../components/Dashboard/AIDrivenDashboard.jsx"; // The new AI Core
 import PersonalizedLearningPath from "../components/Learning/PersonalizedLearningPath.jsx";
 import SmartProgressInsights from "../components/Learning/SmartProgressInsights.jsx";
 import QuizGenerator from "../components/learning/QuizGenerator.jsx";
@@ -31,14 +31,12 @@ import CareerRecommendations from "../components/learning/CareerRecommendations.
 import StudyPlanner from "../components/learning/StudyPlanner.jsx";
 import GamificationPanel from "../components/learning/GamificationPanel.jsx";
 import QuickWins from "../components/learning/QuickWins.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
-import api from "../api/apiService.js";
 import OnlineResources from "../components/learning/onlineResource.jsx";
 import PeriodManagement from "../components/learning/periodManagement.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import api from "../api/apiService.js";
 
-
-
-// --- Reusable Components ---
+// --- Reusable UI Components ---
 
 const StatCardSkeleton = () => (
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
@@ -75,7 +73,7 @@ const StatCard = ({ icon, label, value, color, to }) => {
         {icon}
       </div>
       <div className="flex-grow">
-        <p className="text-xl font-bold text-slate-800 dark:text-white">
+        <p className="text-2xl font-bold text-slate-800 dark:text-white">
           {value}
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
@@ -89,7 +87,7 @@ const StatCard = ({ icon, label, value, color, to }) => {
   return to ? (
     <Link
       to={to}
-      className="block hover:shadow-lg rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
+      className="block hover:shadow-xl dark:hover:shadow-blue-900/30 rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
     >
       {cardContent}
     </Link>
@@ -98,42 +96,36 @@ const StatCard = ({ icon, label, value, color, to }) => {
   );
 };
 
-const AssignmentCard = ({ title, subject, dueDate }) => (
-  <a
-    href="#"
-    className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/60 hover:border-blue-300 transition-all duration-300 group"
+const SectionWrapper = ({ title, icon, children, className }) => (
+  <motion.section
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay: 0.4 }}
+    className={`bg-white dark:bg-slate-800/60 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 ${className}`}
   >
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 shrink-0">
-          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div className="min-w-0">
-          <h3 className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-            {title}
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {subject} •{" "}
-            <span className="text-red-500 font-medium">Due: {dueDate}</span>
-          </p>
-        </div>
+    <div className="flex items-center gap-3 mb-4">
+      <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">
+        {icon}
       </div>
-      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1 shrink-0 ml-4" />
+      <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+        {title}
+      </h2>
     </div>
-  </a>
+    <div className="space-y-4">{children}</div>
+  </motion.section>
 );
 
-// --- Main Student Dashboard Component ---
+// --- Main Student Dashboard Component (REDESIGNED) ---
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [scannerError, setScannerError] = useState(null);
-  const [activeTab, setActiveTab] = useState("feed");
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- Data Fetching (Preserved) ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -146,20 +138,6 @@ export default function StudentDashboard() {
             assignmentsDue: 3,
             activitiesDone: 12,
           },
-          assignments: [
-            {
-              id: 1,
-              title: "React Hooks In-depth",
-              subject: "Web Development",
-              dueDate: "Sep 15, 2025",
-            },
-            {
-              id: 2,
-              title: "AI Ethics Essay",
-              subject: "Artificial Intelligence",
-              dueDate: "Sep 18, 2025",
-            },
-          ],
         });
       } catch (error) {
         console.error("Failed to load dashboard:", error);
@@ -170,6 +148,7 @@ export default function StudentDashboard() {
     fetchData();
   }, []);
 
+  // --- Scanner Logic (Preserved) ---
   const handleScan = async (result) => {
     if (!result) return;
     setShowScanner(false);
@@ -188,7 +167,7 @@ export default function StudentDashboard() {
   const handleScannerError = (error) => {
     console.error("Scanner Error:", error);
     setScannerError(
-      "Could not access camera. Please grant permission and ensure you are on a secure (HTTPS) connection."
+      "Could not access camera. Grant permission and use a secure (HTTPS) connection."
     );
   };
 
@@ -197,31 +176,20 @@ export default function StudentDashboard() {
     setShowScanner(true);
   };
 
-  const TabButton = ({ id, label, icon }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${
-        activeTab === id
-          ? "bg-blue-600 text-white shadow-md"
-          : "text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-      }`}
-    >
-      {icon} {label}
-    </button>
-  );
-
   return (
     <DashboardLayout>
       <div className="space-y-8">
+        {/* --- Header --- */}
         <header>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
             Welcome back, {user?.name.split(" ")[0]} 👋
           </h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">
-            Ready to learn something new today? Let's get started.
+            Your personalized dashboard is ready. Let's make today productive.
           </p>
         </header>
 
+        {/* --- Quick Stats Overview --- */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           initial="hidden"
@@ -263,149 +231,79 @@ export default function StudentDashboard() {
           )}
         </motion.div>
 
+        {/* --- Main Dashboard Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 lg:order-last">
-            <div className="lg:sticky top-24 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <div className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
-                    Quick Actions
-                  </h2>
-                  <div className="space-y-3">
-                    <button
-                      onClick={openScanner}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
-                    >
-                      <QrCode className="w-5 h-5" />
-                      <span>Scan Attendance</span>
-                    </button>
-                    <Link
-                      to="/learning-path"
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
-                    >
-                      <GraduationCap className="w-5 h-5" />
-                      <span>My Learning Path</span>
-                    </Link>
-                    <Link
-                      to="/drive"
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
-                    >
-                      <FileArchive className="w-5 h-5" />
-                      <span>My Drive</span>
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-              {/* ✅ COMPONENT RESTORED */}
-              <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
-              <QuickWins onMood={(m) => console.log("Mood:", m)} />
+          {/* --- LEFT COLUMN: AI Core & Other Tools --- */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* ✨ AI PERSONALIZED DASHBOARD (THE MVP) ✨ */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+              className="relative p-1 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-blue-500 shadow-2xl shadow-purple-500/20"
+            >
+              <div className="absolute -inset-2 bg-grid-slate-900/10 bg-[length:100px_100px] [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-100/10 -z-10"></div>
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-[22px] p-4 sm:p-6">
+                <AIDrivenDashboard />
+              </div>
+            </motion.div>
+
+            {/* Integrating other existing components */}
+            <PersonalizedLearningPath
+              onOpenLesson={(lesson) => console.log("Open", lesson)}
+            />
+            <SmartProgressInsights />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <QuizGenerator />
+              <StudyPlanner />
             </div>
+            <CareerRecommendations
+              strengths={user?.profile?.strengths || ["AI", "Algorithms"]}
+            />
+            <OnlineResources />
+            <PeriodManagement />
           </div>
 
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white dark:bg-slate-800/60 dark:backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 p-2">
-                <TabButton
-                  id="feed"
-                  label="My Feed"
-                  icon={<LayoutGrid size={16} />}
-                />
-                <TabButton
-                  id="tools"
-                  label="AI Learning Tools"
-                  icon={<Bot size={16} />}
-                />
-                <TabButton
-                  id="career"
-                  label="Career Hub"
-                  icon={<Briefcase size={16} />}
-                />
-              </div>
-              <div className="p-2 md:p-4">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-8"
-                  >
-                    {activeTab === "feed" && (
-                      <div className="space-y-8">
-                        <div>
-                          <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
-                            Upcoming Assignments
-                          </h2>
-                          <div className="space-y-4">
-                            {isLoading ? (
-                              Array.from({ length: 2 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="h-20 bg-slate-100 dark:bg-slate-700/50 rounded-xl animate-pulse"
-                                ></div>
-                              ))
-                            ) : dashboardData?.assignments.length > 0 ? (
-                              dashboardData.assignments.map((assignment) => (
-                                <AssignmentCard
-                                  key={assignment.id}
-                                  {...assignment}
-                                />
-                              ))
-                            ) : (
-                              <div className="text-center py-10 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                                <CheckCircle2
-                                  size={40}
-                                  className="mx-auto text-green-500"
-                                />
-                                <h3 className="mt-4 text-lg font-semibold text-slate-700 dark:text-slate-300">
-                                  All caught up!
-                                </h3>
-                                <p className="text-slate-500 dark:text-slate-400">
-                                  You have no pending assignments. 🎉
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {/* ✅ COMPONENT RESTORED */}
-                        <PersonalizedLearningPath
-                          onOpenLesson={(lesson) => console.log("Open", lesson)}
-                        />
-                      </div>
-                    )}
-                    {activeTab === "tools" && (
-                      <div className="space-y-8">
-                        {/* ✅ COMPONENT RESTORED */}
-                        <SmartProgressInsights />
-                        <StudyPlanner
-                          assignments={dashboardData?.assignments || []}
-                        />
-                        <QuizGenerator />
-                      </div>
-                    )}
-                    {activeTab === "career" && (
-                      <div>
-                        {/* ✅ COMPONENT RESTORED */}
-                        <CareerRecommendations
-                          strengths={
-                            user?.profile?.strengths || ["AI", "Algorithms"]
-                          }
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+          {/* --- RIGHT COLUMN: Sticky Sidebar with Quick Actions & Info --- */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky top-24 space-y-8">
+              <SectionWrapper
+                title="Quick Actions"
+                icon={
+                  <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                }
+              >
+                <button
+                  onClick={openScanner}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+                >
+                  <QrCode className="w-5 h-5" />
+                  <span>Scan Attendance</span>
+                </button>
+                <Link
+                  to="/learning-path"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                >
+                  <GraduationCap className="w-5 h-5" />
+                  <span>My Learning Path</span>
+                </Link>
+                <Link
+                  to="/drive"
+                  className="w-full bg-slate-700 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                >
+                  <FileArchive className="w-5 h-5" />
+                  <span>My Drive</span>
+                </Link>
+              </SectionWrapper>
+
+              <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
+              <QuickWins onMood={(m) => console.log("Mood:", m)} />
             </div>
           </div>
         </div>
       </div>
 
+      {/* --- MODALS & FLOATING ELEMENTS (Preserved) --- */}
       <AnimatePresence>
         {showScanner && (
           <motion.div
@@ -492,9 +390,8 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-       <OnlineResources />  
-        <PeriodManagement />
 
+      {/* AI Assistant is now a floating button for easy access */}
       <AIAssistant />
     </DashboardLayout>
   );
