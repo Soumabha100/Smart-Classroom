@@ -208,7 +208,7 @@ const AttendancePage = () => {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-purple-500 hover:to-indigo-500 transition-transform transform hover:scale-105"
           >
             <Calendar size={16} />
             <span>View Full Calendar</span>

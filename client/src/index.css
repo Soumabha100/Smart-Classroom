@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
+/* ===== Base Reset ===== */
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.3s, color 0.3s; /* smooth theme switch */
 }
 
 code {
@@ -12,6 +14,18 @@ code {
     monospace;
 }
 
+/* ===== Light & Dark Theme ===== */
+body.light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+body.dark {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* ===== Animations ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -38,6 +52,10 @@ code {
   }
 }
 
+.animate-slide-in-fade {
+  animation: slide-in-fade 0.7s ease-out forwards;
+}
+
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -50,14 +68,11 @@ code {
   }
 }
 
-.animate-slide-in-fade {
-  animation: slide-in-fade 0.7s ease-out forwards;
-}
-
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
+/* ===== Scroller ===== */
 .scroller {
   -webkit-mask: linear-gradient(
     90deg,

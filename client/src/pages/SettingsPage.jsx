@@ -1,26 +1,21 @@
+// src/pages/SettingsPage.jsx
 import React, { useState } from "react";
 import { Moon, Sun, Bell, Lock, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
-// ✨ Import the new useAuth hook
-import { useAuth } from "../context/AuthContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx"; // centralized theme context
 
 const SettingsPage = () => {
-  // ✨ Get theme and updater function from our new AuthContext
-  const { theme, updateTheme } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // get theme toggle from context
   const isDarkMode = theme === "dark";
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const navigate = useNavigate();
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-  };
+  const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
 
-  // ✨ Create a new handler for the theme toggle
   const handleThemeToggle = () => {
-    const newTheme = isDarkMode ? "light" : "dark";
-    updateTheme(newTheme);
+    toggleTheme(); // centralized toggle (works everywhere)
   };
 
   return (
@@ -33,17 +28,9 @@ const SettingsPage = () => {
             className="p-2 mr-4 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             aria-label="Go back"
           >
-            <ArrowLeft
-              className={`h-6 w-6 ${
-                isDarkMode ? "text-white" : "text-gray-800"
-              }`}
-            />
+            <ArrowLeft className={`h-6 w-6 ${isDarkMode ? "text-white" : "text-gray-800"}`} />
           </button>
-          <h1
-            className={`text-3xl font-bold ${
-              isDarkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
+          <h1 className={`text-3xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
             Settings
           </h1>
         </div>
@@ -67,7 +54,6 @@ const SettingsPage = () => {
               )}
               <span>Theme</span>
             </div>
-            {/* ✨ Connect the toggle to our new handler */}
             <button
               onClick={handleThemeToggle}
               className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"

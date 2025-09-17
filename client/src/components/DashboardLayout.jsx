@@ -21,10 +21,10 @@ export default function DashboardLayout({ children }) {
   }, [isSidebarOpen]);
 
   return (
-    // ✅ FIX: Added dark mode class to the main layout container.
-    // This will change the background of all dashboard pages.
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+    // ✅ Dark mode enabled for the whole layout
+    <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
       <div className="transition-all duration-300 ease-in-out lg:ml-64">
         {/* Mobile Header with Hamburger Menu */}
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg shadow-sm lg:hidden dark:bg-slate-800/80 dark:border-b dark:border-slate-700">
@@ -32,7 +32,7 @@ export default function DashboardLayout({ children }) {
             <div className="flex h-16 items-center justify-between">
               <Link
                 to="/"
-                className="text-xl font-bold text-slate-800 dark:text-white"
+                className="text-xl font-bold text-slate-800 dark:text-slate-100"
               >
                 Smart Classroom
               </Link>
@@ -62,7 +62,9 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Main Content Area */}
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm transition-colors duration-300">
+          {children}
+        </main>
       </div>
     </div>
   );
