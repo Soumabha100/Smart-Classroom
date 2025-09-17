@@ -6,139 +6,128 @@ const Assignment = require("../models/Assignment");
 const Submission = require("../models/Submission");
 const Class = require("../models/Class");
 
-// Cache setup remains the same
-const aiCache = new NodeCache({ stdTTL: 600 });
+// Cache setup with a 24-hour TTL
+const aiCache = new NodeCache({ stdTTL: 86400 });
+
+// THIS IS THE CRITICAL PART: Forcefully clear the cache on every single restart.
+aiCache.flushAll();
+console.log("✅ [INIT] AI Dashboard cache has been completely cleared.");
 
 // Initialize the Google Generative AI client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 exports.generateDashboard = async (req, res) => {
-  try {
-    const { mode } = req.body;
-    const userId = req.user.id;
+  const { mode } = req.body;
+  const userId = req.user.id;
+  const cacheKey = `dashboard-${userId}-${mode}`;
 
-    const cacheKey = `dashboard-${userId}-${mode}`;
-    if (aiCache.has(cacheKey)) {
-      console.log(`✅ Serving dashboard for user ${userId} from cache.`);
-      return res.status(200).json(aiCache.get(cacheKey));
+  if (aiCache.has(cacheKey)) {
+    console.log(`✅ Serving dashboard for user ${userId} from cache.`);
+    return res.status(200).json(aiCache.get(cacheKey));
+  }
+
+  const student = await User.findById(userId).select("-password");
+  if (!student) return res.status(404).json({ message: "Student not found." });
+
+  // Data aggregation... (remains the same)
+  const attendanceRecords = await Attendance.find({ student: userId })
+    .sort({ date: -1 })
+    .limit(10);
+  const studentClasses = await Class.find({ students: userId }).populate(
+    "teacher",
+    "name"
+  );
+  const assignments = await Assignment.find({
+    class: { $in: studentClasses.map((c) => c._id) },
+  }).sort({ dueDate: 1 });
+  const submissions = await Submission.find({ student: userId }).populate(
+    "assignment",
+    "title"
+  );
+  const totalAttendance = await Attendance.countDocuments({ student: userId });
+  const presentAttendance = await Attendance.countDocuments({
+    student: userId,
+    status: "present",
+  });
+  const attendancePercentage =
+    totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 100;
+  const averageGrade =
+    submissions.length > 0
+      ? submissions.reduce((acc, sub) => acc + (sub.grade || 0), 0) /
+        submissions.length
+      : 0;
+
+  const prompt = `
+    You are an expert AI academic advisor for IntelliClass.
+    Your task is to generate a personalized dashboard layout in a specific JSON format.
+    IMPORTANT: Your entire response must be ONLY the raw JSON object, without any markdown formatting like \`\`\`json, commentary, or extra text.
+
+    Student Data:
+    - Name: ${student.name}
+    - Interests: ${
+      student.interests ? student.interests.join(", ") : "Not specified"
+    }
+    - Overall Attendance: ${attendancePercentage.toFixed(2)}%
+    - Average Grade: ${averageGrade.toFixed(2)}%
+
+    Selected Mode: "${mode}"
+
+    Available Widget Types: "header", "quickStats", "todoList", "careerSuggestion", "learningSuggestion", "motivationalQuote".
+
+    Generate 3 to 4 relevant widgets. Here is a PERFECT example of the required output format:
+    {
+      "widgets": [
+        { "id": "header-1", "type": "header", "data": { "title": "Welcome, ${
+          student.name
+        }!", "subtitle": "Let's focus on learning." } },
+        { "id": "stats-1", "type": "quickStats", "data": { "title": "Academic Snapshot", "stats": [ { "label": "Attendance", "value": "${attendancePercentage.toFixed(
+          1
+        )}%" } ] } }
+      ]
     }
 
-    console.log(
-      `⚡️ Generating new dashboard for user ${userId}. Not found in cache.`
-    );
+    Now, generate the JSON for this student.
+  `;
 
-    // --- Data Aggregation ---
-    const student = await User.findById(userId).select("-password");
-    if (!student || student.role !== "student") {
-      return res.status(404).json({ message: "Student not found." });
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      console.log(
+        `⚡️ [Attempt ${
+          4 - retries
+        }] Calling AI to generate new dashboard for user ${userId}.`
+      );
+
+      const model = genAI.getGenerativeModel({
+        model: "models/gemini-1.5-flash-latest",
+      }); // Using a reliable model from your list
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      const cleanedText = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      const dashboardJson = JSON.parse(cleanedText);
+
+      aiCache.set(cacheKey, dashboardJson);
+      console.log(`📦 Stored new dashboard for user ${userId} in cache.`);
+
+      return res.status(200).json(dashboardJson);
+    } catch (error) {
+      console.error("Error during AI generation attempt:", error.message);
+      retries--;
+      if (retries <= 0) {
+        return res
+          .status(500)
+          .json({
+            message: "Failed to generate AI dashboard after multiple attempts.",
+          });
+      }
+      await sleep(1000);
     }
-
-    const attendanceRecords = await Attendance.find({ student: userId })
-      .sort({ date: -1 })
-      .limit(10);
-    const studentClasses = await Class.find({ students: userId }).populate(
-      "teacher",
-      "name"
-    );
-    const assignments = await Assignment.find({
-      class: { $in: studentClasses.map((c) => c._id) },
-    }).sort({ dueDate: 1 });
-    const submissions = await Submission.find({ student: userId }).populate(
-      "assignment",
-      "title"
-    );
-
-    const totalAttendance = await Attendance.countDocuments({
-      student: userId,
-    });
-    const presentAttendance = await Attendance.countDocuments({
-      student: userId,
-      status: "present",
-    });
-    const attendancePercentage =
-      totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 100;
-
-    const averageGrade =
-      submissions.length > 0
-        ? submissions.reduce((acc, sub) => acc + (sub.grade || 0), 0) /
-          submissions.length
-        : 0;
-
-    // --- Prompt Engineering ---
-    // ✨ THIS IS THE FIX: Reverting to the correct and latest model name ✨
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
-
-    const prompt = `
-            You are an expert AI academic advisor for a platform called IntelliClass.
-            Your task is to generate a personalized dashboard layout in a specific JSON format for a student.
-            Do NOT include any markdown formatting (like \`\`\`json) in your output. Only return the raw JSON object.
-
-            Student Data:
-            - Name: ${student.name}
-            - Interests: ${
-              student.interests ? student.interests.join(", ") : "Not specified"
-            }
-            - Recent Attendance: ${attendanceRecords
-              .map((a) => `${a.date.toDateString()}: ${a.status}`)
-              .join("; ")}
-            - Overall Attendance: ${attendancePercentage.toFixed(2)}%
-            - Average Grade: ${averageGrade.toFixed(2)}%
-            - Upcoming Assignments: ${assignments
-              .slice(0, 3)
-              .map((a) => `${a.title} due on ${a.dueDate.toDateString()}`)
-              .join("; ")}
-
-            Based on the student's data and the selected mode "${mode}", generate a JSON object for their dashboard.
-
-            Available Widget Types:
-            - "header": A welcoming header. Must include a 'title' and 'subtitle'.
-            - "todoList": A list of actionable items. Must include a 'title' and an array of 'tasks' (each with 'id', 'text', 'completed').
-            - "quickStats": Key metrics. Must include a 'title' and an array of 'stats' (each with 'label', 'value').
-            - "careerSuggestion": Career guidance. Must include a 'title' and a 'suggestion' text.
-            - "motivationalQuote": An inspiring quote. Must include 'quote' and 'author'.
-            - "learningSuggestion": A resource suggestion. Must include a 'title' and a 'suggestion' text.
-
-            Rules for JSON Generation:
-            - The root object must have a single key: "widgets".
-            - "widgets" must be an array of widget objects.
-            - Each widget object in the array must have a unique 'id' (as a string), a 'type' (from the list above), and a 'data' object containing the required fields for that type.
-            - Generate 3 to 4 relevant widgets based on the mode.
-
-            Mode: "${mode}"
-
-            Now, generate the JSON for this student.
-        `;
-
-    // --- AI API Call ---
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-
-    // --- Response Handling ---
-    const cleanedText = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const dashboardJson = JSON.parse(cleanedText);
-
-    aiCache.set(cacheKey, dashboardJson);
-    console.log(`📦 Stored new dashboard for user ${userId} in cache.`);
-
-    res.status(200).json(dashboardJson);
-  } catch (error) {
-    console.error("Error generating AI dashboard:", error);
-    if (error.status === 429) {
-      return res
-        .status(429)
-        .json({
-          message: "The AI is currently busy. Please try again in a minute.",
-        });
-    }
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate AI dashboard content.",
-        error: error.message,
-      });
   }
 };
