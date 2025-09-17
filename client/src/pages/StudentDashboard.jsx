@@ -33,6 +33,10 @@ import GamificationPanel from "../components/learning/GamificationPanel.jsx";
 import QuickWins from "../components/learning/QuickWins.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/apiService.js";
+import OnlineResources from "../components/learning/onlineResource.jsx";
+import PeriodManagement from "../components/learning/periodManagement.jsx";
+
+
 
 // --- Reusable Components ---
 
@@ -488,6 +492,8 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+       <OnlineResources />  
+        <PeriodManagement />
 
       <AIAssistant />
     </DashboardLayout>
