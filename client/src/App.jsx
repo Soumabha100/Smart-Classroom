@@ -19,143 +19,150 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import DrivePage from "./pages/DrivePage.jsx";
 import LearningPath from "./pages/LearningPath.jsx";
-import AttendancePage from "./pages/AttendancePage.jsx"; // ✨ Import the new page
+import AttendancePage from "./pages/AttendancePage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
+// ✅ Import theme hook
+import { useTheme } from "./context/ThemeContext.jsx";
+
 function App() {
+  const { theme } = useTheme(); // light or dark
+
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
+    // ✅ Apply Tailwind dark mode class here
+    <div className={theme === "dark" ? "dark bg-slate-900 text-white min-h-screen" : "bg-white text-slate-900 min-h-screen"}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
 
-      {/* Student Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      {/* New route for the attendance page */}
-      <Route
-        path="/attendance"
-        element={
-          <ProtectedRoute role="student">
-            <AttendancePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute role="student">
-            <Onboarding />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/drive"
-        element={
-          <ProtectedRoute role="student">
-            <DrivePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/learning-path"
-        element={
-          <ProtectedRoute role="student">
-            <LearningPath />
-          </ProtectedRoute>
-        }
-      />
+        {/* Student Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute role="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/attendance"
+          element={
+            <ProtectedRoute role="student">
+              <AttendancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute role="student">
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/drive"
+          element={
+            <ProtectedRoute role="student">
+              <DrivePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/learning-path"
+          element={
+            <ProtectedRoute role="student">
+              <LearningPath />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Teacher Routes */}
-      <Route
-        path="/teacher-dashboard"
-        element={
-          <ProtectedRoute role="teacher">
-            <TeacherDashboard />
-          </ProtectedRoute>
-        }
-      />
+        {/* Teacher Routes */}
+        <Route
+          path="/teacher-dashboard"
+          element={
+            <ProtectedRoute role="teacher">
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin-dashboard"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manage-classes"
-        element={
-          <ProtectedRoute role="admin">
-            <ClassManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/class/:classId"
-        element={
-          <ProtectedRoute role="admin">
-            <ClassDetailsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manage-parents"
-        element={
-          <ProtectedRoute role="admin">
-            <ParentManagementPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manage-invites"
-        element={
-          <ProtectedRoute role="admin">
-            <InvitationManagement />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Routes */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-classes"
+          element={
+            <ProtectedRoute role="admin">
+              <ClassManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/class/:classId"
+          element={
+            <ProtectedRoute role="admin">
+              <ClassDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-parents"
+          element={
+            <ProtectedRoute role="admin">
+              <ParentManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-invites"
+          element={
+            <ProtectedRoute role="admin">
+              <InvitationManagement />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Parent Routes */}
-      <Route
-        path="/parent-dashboard"
-        element={
-          <ProtectedRoute role="parent">
-            <ParentDashboard />
-          </ProtectedRoute>
-        }
-      />
+        {/* Parent Routes */}
+        <Route
+          path="/parent-dashboard"
+          element={
+            <ProtectedRoute role="parent">
+              <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Authenticated Routes */}
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        {/* Authenticated Routes */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </div>
   );
 }
 

@@ -2,6 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DayPicker } from "react-day-picker";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { format } from "date-fns";
 import "react-day-picker/dist/style.css";
 
 const AttendanceCalendarModal = ({
@@ -55,6 +56,7 @@ const AttendanceCalendarModal = ({
             className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 w-full max-w-md relative"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Close Button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -62,7 +64,7 @@ const AttendanceCalendarModal = ({
               <X size={20} />
             </button>
 
-            {/* This is a completely custom-styled calendar using Tailwind CSS */}
+            {/* Calendar */}
             <DayPicker
               mode="single"
               onDayClick={handleDayClick}
@@ -84,29 +86,19 @@ const AttendanceCalendarModal = ({
                 head_cell:
                   "text-sm font-semibold text-slate-500 dark:text-slate-400 pb-2",
                 cell: "text-center relative",
-                day: "h-10 w-10 flex items-center justify-center rounded-full transition-colors font-medium hover:bg-slate-100 dark:hover:bg-slate-700",
+                day: "h-10 w-10 flex items-center justify-center rounded-full transition-colors font-medium hover:bg-slate-100 dark:hover:bg-slate-700 relative",
                 day_today:
                   "text-blue-600 dark:text-blue-400 font-bold bg-slate-100 dark:bg-slate-700/50",
                 day_selected:
                   "bg-blue-600 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-600",
                 day_outside: "text-slate-400 dark:text-slate-500 opacity-50",
-                // Custom dot modifiers
-                modifier_present: "relative",
-                modifier_absent: "relative",
+                // Present / Absent dots
+                modifier_present:
+                  "after:content-[''] after:w-1.5 after:h-1.5 after:rounded-full after:bg-green-500 after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2",
+                modifier_absent:
+                  "after:content-[''] after:w-1.5 after:h-1.5 after:rounded-full after:bg-red-500 after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2",
               }}
-            >
-              {(day, modifiers) => (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <span>{format(day.date, "d")}</span>
-                  {modifiers.present && (
-                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                  )}
-                  {modifiers.absent && (
-                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                  )}
-                </div>
-              )}
-            </DayPicker>
+            />
           </motion.div>
         </motion.div>
       )}
