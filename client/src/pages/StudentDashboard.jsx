@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+// 1. ✨ IMPORT THE 'Sparkles' ICON FOR THE NEW BUTTON
+import { ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
 
@@ -22,8 +24,8 @@ import {
 
 // --- COMPONENT IMPORTS ---
 import DashboardLayout from "../components/DashboardLayout.jsx";
-import AIAssistant from "../components/AIAssistant.jsx"; // Floating Chatbot
-import AIDrivenDashboard from "../components/Dashboard/AIDrivenDashboard.jsx"; // The new AI Core
+import AIAssistant from "../components/AIAssistant.jsx";
+import AIDrivenDashboard from "../components/Dashboard/AIDrivenDashboard.jsx";
 import PersonalizedLearningPath from "../components/Learning/PersonalizedLearningPath.jsx";
 import SmartProgressInsights from "../components/Learning/SmartProgressInsights.jsx";
 import QuizGenerator from "../components/learning/QuizGenerator.jsx";
@@ -36,7 +38,7 @@ import PeriodManagement from "../components/learning/periodManagement.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/apiService.js";
 
-// --- Reusable UI Components ---
+// --- Reusable UI Components (No changes here) ---
 
 const StatCardSkeleton = () => (
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
@@ -115,7 +117,7 @@ const SectionWrapper = ({ title, icon, children, className }) => (
   </motion.section>
 );
 
-// --- Main Student Dashboard Component (REDESIGNED) ---
+// --- Main Student Dashboard Component ---
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -125,7 +127,7 @@ export default function StudentDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- Data Fetching (Preserved) ---
+  // Data Fetching
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -148,7 +150,7 @@ export default function StudentDashboard() {
     fetchData();
   }, []);
 
-  // --- Scanner Logic (Preserved) ---
+  // Scanner Logic
   const handleScan = async (result) => {
     if (!result) return;
     setShowScanner(false);
@@ -181,15 +183,18 @@ export default function StudentDashboard() {
       <div className="space-y-8">
         {/* --- Header --- */}
         <header>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-            Welcome back, {user?.name.split(" ")[0]} 👋
-          </h1>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
-            Your personalized dashboard is ready. Let's make today productive.
-          </p>
+          {/* 2. ✨ THE MAIN HEADER IS NOW CLEANER. THE BUTTON HAS BEEN REMOVED. ✨ */}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
+              Welcome back, {user?.name.split(" ")[0]} 👋
+            </h1>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">
+              Your personalized dashboard is ready. Let's make today productive.
+            </p>
+          </div>
         </header>
 
-        {/* --- Quick Stats Overview --- */}
+        {/* --- Quick Stats Overview (No changes here) --- */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           initial="hidden"
@@ -233,9 +238,9 @@ export default function StudentDashboard() {
 
         {/* --- Main Dashboard Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* --- LEFT COLUMN: AI Core & Other Tools --- */}
+          {/* --- LEFT COLUMN --- */}
           <div className="lg:col-span-2 space-y-8">
-            {/* ✨ AI PERSONALIZED DASHBOARD (THE MVP) ✨ */}
+            {/* ✨ AI PERSONALIZED DASHBOARD (NOW WITH INTEGRATED HEADER) ✨ */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -244,11 +249,31 @@ export default function StudentDashboard() {
             >
               <div className="absolute -inset-2 bg-grid-slate-900/10 bg-[length:100px_100px] [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-100/10 -z-10"></div>
               <div className="bg-slate-50 dark:bg-slate-900 rounded-[22px] p-4 sm:p-6">
+                {/* 3. ✨ THIS IS THE NEW, PREMIUM HEADER INSIDE THE WIDGET ✨ */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-purple-500" />
+                      AI Personalized Dashboard
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Your dynamic hub, tailored just for you.
+                    </p>
+                  </div>
+                  <Link
+                    to="/ai-dashboard"
+                    className="group flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 text-sm font-semibold rounded-full shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all transform hover:scale-105"
+                  >
+                    <span>Expand</span>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                  </Link>
+                </div>
+
                 <AIDrivenDashboard />
               </div>
             </motion.div>
 
-            {/* Integrating other existing components */}
+            {/* Other components... */}
             <PersonalizedLearningPath
               onOpenLesson={(lesson) => console.log("Open", lesson)}
             />
@@ -264,7 +289,7 @@ export default function StudentDashboard() {
             <PeriodManagement />
           </div>
 
-          {/* --- RIGHT COLUMN: Sticky Sidebar with Quick Actions & Info --- */}
+          {/* --- RIGHT COLUMN (No changes here) --- */}
           <div className="lg:col-span-1">
             <div className="lg:sticky top-24 space-y-8">
               <SectionWrapper
@@ -295,7 +320,6 @@ export default function StudentDashboard() {
                   <span>My Drive</span>
                 </Link>
               </SectionWrapper>
-
               <GamificationPanel xp={420} badges={["Quiz Champ", "Streak 7"]} />
               <QuickWins onMood={(m) => console.log("Mood:", m)} />
             </div>
@@ -303,7 +327,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* --- MODALS & FLOATING ELEMENTS (Preserved) --- */}
+      {/* --- MODALS & FLOATING ELEMENTS (No changes here) --- */}
       <AnimatePresence>
         {showScanner && (
           <motion.div
@@ -368,7 +392,6 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {scanResult && (
           <motion.div
@@ -390,8 +413,6 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* AI Assistant is now a floating button for easy access */}
       <AIAssistant />
     </DashboardLayout>
   );

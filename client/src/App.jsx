@@ -8,6 +8,7 @@ import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import TeacherDashboard from "./pages/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
+import AiDashboardPage from "./pages/AiDashboardPage.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ClassManagement from "./pages/ClassManagement.jsx";
@@ -32,7 +33,13 @@ function App() {
 
   return (
     // ✅ Apply Tailwind dark mode class here
-    <div className={theme === "dark" ? "dark bg-slate-900 text-white min-h-screen" : "bg-white text-slate-900 min-h-screen"}>
+    <div
+      className={
+        theme === "dark"
+          ? "dark bg-slate-900 text-white min-h-screen"
+          : "bg-white text-slate-900 min-h-screen"
+      }
+    >
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -158,6 +165,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-dashboard"
+          element={
+            <ProtectedRoute role="student">
+              <AiDashboardPage />
             </ProtectedRoute>
           }
         />

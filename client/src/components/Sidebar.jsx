@@ -12,7 +12,8 @@ import {
   FileArchive,
   GraduationCap,
   Mail,
-  CalendarCheck, // ✨ IMPORTED ICON
+  CalendarCheck,
+  Sparkles,
 } from "lucide-react";
 
 // ✅ Reusable Sub-component for Navigation Links
@@ -96,7 +97,11 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             icon: <LayoutDashboard className="h-4 w-4" />,
             label: "Dashboard",
           },
-          // ✨ ADDED ATTENDANCE LINK FOR STUDENTS
+          {
+            to: "/ai-dashboard",
+            icon: <Sparkles className="h-4 w-4" />,
+            label: "AI Hub",
+          },
           {
             to: "/attendance",
             icon: <CalendarCheck className="h-4 w-4" />,
