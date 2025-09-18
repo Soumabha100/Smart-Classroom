@@ -274,6 +274,7 @@ export default function AiDashboardPage() {
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.5, ease: "easeInOut" }}
                   className="absolute inset-0 flex items-center text-lg text-slate-400"
+                  onClick={() => setQuery(shuffledPrompts[currentPromptIndex])}
                 >
                   {shuffledPrompts[currentPromptIndex]}
                 </motion.span>
@@ -286,7 +287,7 @@ export default function AiDashboardPage() {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="" // Placeholder is now handled by the animated span
+            placeholder=""
             className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
           />
           <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110">
@@ -333,11 +334,11 @@ export default function AiDashboardPage() {
             <motion.div
               className="flex gap-4"
               animate={{
-                x: `calc(-${(carouselIndex * 100) / cardCount}% - ${
-                  carouselIndex * 16
+                x: `calc(-${(carouselIndex * 100) / 3}% - ${
+                  (carouselIndex * 16 * 2) / 3
                 }px)`,
               }}
-              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               {featureList.map((feature) => (
                 <ToolCard
