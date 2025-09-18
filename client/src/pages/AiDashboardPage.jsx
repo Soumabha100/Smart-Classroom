@@ -1,11 +1,9 @@
 // client/src/pages/AiDashboardPage.jsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  X,
-  Bot,
   ArrowRight,
   BookOpen,
   ListTodo,
@@ -13,216 +11,349 @@ import {
   Briefcase,
   Download,
   BarChart2,
-  LifeBuoy,
-  FileText,
+  ArrowUp,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Paperclip,
+  Mic,
+  Image as ImageIcon,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 
-// --- Reusable Component for Feature Cards ---
-const FeatureCard = ({ icon, title, description, onClick }) => (
-  <motion.div
-    whileHover={{
-      y: -5,
-      boxShadow:
-        "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-    }}
-    className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer flex flex-col"
+// --- Reusable Component: ToolCard (Unchanged) ---
+const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
+  <div
     onClick={onClick}
+    className={`relative h-48 p-6 rounded-2xl cursor-pointer transition-all duration-300 flex-shrink-0 ${
+      isSelected
+        ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30"
+        : "bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600"
+    }`}
+    style={{ width: "calc(100% / 3 - (16px * 2 / 3))" }}
   >
-    <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 mb-4">
+    <div
+      className={`mb-3 w-12 h-12 flex items-center justify-center rounded-xl transition-colors duration-300 ${
+        isSelected
+          ? "bg-white/20 text-white"
+          : "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300"
+      }`}
+    >
       {icon}
     </div>
-    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
+    <h3
+      className={`font-bold transition-colors duration-300 ${
+        isSelected ? "text-white" : "text-slate-800 dark:text-white"
+      }`}
+    >
       {title}
     </h3>
-    <p className="text-slate-500 dark:text-slate-400 text-sm flex-grow">
+    <p
+      className={`text-sm mt-1 transition-colors duration-300 ${
+        isSelected ? "text-white/70" : "text-slate-500 dark:text-slate-400"
+      }`}
+    >
       {description}
     </p>
-    <div className="mt-4 text-indigo-600 dark:text-indigo-400 font-semibold flex items-center">
-      Explore <ArrowRight className="w-4 h-4 ml-1" />
+    <div
+      className={`absolute bottom-4 right-4 p-1 rounded-full transition-all duration-300 ${
+        isSelected
+          ? "bg-white text-indigo-600 scale-100"
+          : "bg-slate-100 dark:bg-slate-700 scale-0"
+      }`}
+    >
+      <ArrowRight className="w-4 h-4" />
+    </div>
+  </div>
+);
+
+// --- Reusable Component: FeatureDisplay (Unchanged) ---
+const FeatureDisplay = ({ feature }) => (
+  <motion.div
+    key={feature.id}
+    initial={{ opacity: 0, y: 30 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -30 }}
+    transition={{ duration: 0.4, ease: "easeInOut" }}
+    className="bg-white/50 dark:bg-slate-800/50 p-8 rounded-b-2xl border-x border-b border-slate-200 dark:border-slate-700"
+  >
+    <div className="flex items-center gap-4">
+      <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300">
+        {feature.icon}
+      </div>
+      <div>
+        <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+          {feature.title}
+        </h3>
+        <p className="text-slate-500 dark:text-slate-400">
+          {feature.description}
+        </p>
+      </div>
+    </div>
+    <div className="mt-6 h-64 bg-slate-100 dark:bg-slate-700/50 rounded-lg flex items-center justify-center">
+      <p className="text-slate-400 dark:text-slate-500 text-sm">
+        Full implementation of {feature.title} will appear here.
+      </p>
     </div>
   </motion.div>
 );
 
-// --- Main AI Dashboard Page Component ---
+// --- NEW Reusable Component: ActionButton ---
+const ActionButton = ({ icon, label }) => (
+  <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+    {icon}
+    <span>{label}</span>
+  </button>
+);
+
+// --- The Final, Merged AI Dashboard Page ---
 export default function AiDashboardPage() {
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      sender: "ai",
-      text: "Hello! How can I assist you with your studies today?",
-    },
-  ]);
-  const [inputText, setInputText] = useState("");
+  const [query, setQuery] = useState("");
+  const [showContent, setShowContent] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
+  // --- NEW: Logic for Animated Suggestive Prompts ---
+  const prompts = [
+    "Generate me this week's table",
+    "Make a study plan for my exams",
+    "Explain this topic in simple words",
+    "Give me practice questions from Physics",
+    "Test me with 5 MCQs from Chapter 2",
+    "Revise yesterday’s notes in short",
+    "Suggest effective revision tips",
+    "Create a timetable for my daily routine",
+    "Help me prepare for viva questions",
+    "Break down this formula step by step",
+    "Give a motivational tip to stay consistent",
+    "Explain this program line by line",
+    "List important definitions from Chapter 3",
+    "Summarize today’s lecture in points",
+    "Generate a mind map for this topic",
+    "Suggest group study activities",
+    "How to reduce exam stress",
+    "Highlight the key topics for mid-sem",
+    "Create a mnemonic for these terms",
+    "Generate an assignment outline",
+    "Give feedback on my project idea",
+    "How to score more",
+    "Help me focus more in studies",
+    "Summarize my Computer Science Chapter 1",
+    "How to memorize notes efficiently",
+    "Generate a quick quiz for me",
+    "Analyze and give a full review of my grade card",
+    "How to manage my time efficiently",
+    "Give a nice plan for this weekend",
+    "Generate the flashcards for me",
+  ];
 
-    // Add user message and a mock AI response
-    setMessages((prev) => [...prev, { sender: "user", text: inputText }]);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: `Thinking about "${inputText}"...` },
-      ]);
-    }, 1000);
+  const [shuffledPrompts, setShuffledPrompts] = useState([]);
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
 
-    setInputText("");
-  };
+  useEffect(() => {
+    const shuffle = (array) => {
+      let currentIndex = array.length,
+        randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [
+          array[randomIndex],
+          array[currentIndex],
+        ];
+      }
+      return array;
+    };
+    setShuffledPrompts(shuffle([...prompts]));
+  }, []);
+
+  useEffect(() => {
+    if (shuffledPrompts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentPromptIndex(
+        (prevIndex) => (prevIndex + 1) % shuffledPrompts.length
+      );
+    }, 4000); // Cycle every 4 seconds
+    return () => clearInterval(interval);
+  }, [shuffledPrompts]);
 
   const featureList = [
     {
+      id: "suggestion",
       icon: <BookOpen />,
-      title: "Learning Suggestion",
-      description:
-        "Get personalized recommendations for articles, videos, and courses.",
+      title: "Learning Suggestions",
+      description: "Get curated study recommendations.",
     },
     {
-      icon: <ListTodo />,
-      title: "To-Do Activity List",
-      description: "Manage your daily tasks and assignments in one place.",
-    },
-    {
+      id: "practice",
       icon: <BrainCircuit />,
-      title: "Daily Practice Session",
-      description:
-        "Engage with tailored quizzes and exercises to sharpen your skills.",
+      title: "Practice Sessions",
+      description: "Sharpen your skills with AI quizzes.",
     },
     {
-      icon: <Download />,
-      title: "Study Materials & Drive",
-      description:
-        "Access all your notes, documents, and resources from your cloud drive.",
+      id: "planner",
+      icon: <ListTodo />,
+      title: "Study Planner",
+      description: "Organize your schedule intelligently.",
     },
     {
-      icon: <FileText />,
-      title: "Previous Year Questions",
-      description: "Review and analyze past exam papers and solutions.",
-    },
-    {
+      id: "career",
       icon: <Briefcase />,
-      title: "Career Guidance Mode",
-      description:
-        "Explore career paths, skill requirements, and get expert advice.",
+      title: "Career Guidance",
+      description: "Explore potential career paths.",
     },
     {
+      id: "analysis",
       icon: <BarChart2 />,
       title: "Performance Analysis",
-      description:
-        "Visualize your academic progress with detailed charts and insights.",
+      description: "Visualize your academic progress.",
     },
     {
-      icon: <LifeBuoy />,
-      title: "Help and Support",
-      description:
-        "Find answers to your questions or get in touch with our support team.",
+      id: "drive",
+      icon: <Download />,
+      title: "My Drive",
+      description: "Access your cloud resources.",
     },
   ];
 
+  const [selectedFeature, setSelectedFeature] = useState(featureList[0]);
+
+  // --- IMPROVED Carousel Logic ---
+  const AUTO_SLIDE_INTERVAL = 5000;
+  const cardCount = featureList.length;
+
+  const handleNext = () => {
+    setCarouselIndex((prevIndex) => (prevIndex + 1) % cardCount);
+  };
+  const handlePrev = () => {
+    setCarouselIndex((prevIndex) => (prevIndex - 1 + cardCount) % cardCount);
+  };
+
+  useEffect(() => {
+    const slideTimer = setInterval(handleNext, AUTO_SLIDE_INTERVAL);
+    return () => clearInterval(slideTimer);
+  }, [carouselIndex]);
+
+  const handleToolSelect = (feature) => {
+    setSelectedFeature(feature);
+    setShowContent(true);
+  };
+
   return (
     <DashboardLayout>
-      <div className="relative min-h-screen">
-        {/* Header with Search/Chat Bar */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-              AI Dashboard
-            </h1>
-            <p className="mt-1 text-slate-500 dark:text-slate-400">
-              Your intelligent hub for personalized learning and productivity.
-            </p>
-          </div>
-          <button
-            onClick={() => setIsChatOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105"
+      <div className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
+        {/* --- HERO SECTION (Unchanged) --- */}
+        <div className="text-center mb-12">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white"
           >
-            <Search className="w-5 h-5" />
-            <span className="hidden sm:inline">Chat with AI</span>
+            Your Personal AI Study Partner
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
+            className="mt-4 max-w-xl mx-auto text-slate-500 dark:text-slate-400"
+          >
+            Ask complex questions, get help with assignments, or explore one of
+            your powerful AI tools below.
+          </motion.p>
+        </div>
+
+        {/* --- MERGED: Redesigned Chat Interface --- */}
+        <div className="relative mb-6">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
+          <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
+            <AnimatePresence>
+              {!isFocused && query === "" && (
+                <motion.span
+                  key={currentPromptIndex}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="absolute inset-0 flex items-center text-lg text-slate-400"
+                >
+                  {shuffledPrompts[currentPromptIndex]}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="" // Placeholder is now handled by the animated span
+            className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
+          />
+          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110">
+            <ArrowUp className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {featureList.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
-          ))}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center justify-center gap-3 mb-12"
+        >
+          <ActionButton icon={<Paperclip size={14} />} label="Attach File" />
+          <ActionButton icon={<ImageIcon size={14} />} label="Upload Image" />
+          <ActionButton icon={<Mic size={14} />} label="Use Voice" />
+        </motion.div>
+
+        {/* --- TOOLKIT SECTION: FLUID SLIDING CAROUSEL --- */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                AI Toolkit
+              </h2>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrev}
+                className="p-2 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="p-2 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-4"
+              animate={{
+                x: `calc(-${(carouselIndex * 100) / cardCount}% - ${
+                  carouselIndex * 16
+                }px)`,
+              }}
+              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+            >
+              {featureList.map((feature) => (
+                <ToolCard
+                  key={feature.id}
+                  {...feature}
+                  isSelected={showContent && selectedFeature.id === feature.id}
+                  onClick={() => handleToolSelect(feature)}
+                />
+              ))}
+            </motion.div>
+          </div>
         </div>
 
-        {/* AI Chat Window (Expandable) */}
+        {/* --- DYNAMIC CONTENT DISPLAY AREA (Unchanged) --- */}
         <AnimatePresence>
-          {isChatOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              transition={{ type: "spring", damping: 20, stiffness: 200 }}
-              className="fixed bottom-0 right-0 sm:bottom-8 sm:right-8 w-full sm:w-96 h-[70vh] sm:h-[500px] bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col z-50"
-            >
-              {/* Chat Header */}
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <Bot className="text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="font-bold text-lg">AI Assistant</h3>
-                </div>
-                <button
-                  onClick={() => setIsChatOpen(false)}
-                  className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-                >
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
-              </div>
-
-              {/* Message Area */}
-              <div className="flex-grow p-4 space-y-4 overflow-y-auto">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-end gap-2 ${
-                      msg.sender === "user" ? "justify-end" : ""
-                    }`}
-                  >
-                    {msg.sender === "ai" && (
-                      <div className="w-8 h-8 flex-shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                        <Bot className="w-5 h-5 text-slate-500" />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-2xl ${
-                        msg.sender === "user"
-                          ? "bg-indigo-600 text-white rounded-br-none"
-                          : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none"
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Input Form */}
-              <form
-                onSubmit={handleSendMessage}
-                className="p-4 border-t border-slate-200 dark:border-slate-700 flex-shrink-0"
-              >
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Ask anything..."
-                    className="w-full bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-full py-3 pl-4 pr-12 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700"
-                  >
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
+          {showContent && <FeatureDisplay feature={selectedFeature} />}
         </AnimatePresence>
       </div>
     </DashboardLayout>
