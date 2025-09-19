@@ -16,7 +16,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-// ✅ Reusable Sub-component for Navigation Links
 const SidebarLink = ({ to, icon, children, currentPath }) => {
   const isActive = currentPath.startsWith(to);
   return (
@@ -126,7 +125,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   return (
     <>
-      {/* Mobile Overlay */}
       <div
         className={`fixed inset-0 z-20 bg-black/60 transition-opacity lg:hidden ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -134,8 +132,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         onClick={toggleSidebar}
         aria-hidden="true"
       ></div>
-
-      {/* Sidebar */}
       <aside
         id="sidebar"
         className={`fixed inset-y-0 left-0 z-30 flex h-full w-64 flex-col border-r transition-transform duration-300 ease-in-out 
@@ -143,8 +139,17 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           bg-white text-slate-800 dark:bg-slate-900 dark:border-r-slate-800 dark:text-white`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-6 dark:border-b-slate-800">
-          <Link to="/" className="text-xl font-bold">
-            Smart Classroom
+          {/* This is the updated brand name and logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-xl font-bold text-slate-800 dark:text-white"
+          >
+            <img
+              src="/logos/icon.png"
+              alt="IntelliClass Logo"
+              className="h-8 w-8 rounded-md"
+            />
+            <span>IntelliClass</span>
           </Link>
           <button
             onClick={toggleSidebar}
@@ -154,8 +159,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             <ChevronLeft className="h-6 w-6" />
           </button>
         </div>
-
-        {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-4 py-4">
           <ul className="grid gap-1 font-medium">
             {navLinks.map((link) => (
@@ -170,8 +173,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             ))}
           </ul>
         </nav>
-
-        {/* Logout Button */}
         <div className="border-t p-4 dark:border-t-slate-800">
           <button
             onClick={logout}

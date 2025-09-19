@@ -1,4 +1,3 @@
-// client/src/components/Navbar.jsx
 import React, { useState } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 
@@ -32,14 +31,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link
-              to="/"
-              className="text-2xl font-bold text-white tracking-wider"
-            >
-              Smart Classroom
-            </Link>
-          </div>
+          {/* FIX: Changed 'user' to 'token' to correctly check login state */}
+          <NavLink
+            to={token ? dashboardPath : "/"}
+            className="flex items-center"
+          >
+            {/* FIX: Changed file extension to .png as requested */}
+            <img src="/logos/logotext.png" alt="IntelliClass" className="h-8" />
+          </NavLink>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8">
@@ -93,7 +92,6 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-white p-2"
             >
-              {/* Icon for menu open/close */}
               {isMenuOpen ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -154,7 +152,6 @@ export default function Navbar() {
             {!isAuthPage &&
               (token ? (
                 <>
-                  {/* FIX: Use the dynamic dashboardPath here for the mobile menu */}
                   <NavLink
                     to={dashboardPath}
                     className="text-gray-300 hover:text-white py-2"
