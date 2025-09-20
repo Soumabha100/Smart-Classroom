@@ -7,6 +7,7 @@ const Attendance = require("../models/Attendance");
 const Class = require("../models/Class");
 const Assignment = require("../models/Assignment");
 const Submission = require("../models/Submission");
+const ChatHistory = require('../models/ChatHistory');
 
 // --- CONFIGURATION ---
 const aiCache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
@@ -173,4 +174,66 @@ exports.generateDashboard = async (req, res) => {
     console.error("Error in generateDashboard controller:", err);
     res.status(500).json({ message: "An unexpected server error occurred." });
   }
+};
+
+exports.getChatHistory = async (req, res) => {
+    try {
+        const chatHistory = await ChatHistory.findOne({ userId: req.user.id });
+        if (chatHistory) {
+            res.status(200).json(chatHistory.history);
+        } else {
+            // No history, return an empty array
+            res.status(200).json([]);
+        }
+    } catch (error) {
+        console.error('Error fetching chat history:', error);
+        res.status(500).json({ message: 'Server error while fetching chat history.' });
+    }
+};
+
+// NEW FUNCTION: Handle a conversation turn with the AI
+exports.chatWithAI = async (req, res) => {
+    const { prompt } = req.body;
+    const userId = req.user.id;
+
+    if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required.' });
+    }
+
+    try {
+        // Find user's chat history document, or create one if it's the first time
+        let chatHistory = await ChatHistory.findOne({ userId });
+        if (!chatHistory) {
+            chatHistory = new ChatHistory({ userId, history: [] });
+        }
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+        // Start a chat session with the user's existing conversation history
+        const chat = model.startChat({
+            history: chatHistory.history,
+            generationConfig: {
+                maxOutputTokens: 1000,
+            },
+        });
+
+        // Send the new prompt to the AI
+        const result = await chat.sendMessage(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Save the new user prompt and the AI response to the database
+        chatHistory.history.push(
+            { role: 'user', parts: [{ text: prompt }] },
+            { role: 'model', parts: [{ text }] }
+        );
+        await chatHistory.save();
+
+        // Send just the AI's new response back to the client
+        res.status(200).json({ response: text });
+
+    } catch (error) {
+        console.error('Error in AI chat:', error);
+        res.status(500).json({ message: 'An error occurred with the AI service.' });
+    }
 };

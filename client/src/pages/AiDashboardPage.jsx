@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -16,10 +16,46 @@ import {
   Paperclip,
   Mic,
   Image as ImageIcon,
-} from "lucide-react";
+} from "lucide-react"; // Corrected: FiSend has been removed
 import DashboardLayout from "../components/DashboardLayout";
+import { fetchChatHistory, sendChatMessage } from "../api/apiService";
 
-// --- Reusable Component: ToolCard (Unchanged) ---
+// --- Reusable Component: Message Bubble ---
+const Message = ({ message }) => {
+  const isUser = message.role === "user";
+  const messageEndRef = useRef(null);
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [message]);
+
+  const renderText = (text) => {
+    return text
+      .split("**")
+      .map((part, index) =>
+        index % 2 === 1 ? <strong key={index}>{part}</strong> : part
+      );
+  };
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
+      <div
+        className={`max-w-xl p-3 rounded-lg shadow-md ${
+          isUser
+            ? "bg-indigo-500 text-white"
+            : "bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-gray-200"
+        }`}
+      >
+        <p className="text-sm whitespace-pre-wrap">
+          {renderText(message.parts[0].text)}
+        </p>
+      </div>
+      <div ref={messageEndRef} />
+    </div>
+  );
+};
+
+// --- Reusable Component: ToolCard ---
 const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
   <div
     onClick={onClick}
@@ -65,7 +101,7 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
   </div>
 );
 
-// --- Reusable Component: FeatureDisplay (Unchanged) ---
+// --- Reusable Component: FeatureDisplay ---
 const FeatureDisplay = ({ feature }) => (
   <motion.div
     key={feature.id}
@@ -96,7 +132,7 @@ const FeatureDisplay = ({ feature }) => (
   </motion.div>
 );
 
-// --- NEW Reusable Component: ActionButton ---
+// --- Reusable Component: ActionButton ---
 const ActionButton = ({ icon, label }) => (
   <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
     {icon}
@@ -104,14 +140,22 @@ const ActionButton = ({ icon, label }) => (
   </button>
 );
 
-// --- The Final, Merged AI Dashboard Page ---
+// --- The Main AI Dashboard Page ---
 export default function AiDashboardPage() {
+  // --- STATE MANAGEMENT for Chat ---
   const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatContainerRef = useRef(null);
+
+  // --- STATE MANAGEMENT for UI ---
   const [showContent, setShowContent] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
+  const [shuffledPrompts, setShuffledPrompts] = useState([]);
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
 
-  // --- NEW: Logic for Animated Suggestive Prompts ---
+  // --- Data for UI elements ---
   const prompts = [
     "Generate me this week's table",
     "Make a study plan for my exams",
@@ -144,37 +188,6 @@ export default function AiDashboardPage() {
     "Give a nice plan for this weekend",
     "Generate the flashcards for me",
   ];
-
-  const [shuffledPrompts, setShuffledPrompts] = useState([]);
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
-
-  useEffect(() => {
-    const shuffle = (array) => {
-      let currentIndex = array.length,
-        randomIndex;
-      while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [
-          array[randomIndex],
-          array[currentIndex],
-        ];
-      }
-      return array;
-    };
-    setShuffledPrompts(shuffle([...prompts]));
-  }, []);
-
-  useEffect(() => {
-    if (shuffledPrompts.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentPromptIndex(
-        (prevIndex) => (prevIndex + 1) % shuffledPrompts.length
-      );
-    }, 4000); // Cycle every 4 seconds
-    return () => clearInterval(interval);
-  }, [shuffledPrompts]);
-
   const featureList = [
     {
       id: "suggestion",
@@ -213,25 +226,77 @@ export default function AiDashboardPage() {
       description: "Access your cloud resources.",
     },
   ];
-
   const [selectedFeature, setSelectedFeature] = useState(featureList[0]);
 
-  // --- IMPROVED Carousel Logic ---
-  const AUTO_SLIDE_INTERVAL = 5000;
-  const cardCount = featureList.length;
-
-  const handleNext = () => {
-    setCarouselIndex((prevIndex) => (prevIndex + 1) % cardCount);
-  };
-  const handlePrev = () => {
-    setCarouselIndex((prevIndex) => (prevIndex - 1 + cardCount) % cardCount);
-  };
+  // --- EFFECTS for UI animations and data fetching ---
+  useEffect(() => {
+    const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
+    setShuffledPrompts(shuffle(prompts));
+  }, []);
 
   useEffect(() => {
-    const slideTimer = setInterval(handleNext, AUTO_SLIDE_INTERVAL);
-    return () => clearInterval(slideTimer);
-  }, [carouselIndex]);
+    if (shuffledPrompts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentPromptIndex((prev) => (prev + 1) % shuffledPrompts.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [shuffledPrompts]);
 
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoading(true);
+      try {
+        const history = await fetchChatHistory();
+        setMessages(history);
+      } catch (error) {
+        console.error("Failed to fetch chat history", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  useEffect(() => {
+    chatContainerRef.current?.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  // --- HANDLER FUNCTIONS ---
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!query.trim() || isLoading) return;
+
+    const userMessage = { role: "user", parts: [{ text: query }] };
+    setMessages((prev) => [...prev, userMessage]);
+    const currentQuery = query;
+    setQuery("");
+    setIsLoading(true);
+
+    try {
+      const data = await sendChatMessage(currentQuery);
+      const aiMessage = { role: "model", parts: [{ text: data.response }] };
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Failed to send message", error);
+      const errorMessage = {
+        role: "model",
+        parts: [{ text: "Sorry, I encountered an error. Please try again." }],
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = () =>
+    setCarouselIndex((prev) => (prev + 1) % featureList.length);
+  const handlePrev = () =>
+    setCarouselIndex(
+      (prev) => (prev - 1 + featureList.length) % featureList.length
+    );
   const handleToolSelect = (feature) => {
     setSelectedFeature(feature);
     setShowContent(true);
@@ -240,7 +305,7 @@ export default function AiDashboardPage() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
-        {/* --- HERO SECTION (Unchanged) --- */}
+        {/* --- HERO SECTION & CHAT --- */}
         <div className="text-center mb-12">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -259,26 +324,29 @@ export default function AiDashboardPage() {
           </motion.p>
         </div>
 
-        {/* --- MERGED: Redesigned Chat Interface --- */}
-        <div className="relative mb-6">
+        {/* --- CHAT DISPLAY & INPUT FORM --- */}
+        <div
+          className="max-h-[calc(100vh-550px)] overflow-y-auto pr-2 mb-4"
+          ref={chatContainerRef}
+        >
+          {messages.map((msg, index) => (
+            <Message key={index} message={msg} />
+          ))}
+          {isLoading && messages[messages.length - 1]?.role === "user" && (
+            <div className="flex justify-start mb-4">
+              <div className="max-w-xl p-3 rounded-lg shadow-md bg-gray-200 dark:bg-slate-800">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-75"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-150"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-250"></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleSendMessage} className="relative mb-6">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
-          <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
-            <AnimatePresence>
-              {!isFocused && query === "" && (
-                <motion.span
-                  key={currentPromptIndex}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                  className="absolute inset-0 flex items-center text-lg text-slate-400"
-                  onClick={() => setQuery(shuffledPrompts[currentPromptIndex])}
-                >
-                  {shuffledPrompts[currentPromptIndex]}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </div>
           <input
             type="text"
             value={query}
@@ -287,11 +355,32 @@ export default function AiDashboardPage() {
             onBlur={() => setIsFocused(false)}
             placeholder=""
             className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
+            disabled={isLoading}
           />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110">
+          {!isFocused && query === "" && (
+            <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
+              <AnimatePresence>
+                <motion.span
+                  key={currentPromptIndex}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="absolute inset-0 flex items-center text-lg text-slate-400"
+                >
+                  {shuffledPrompts[currentPromptIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          )}
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110 disabled:bg-indigo-300 disabled:scale-100"
+            disabled={isLoading || !query.trim()}
+          >
             <ArrowUp className="w-5 h-5" />
           </button>
-        </div>
+        </form>
 
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -304,7 +393,7 @@ export default function AiDashboardPage() {
           <ActionButton icon={<Mic size={14} />} label="Use Voice" />
         </motion.div>
 
-        {/* --- TOOLKIT SECTION: FLUID SLIDING CAROUSEL --- */}
+        {/* --- TOOLKIT SECTION --- */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -350,7 +439,6 @@ export default function AiDashboardPage() {
           </div>
         </div>
 
-        {/* --- DYNAMIC CONTENT DISPLAY AREA (Unchanged) --- */}
         <AnimatePresence>
           {showContent && <FeatureDisplay feature={selectedFeature} />}
         </AnimatePresence>

@@ -42,6 +42,7 @@ const UserSchema = new mongoose.Schema(
       ref: "Parent",
       default: null,
     },
+    chatHistory: { type: mongoose.Schema.Types.ObjectId, ref: "ChatHistory" },
   },
   { timestamps: true }
 ); // Automatically adds createdAt and updatedAt fields

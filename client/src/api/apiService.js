@@ -50,4 +50,16 @@ export const deleteAssignment = (id) => api.delete(`/assignments/${id}`);
 // Future update example:
 // export const updateAssignment = (id, data) => api.put(`/assignments/${id}`, data);
 
+// Get the user's full chat history from the backend
+export const fetchChatHistory = async () => {
+    const response = await api.get('/ai/chat/history');
+    return response.data;
+};
+
+// Send a new prompt to the backend and get the AI's response
+export const sendChatMessage = async (prompt) => {
+    const response = await api.post('/ai/chat', { prompt });
+    return response.data;
+};
+
 export default api;

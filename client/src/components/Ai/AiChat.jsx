@@ -1,68 +1,145 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ArrowUp, Paperclip, Mic, FileText, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { FiSend } from "react-icons/fi";
+import { fetchChatHistory, sendChatMessage } from "../../api/apiService";
+import { useAuth } from "../../context/AuthContext";
 
-// Reusable action button component
-const ActionButton = ({ icon, label }) => (
-  <motion.button 
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-  >
-    {icon}
-    <span>{label}</span>
-  </motion.button>
-);
+// A reusable component for rendering a single message bubble
+const Message = ({ message }) => {
+  const isUser = message.role === "user";
+  const messageEndRef = useRef(null);
 
-export default function AiChat() {
-  const [query, setQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  // Auto-scroll to the latest message
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [message]);
+
+  // Simple renderer for bold text (e.g., **text**)
+  const renderText = (text) => {
+    return text
+      .split("**")
+      .map((part, index) =>
+        index % 2 === 1 ? <strong key={index}>{part}</strong> : part
+      );
+  };
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
-      
-      {/* Main Search/Chat Input Area */}
-      <motion.div 
-        layout 
-        className="w-full"
-        transition={{ duration: 0.3, ease: "easeInOut" }}
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
+      <div
+        className={`max-w-xl p-3 rounded-lg shadow-md ${
+          isUser
+            ? "bg-indigo-500 text-white"
+            : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+        }`}
       >
-        <div className={`relative w-full transition-all duration-300 ${isFocused ? 'mb-4' : 'mb-8'}`}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder="Ask anything or start a new topic..."
-            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-14 h-16 text-lg placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow focus:shadow-xl focus:shadow-indigo-500/10"
-          />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:bg-indigo-400 transition-colors transform hover:scale-110 disabled:scale-100">
-            <ArrowUp className="w-5 h-5" />
-          </button>
-        </div>
-      </motion.div>
-      
-      {/* Action Buttons Below Search Bar */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: isFocused ? 0 : 1, y: isFocused ? -10 : 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex items-center gap-3"
-      >
-        <ActionButton icon={<Paperclip size={16} />} label="Attach File" />
-        <ActionButton icon={<FileText size={16} />} label="Focus on Writing" />
-        <ActionButton icon={<ImageIcon size={16} />} label="Generate Image" />
-        <ActionButton icon={<Mic size={16} />} label="Use Microphone" />
-      </motion.div>
-
-      {/* Placeholder for AI Response (this will be built out later) */}
-      <div className="mt-12 text-center">
-        <p className="text-slate-400 dark:text-slate-500">
-          Your conversation with the AI will appear here.
+        <p className="text-sm whitespace-pre-wrap">
+          {renderText(message.parts[0].text)}
         </p>
       </div>
+      <div ref={messageEndRef} />
     </div>
   );
-}
+};
+
+// The main AI Chat Component
+const AiChat = () => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const chatContainerRef = useRef(null);
+
+  // Fetch chat history when the component first loads
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoading(true);
+      try {
+        const history = await fetchChatHistory();
+        setMessages(history);
+      } catch (error) {
+        console.error("Failed to fetch chat history", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  // Scroll chat container to the bottom when new messages are added
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Handle form submission
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage = { role: "user", parts: [{ text: input }] };
+    setMessages((prev) => [...prev, userMessage]); // Optimistically update UI
+    const currentInput = input;
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const data = await sendChatMessage(currentInput);
+      const aiMessage = { role: "model", parts: [{ text: data.response }] };
+      setMessages((prev) => [...prev.slice(0, -1), userMessage, aiMessage]); // Replace optimistic update with final
+    } catch (error) {
+      console.error("Failed to send message", error);
+      const errorMessage = {
+        role: "model",
+        parts: [{ text: "Sorry, I encountered an error. Please try again." }],
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[70vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4">
+      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2">
+        IntelliClass AI Assistant
+      </h2>
+
+      <div ref={chatContainerRef} className="flex-grow overflow-y-auto pr-2">
+        {messages.map((msg, index) => (
+          <Message key={index} message={msg} />
+        ))}
+        {isLoading && messages[messages.length - 1]?.role === "user" && (
+          <div className="flex justify-start mb-4">
+            <div className="max-w-xl p-3 rounded-lg shadow-md bg-gray-200 dark:bg-gray-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-75"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-150"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-250"></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={handleSendMessage} className="mt-4 flex items-center">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask me anything about your studies..."
+          className="flex-grow p-3 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          className="bg-indigo-500 text-white p-3 rounded-r-lg hover:bg-indigo-600 disabled:bg-indigo-300 transition-colors"
+          disabled={isLoading || !input.trim()}
+        >
+          <FiSend size={20} />
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default AiChat;
