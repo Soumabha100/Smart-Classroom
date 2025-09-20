@@ -16,34 +16,34 @@ import {
   Paperclip,
   Mic,
   Image as ImageIcon,
-} from "lucide-react"; // Corrected: FiSend has been removed
+  History,
+  X, // New Icons for History Modal
+} from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 import { fetchChatHistory, sendChatMessage } from "../api/apiService";
+import ReactMarkdown from "react-markdown";
+import { TypeAnimation } from "react-type-animation";
 
-// --- Reusable Component: Message Bubble ---
+// --- Reusable Component: Message Bubble (Unchanged) ---
 const Message = ({ message }) => {
   const isUser = message.role === "user";
   const messageEndRef = useRef(null);
-
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [message]);
-
-  const renderText = (text) => {
-    return text
+  const renderText = (text) =>
+    text
       .split("**")
       .map((part, index) =>
         index % 2 === 1 ? <strong key={index}>{part}</strong> : part
       );
-  };
-
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
         className={`max-w-xl p-3 rounded-lg shadow-md ${
           isUser
             ? "bg-indigo-500 text-white"
-            : "bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-gray-200"
+            : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200"
         }`}
       >
         <p className="text-sm whitespace-pre-wrap">
@@ -55,7 +55,59 @@ const Message = ({ message }) => {
   );
 };
 
-// --- Reusable Component: ToolCard ---
+// --- NEW Reusable Component: Chat History Modal ---
+const ChatHistoryModal = ({ history, isLoading, onClose }) => (
+  <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl h-[80vh] rounded-2xl shadow-xl flex flex-col"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      >
+        <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-slate-500" />
+            <h3 className="font-bold text-slate-800 dark:text-white">
+              Conversation History
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </header>
+        <div className="flex-grow overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            </div>
+          ) : history.length > 0 ? (
+            history.map((msg, index) => <Message key={index} message={msg} />)
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-slate-400 text-center">
+                No history yet. <br /> Start a conversation!
+              </p>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  </AnimatePresence>
+);
+
+// --- All your original reusable components are preserved ---
 const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
   <div
     onClick={onClick}
@@ -66,6 +118,7 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
     }`}
     style={{ width: "calc(100% / 3 - (16px * 2 / 3))" }}
   >
+    {" "}
     <div
       className={`mb-3 w-12 h-12 flex items-center justify-center rounded-xl transition-colors duration-300 ${
         isSelected
@@ -74,21 +127,21 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
       }`}
     >
       {icon}
-    </div>
+    </div>{" "}
     <h3
       className={`font-bold transition-colors duration-300 ${
         isSelected ? "text-white" : "text-slate-800 dark:text-white"
       }`}
     >
       {title}
-    </h3>
+    </h3>{" "}
     <p
       className={`text-sm mt-1 transition-colors duration-300 ${
         isSelected ? "text-white/70" : "text-slate-500 dark:text-slate-400"
       }`}
     >
       {description}
-    </p>
+    </p>{" "}
     <div
       className={`absolute bottom-4 right-4 p-1 rounded-full transition-all duration-300 ${
         isSelected
@@ -97,11 +150,9 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
       }`}
     >
       <ArrowRight className="w-4 h-4" />
-    </div>
+    </div>{" "}
   </div>
 );
-
-// --- Reusable Component: FeatureDisplay ---
 const FeatureDisplay = ({ feature }) => (
   <motion.div
     key={feature.id}
@@ -111,51 +162,57 @@ const FeatureDisplay = ({ feature }) => (
     transition={{ duration: 0.4, ease: "easeInOut" }}
     className="bg-white/50 dark:bg-slate-800/50 p-8 rounded-b-2xl border-x border-b border-slate-200 dark:border-slate-700"
   >
+    {" "}
     <div className="flex items-center gap-4">
+      {" "}
       <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300">
-        {feature.icon}
-      </div>
+        {" "}
+        {feature.icon}{" "}
+      </div>{" "}
       <div>
+        {" "}
         <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-          {feature.title}
-        </h3>
+          {" "}
+          {feature.title}{" "}
+        </h3>{" "}
         <p className="text-slate-500 dark:text-slate-400">
-          {feature.description}
-        </p>
-      </div>
-    </div>
+          {" "}
+          {feature.description}{" "}
+        </p>{" "}
+      </div>{" "}
+    </div>{" "}
     <div className="mt-6 h-64 bg-slate-100 dark:bg-slate-700/50 rounded-lg flex items-center justify-center">
+      {" "}
       <p className="text-slate-400 dark:text-slate-500 text-sm">
-        Full implementation of {feature.title} will appear here.
-      </p>
-    </div>
+        {" "}
+        Full implementation of {feature.title} will appear here.{" "}
+      </p>{" "}
+    </div>{" "}
   </motion.div>
 );
-
-// --- Reusable Component: ActionButton ---
 const ActionButton = ({ icon, label }) => (
   <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
-    {icon}
-    <span>{label}</span>
+    {" "}
+    {icon} <span>{label}</span>{" "}
   </button>
 );
 
 // --- The Main AI Dashboard Page ---
 export default function AiDashboardPage() {
-  // --- STATE MANAGEMENT for Chat ---
   const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const chatContainerRef = useRef(null);
+  const [currentResponse, setCurrentResponse] = useState(null); // Holds only the latest AI response
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isResponding, setIsResponding] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
-  // --- STATE MANAGEMENT for UI ---
+  // All your original state for the UI is preserved
   const [showContent, setShowContent] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [shuffledPrompts, setShuffledPrompts] = useState([]);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
 
-  // --- Data for UI elements ---
   const prompts = [
     "Generate me this week's table",
     "Make a study plan for my exams",
@@ -228,12 +285,27 @@ export default function AiDashboardPage() {
   ];
   const [selectedFeature, setSelectedFeature] = useState(featureList[0]);
 
-  // --- EFFECTS for UI animations and data fetching ---
+  // Load history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const history = await fetchChatHistory();
+        setChatHistory(history);
+      } catch (error) {
+        console.error("Failed to fetch chat history", error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  // Your original UI effects
   useEffect(() => {
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     setShuffledPrompts(shuffle(prompts));
   }, []);
-
   useEffect(() => {
     if (shuffledPrompts.length === 0) return;
     const interval = setInterval(() => {
@@ -242,52 +314,39 @@ export default function AiDashboardPage() {
     return () => clearInterval(interval);
   }, [shuffledPrompts]);
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      setIsLoading(true);
-      try {
-        const history = await fetchChatHistory();
-        setMessages(history);
-      } catch (error) {
-        console.error("Failed to fetch chat history", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadHistory();
-  }, []);
-
-  useEffect(() => {
-    chatContainerRef.current?.scrollTo({
-      top: chatContainerRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages]);
-
-  // --- HANDLER FUNCTIONS ---
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!query.trim() || isLoading) return;
+    if (!query.trim() || isResponding) return;
 
-    const userMessage = { role: "user", parts: [{ text: query }] };
-    setMessages((prev) => [...prev, userMessage]);
     const currentQuery = query;
     setQuery("");
-    setIsLoading(true);
+    setIsResponding(true);
+    setCurrentResponse(""); // Clear previous response
+
+    // Optimistically update history for a snappy UX
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "user", parts: [{ text: currentQuery }] },
+    ]);
 
     try {
       const data = await sendChatMessage(currentQuery);
-      const aiMessage = { role: "model", parts: [{ text: data.response }] };
-      setMessages((prev) => [...prev, aiMessage]);
+      setCurrentResponse(data.response); // Set the response for the main display
+      // Add the final AI response to the history
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "model", parts: [{ text: data.response }] },
+      ]);
     } catch (error) {
       console.error("Failed to send message", error);
-      const errorMessage = {
-        role: "model",
-        parts: [{ text: "Sorry, I encountered an error. Please try again." }],
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      const errorMessage = "Sorry, I encountered an error. Please try again.";
+      setCurrentResponse(errorMessage);
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "model", parts: [{ text: errorMessage }] },
+      ]);
     } finally {
-      setIsLoading(false);
+      setIsResponding(false);
     }
   };
 
@@ -304,8 +363,17 @@ export default function AiDashboardPage() {
 
   return (
     <DashboardLayout>
+      {/* Conditionally render the Chat History Modal */}
+      {isHistoryOpen && (
+        <ChatHistoryModal
+          history={chatHistory}
+          isLoading={isLoadingHistory}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
+
       <div className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
-        {/* --- HERO SECTION & CHAT --- */}
+        {/* === HERO SECTION === */}
         <div className="text-center mb-12">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -324,76 +392,99 @@ export default function AiDashboardPage() {
           </motion.p>
         </div>
 
-        {/* --- CHAT DISPLAY & INPUT FORM --- */}
-        <div
-          className="max-h-[calc(100vh-550px)] overflow-y-auto pr-2 mb-4"
-          ref={chatContainerRef}
-        >
-          {messages.map((msg, index) => (
-            <Message key={index} message={msg} />
-          ))}
-          {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex justify-start mb-4">
-              <div className="max-w-xl p-3 rounded-lg shadow-md bg-gray-200 dark:bg-slate-800">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-75"></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-150"></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse delay-250"></div>
-                </div>
+        {/* === MAIN CHAT INPUT FORM === */}
+        <div className="relative mb-6">
+          <form onSubmit={handleSendMessage} className="relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder=""
+              className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
+              disabled={isResponding}
+            />
+            {!isFocused && query === "" && (
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
+                {" "}
+                <AnimatePresence>
+                  {" "}
+                  <motion.span
+                    key={currentPromptIndex}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0 flex items-center text-lg text-slate-400 cursor-text"
+                    onClick={() =>
+                      document.querySelector('input[type="text"]').focus()
+                    }
+                  >
+                    {" "}
+                    {shuffledPrompts[currentPromptIndex]}{" "}
+                  </motion.span>{" "}
+                </AnimatePresence>{" "}
               </div>
-            </div>
-          )}
+            )}
+            <button
+              type="submit"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110 disabled:bg-indigo-300 disabled:scale-100"
+              disabled={isResponding || !query.trim()}
+            >
+              <ArrowUp className="w-5 h-5" />
+            </button>
+          </form>
         </div>
 
-        <form onSubmit={handleSendMessage} className="relative mb-6">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder=""
-            className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
-            disabled={isLoading}
-          />
-          {!isFocused && query === "" && (
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
-              <AnimatePresence>
-                <motion.span
-                  key={currentPromptIndex}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                  className="absolute inset-0 flex items-center text-lg text-slate-400"
-                >
-                  {shuffledPrompts[currentPromptIndex]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          )}
-          <button
-            type="submit"
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110 disabled:bg-indigo-300 disabled:scale-100"
-            disabled={isLoading || !query.trim()}
-          >
-            <ArrowUp className="w-5 h-5" />
-          </button>
-        </form>
-
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex items-center justify-center gap-3 mb-12"
-        >
+        {/* === DYNAMIC RESPONSE & ACTION BUTTONS AREA === */}
+        <div className="flex items-center justify-center gap-3 mb-12">
           <ActionButton icon={<Paperclip size={14} />} label="Attach File" />
           <ActionButton icon={<ImageIcon size={14} />} label="Upload Image" />
           <ActionButton icon={<Mic size={14} />} label="Use Voice" />
-        </motion.div>
+          {/* NEW HISTORY BUTTON */}
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+          >
+            <History size={14} />
+            <span>Recent Activity</span>
+          </button>
+        </div>
 
-        {/* --- TOOLKIT SECTION --- */}
+        {/* This area will show the AI's latest response */}
+        <AnimatePresence>
+          {(isResponding || currentResponse) && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-12 bg-white/50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700"
+            >
+              <ReactMarkdown
+                components={{
+                  p: ({ ...props }) => <p className="mb-2" {...props} />,
+                  ul: ({ ...props }) => (
+                    <ul className="list-disc list-inside ml-4" {...props} />
+                  ),
+                }}
+              >
+                {isResponding ? "Thinking..." : ""}
+              </ReactMarkdown>
+              {currentResponse && !isResponding && (
+                <TypeAnimation
+                  sequence={[currentResponse]}
+                  wrapper="div"
+                  speed={70}
+                  cursor={true}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* === AI TOOLKIT SECTION (Your original component) === */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -438,7 +529,6 @@ export default function AiDashboardPage() {
             </motion.div>
           </div>
         </div>
-
         <AnimatePresence>
           {showContent && <FeatureDisplay feature={selectedFeature} />}
         </AnimatePresence>
