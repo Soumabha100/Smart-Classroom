@@ -6,8 +6,8 @@ import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/apiService"; // API instance for backend calls
 
 import ChatBox from "./ChatBox.jsx"; // Assuming ChatBox.jsx is in src/pages
-import ClassesManager from "../components/ClassMannager.jsx"; // Ensure this path and filename exist exactly
-import AssingmentMannager from "../components/AssingmentMannager.jsx"; // Confirm file and path
+import ClassesManager from "../components/ClassManager.jsx"; // Ensure this path and filename exist exactly
+import AssingmentManager from "../components/AssingmentManager.jsx"; // Confirm file and path
 import Hodfeed from "../components/Hodfeed.jsx"; // Confirm case-sensitive spelling and path
 
 // Dynamically determine secure WebSocket URL
@@ -148,7 +148,7 @@ export default function TeacherDashboard() {
       {/* ClassesManager, AssignmentsManager, HODFeed and ChatBox sections */}
       <div className="mt-10 space-y-8">
         <ClassesManager />
-        <AssingmentMannager classIdProp={classId} />
+        <AssingmentManager classIdProp={classId} />
         <Hodfeed />
         <ChatBox user="Teacher" />
       </div>
