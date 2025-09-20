@@ -1,28 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { generateDashboard } = require('../controllers/aiController');
-
-// Import middleware from their specific, correct files
-const { protect } = require('../middlewares/authMiddleware');
-const { checkRole } = require('../middlewares/checkRole');
-
-const authModule = require('../middlewares/authMiddleware');
-console.log('authModule =>', authModule);
-console.log('typeof authModule.protect =>', typeof authModule.protect);
-
-
+const {
+  generateDashboard,
+  chatWithAI,
+  getChatHistory,
+} = require("../controllers/aiController");
+const { protect } = require("../middlewares/authMiddleware");
+const { checkRole } = require("../middlewares/checkRole");
 
 // @route   POST /api/ai/generate-dashboard
 // @desc    Generate personalized dashboard content for a student
 // @access  Private (Students only)
 router.post(
-    '/generate-dashboard',
-    protect, // Use the correctly imported 'protect' function
-    checkRole(['student']), // Use the correctly imported 'checkRole' function
-    generateDashboard
+  "/generate-dashboard",
+  protect,
+  checkRole(["student"]),
+  generateDashboard
 );
 
-
-
+// Use protect (a middleware function), not the module object
+router.post("/chat", protect, chatWithAI);
+router.get("/chat/history", protect, getChatHistory);
 
 module.exports = router;
