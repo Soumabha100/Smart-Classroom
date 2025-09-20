@@ -20,26 +20,20 @@ import {
   X,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
-import { askAI } from "../api/apiService"; // MODIFIED: Use the new 'askAI' service
+import { askAI } from "../api/apiService";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
-import { TypeAnimation } from "react-type-animation";
-import { Link } from "react-router-dom"; // IMPORTED: For navigation
+import { Link } from "react-router-dom";
+import { TypeAnimation } from "react-type-animation"; // Re-imported for smooth text animation
 
-// --- All of your reusable components like Message, ToolCard, etc., are preserved. ---
-// --- No changes needed for them. ---
+// --- MODIFIED: Message component now uses ReactMarkdown for proper formatting ---
 const Message = ({ message }) => {
   const isUser = message.role === "user";
   const messageEndRef = useRef(null);
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [message]);
-  const renderText = (text) =>
-    text
-      .split("**")
-      .map((part, index) =>
-        index % 2 === 1 ? <strong key={index}>{part}</strong> : part
-      );
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
@@ -49,15 +43,17 @@ const Message = ({ message }) => {
             : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200"
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap">
-          {renderText(message.parts[0].text)}
-        </p>
+        {/* The 'prose' class from Tailwind Typography ensures correct spacing and styling */}
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
+        </div>
       </div>
       <div ref={messageEndRef} />
     </div>
   );
 };
 
+// --- Your other components (ToolCard, FeatureDisplay, etc.) are unchanged ---
 const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
   <div
     onClick={onClick}
@@ -139,16 +135,47 @@ const ActionButton = ({ icon, label }) => (
   </button>
 );
 
+// --- Dynamic "Thinking" Component (Unchanged) ---
+const ThinkingComponent = ({ userQuery }) => {
+  const [thinkingMessage, setThinkingMessage] = useState("Thinking...");
+
+  const thinkingMessages = [
+    "Analyzing your request...",
+    "Consulting my knowledge base...",
+    `Searching for information about "${userQuery}"...`,
+    "Compiling the best response for you...",
+    "Just a moment, formulating the answer...",
+    "Cross-referencing data points...",
+  ];
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % thinkingMessages.length;
+      setThinkingMessage(thinkingMessages[index]);
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [userQuery]);
+
+  return (
+    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+      <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-75"></div>
+      <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-150"></div>
+      <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-250"></div>
+      <span>{thinkingMessage}</span>
+    </div>
+  );
+};
+
 // --- The Main AI Dashboard Page ---
 export default function AiDashboardPage() {
   const [query, setQuery] = useState("");
   const [currentResponse, setCurrentResponse] = useState(null);
   const [isResponding, setIsResponding] = useState(false);
-
-  // MODIFIED: State to manage the current chat session for THIS page
   const [currentChatId, setCurrentChatId] = useState(null);
+  const [lastQuery, setLastQuery] = useState("");
 
-  // All your original state for the UI is preserved
   const [showContent, setShowContent] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -227,11 +254,11 @@ export default function AiDashboardPage() {
   ];
   const [selectedFeature, setSelectedFeature] = useState(featureList[0]);
 
-  // Your original UI effects (Unchanged)
   useEffect(() => {
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     setShuffledPrompts(shuffle(prompts));
   }, []);
+
   useEffect(() => {
     if (shuffledPrompts.length === 0) return;
     const interval = setInterval(() => {
@@ -240,19 +267,18 @@ export default function AiDashboardPage() {
     return () => clearInterval(interval);
   }, [shuffledPrompts]);
 
-  // --- MODIFIED: Handle sending messages using the new multi-chat system ---
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!query.trim() || isResponding) return;
 
     const currentQuery = query;
-    // Every time you send a message from this page, it starts a NEW chat session.
     const chatIdToUse = uuidv4();
-    setCurrentChatId(chatIdToUse); // Set it for this session
+    setCurrentChatId(chatIdToUse);
 
+    setLastQuery(currentQuery);
     setQuery("");
     setIsResponding(true);
-    setCurrentResponse("");
+    setCurrentResponse(null);
 
     try {
       const { data } = await askAI(currentQuery, chatIdToUse);
@@ -341,15 +367,13 @@ export default function AiDashboardPage() {
           </form>
         </div>
 
-        {/* === ACTION BUTTONS AREA (MODIFIED) === */}
+        {/* === ACTION BUTTONS AREA (Unchanged) === */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <ActionButton icon={<Paperclip size={14} />} label="Attach File" />
           <ActionButton icon={<ImageIcon size={14} />} label="Upload Image" />
           <ActionButton icon={<Mic size={14} />} label="Use Voice" />
-
-          {/* MODIFIED: This button now links to the new ChatHistoryPage */}
           <Link
-            to="/chat-history" // This should match your route
+            to="/chat-history"
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             <History size={14} />
@@ -357,7 +381,7 @@ export default function AiDashboardPage() {
           </Link>
         </div>
 
-        {/* === DYNAMIC RESPONSE AREA (Unchanged) === */}
+        {/* === DYNAMIC RESPONSE AREA (MODIFIED) === */}
         <AnimatePresence>
           {(isResponding || currentResponse) && (
             <motion.div
@@ -366,18 +390,28 @@ export default function AiDashboardPage() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-12 bg-white/50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700"
             >
-              {/* MODIFIED: Using ReactMarkdown with fast speed, no typewriter */}
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {isResponding ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-75"></div>
-                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-150"></div>
-                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-250"></div>
-                  </div>
-                ) : (
-                  <ReactMarkdown>{currentResponse || ""}</ReactMarkdown>
-                )}
-              </div>
+              {isResponding ? (
+                <ThinkingComponent userQuery={lastQuery} />
+              ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  {/* Re-introducing TypeAnimation for a smooth, fast reveal */}
+                  <TypeAnimation
+                    key={currentResponse} // Add key to force re-render
+                    sequence={[
+                      (el) => {
+                        if (el) {
+                          el.innerHTML = "";
+                        }
+                      },
+                      currentResponse || "",
+                    ]}
+                    wrapper="div"
+                    speed={85} // Faster speed for a better UX
+                    cursor={false}
+                    repeat={0}
+                  />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
