@@ -3,7 +3,11 @@ import DashboardLayout from "../components/DashboardLayout";
 import UserCard from "../components/UserCard";
 import TeacherList from "../components/TeacherList";
 import ClassList from "../components/ClassList";
-
+import AnalyticsReports from "../components/AnalyticsReports";
+import UpcomingEvents from "../components/upcomingevent";
+import RecentActivity from "../components/RecentActivity";
+import AccessControl from "../components/AccessControl";
+import AuditLogs from "../components/AuditLogs";
 const AdminDashboard = () => {
   return (
     <DashboardLayout>
@@ -36,6 +40,11 @@ const AdminDashboard = () => {
           <TeacherList />
         </div>
       </div>
+      <AnalyticsReports/>
+     <RecentActivity/>
+      <UpcomingEvents/>
+      <AccessControl/>
+      <AuditLogs/>
     </DashboardLayout>
   );
 };
