@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }) {
     // ✅ Dark mode enabled for the whole layout
     <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      
 
       <div className="transition-all duration-300 ease-in-out lg:ml-64">
         {/* Mobile Header with Hamburger Menu */}
@@ -58,12 +59,14 @@ export default function DashboardLayout({ children }) {
                 </svg>
               </button>
             </div>
+            
           </div>
         </header>
 
         {/* Main Content Area */}
         <main className="p-4 sm:p-6 lg:p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm transition-colors duration-300">
           {children}
+         
         </main>
       </div>
     </div>

@@ -3,15 +3,18 @@ import QRCodeWrapper from "../components/QRCodeWrapper";
 import AttendanceChart from "../components/AttendanceChart";
 import io from "socket.io-client";
 import DashboardLayout from "../components/DashboardLayout";
-import api from "../api/apiService"; // ✅ 1. Import the configured api instance
+import api from "../api/apiService"; // API instance for backend calls
 
-// ✅ 2. Dynamically determine the secure WebSocket URL
+import ChatBox from "./ChatBox.jsx"; // Assuming ChatBox.jsx is in src/pages
+import ClassesManager from "../components/ClassMannager.jsx"; // Ensure this path and filename exist exactly
+import AssingmentMannager from "../components/AssingmentMannager.jsx"; // Confirm file and path
+import Hodfeed from "../components/Hodfeed.jsx"; // Confirm case-sensitive spelling and path
+
+// Dynamically determine secure WebSocket URL
 const isSecure = window.location.protocol === "https:";
-const SOCKET_URL = `${isSecure ? "wss" : "ws"}://${
-  window.location.hostname
-}:5001`;
+const SOCKET_URL = `${isSecure ? "wss" : "ws"}://${window.location.hostname}:5001`;
 
-const QR_CODE_VALIDITY_SECONDS = 120; // Central place to manage the countdown time
+const QR_CODE_VALIDITY_SECONDS = 120;
 
 export default function TeacherDashboard() {
   const [qrToken, setQrToken] = useState(null);
@@ -21,24 +24,22 @@ export default function TeacherDashboard() {
   const [liveAttendance, setLiveAttendance] = useState([]);
   const [countdown, setCountdown] = useState(QR_CODE_VALIDITY_SECONDS);
 
-  // Effect for handling the countdown timer
   useEffect(() => {
     if (!qrToken) return;
     setCountdown(QR_CODE_VALIDITY_SECONDS);
     const timer = setInterval(() => {
-      setCountdown((prevCountdown) => {
-        if (prevCountdown <= 1) {
+      setCountdown((prev) => {
+        if (prev <= 1) {
           clearInterval(timer);
           setQrToken(null);
           return 0;
         }
-        return prevCountdown - 1;
+        return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, [qrToken]);
 
-  // Effect for WebSocket connection
   useEffect(() => {
     const socket = io(SOCKET_URL);
     socket.on("connect", () => console.log("Teacher connected to WebSocket!"));
@@ -54,7 +55,6 @@ export default function TeacherDashboard() {
     setQrToken(null);
 
     try {
-      // ✅ 3. Use the imported 'api' service directly. No need to create a new axios instance.
       const res = await api.post("/attendance/generate-qr", { classId });
       setQrToken(res.data.qrToken);
     } catch (err) {
@@ -68,9 +68,7 @@ export default function TeacherDashboard() {
     <DashboardLayout>
       <header className="mb-8">
         <h1 className="text-4xl font-bold text-slate-800">Teacher Dashboard</h1>
-        <p className="text-slate-600">
-          Monitor live attendance and view analytics.
-        </p>
+        <p className="text-slate-600">Monitor live attendance and view analytics.</p>
       </header>
 
       <div className="mb-8">
@@ -79,9 +77,7 @@ export default function TeacherDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4 text-slate-800">
-            Generate Code
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4 text-slate-800">Generate Code</h2>
           <div className="mb-4">
             <label
               htmlFor="classId"
@@ -137,9 +133,7 @@ export default function TeacherDashboard() {
                     <p className="font-bold">{log.student_name}</p>
                     <p className="text-sm text-slate-500">{log.timestamp}</p>
                   </div>
-                  <span className="text-green-600 font-semibold">
-                    {log.status}
-                  </span>
+                  <span className="text-green-600 font-semibold">{log.status}</span>
                 </div>
               ))
             ) : (
@@ -149,6 +143,14 @@ export default function TeacherDashboard() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ClassesManager, AssignmentsManager, HODFeed and ChatBox sections */}
+      <div className="mt-10 space-y-8">
+        <ClassesManager />
+        <AssingmentMannager classIdProp={classId} />
+        <Hodfeed />
+        <ChatBox user="Teacher" />
       </div>
     </DashboardLayout>
   );

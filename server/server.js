@@ -61,10 +61,17 @@ app.use("/api/ai", aiRoutes);
 io.on("connection", (socket) => {
   console.log("🔌 A user connected to WebSocket");
 
+  // Listen for chat messages from any client
+  socket.on("chat_message", (msg) => {
+    // Broadcast received message to all connected clients
+    io.emit("chat_message", msg);
+  });
+
   socket.on("disconnect", () => {
     console.log("❌ User disconnected");
   });
 });
+
 
 // A simple test route
 app.get("/api/test", (req, res) => {
@@ -75,3 +82,13 @@ app.get("/api/test", (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
+
+const assignmentRoutes = require("./routes/assignmentRoutes");
+app.use("/api/assignments", assignmentRoutes);
+
+
+app.use("/api/classes", classRoutes);
+
+
+const hodFeedRoutes = require("./routes/hodFeedRoutes");
+app.use("/api/hodfeed", hodFeedRoutes);
