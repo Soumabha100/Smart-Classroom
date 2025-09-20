@@ -1,13 +1,12 @@
 import axios from "axios";
 
 // Create a single, configured instance of Axios.
-// The baseURL is now simply "/api". The Vite proxy will handle forwarding
-// this to http://localhost:5001/api for you.
+// The baseURL is now simply "/api". The Vite proxy will forward this to http://localhost:5001/api for you.
 const api = axios.create({
   baseURL: "/api",
 });
 
-// Use an interceptor to automatically add the JWT token to every request
+// JWT Token Interceptor: automatically adds token from localStorage to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -16,25 +15,39 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Your existing API functions remain the same
+// --- User & Dashboard APIs ---
 export const getUserCount = (role) => api.get(`/users/count?role=${role}`);
 export const getTeachers = () => api.get("/users/teachers");
-export const getClasses = () => api.get("/classes");
 export const getUserProfile = () => api.get("/users/profile");
 export const updateUserProfile = (profileData) =>
   api.post("/users/profile", profileData);
 export const getStudentAttendance = () => api.get("/attendance/student");
 
-
-// --- ADDED: New function for the AI Dashboard ---
+// --- AI Dashboard API ---
 export const generateAIDashboard = (mode) => {
-    return api.post('/ai/generate-dashboard', { mode });
+  return api.post("/ai/generate-dashboard", { mode });
 };
 
+// --- CLASSES CRUD API ---
+// Get all classes
+export const getClasses = () => api.get("/classes");
+// Create a new class
+export const createClass = (data) => api.post("/classes", data);
+// Delete a class by id (using class ID string)
+export const deleteClass = (id) => api.delete(`/classes/${id}`);
+
+// --- ASSIGNMENTS CRUD API ---
+// Get all assignments (optionally filtered by classId)
+export const getAssignments = (classId) =>
+  api.get(`/assignments${classId ? `?classId=${classId}` : ""}`);
+// Create a new assignment
+export const createAssignment = (data) => api.post("/assignments", data);
+// Delete an assignment by id
+export const deleteAssignment = (id) => api.delete(`/assignments/${id}`);
+// Future update example:
+// export const updateAssignment = (id, data) => api.put(`/assignments/${id}`, data);
 
 export default api;
