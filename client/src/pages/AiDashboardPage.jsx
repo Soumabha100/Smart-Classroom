@@ -24,12 +24,13 @@ import { askAI } from "../api/apiService";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
-import { TypeAnimation } from "react-type-animation"; // Re-imported for smooth text animation
 
-// --- MODIFIED: Message component now uses ReactMarkdown for proper formatting ---
+// --- FINAL VERSION: Message Component ---
+// This now correctly uses ReactMarkdown with the 'prose' class for perfect formatting.
 const Message = ({ message }) => {
   const isUser = message.role === "user";
   const messageEndRef = useRef(null);
+
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [message]);
@@ -43,8 +44,7 @@ const Message = ({ message }) => {
             : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200"
         }`}
       >
-        {/* The 'prose' class from Tailwind Typography ensures correct spacing and styling */}
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div className="prose prose dark:prose-invert max-w-none">
           <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
         </div>
       </div>
@@ -135,10 +135,8 @@ const ActionButton = ({ icon, label }) => (
   </button>
 );
 
-// --- Dynamic "Thinking" Component (Unchanged) ---
 const ThinkingComponent = ({ userQuery }) => {
   const [thinkingMessage, setThinkingMessage] = useState("Thinking...");
-
   const thinkingMessages = [
     "Analyzing your request...",
     "Consulting my knowledge base...",
@@ -280,6 +278,8 @@ export default function AiDashboardPage() {
     setIsResponding(true);
     setCurrentResponse(null);
 
+    
+
     try {
       const { data } = await askAI(currentQuery, chatIdToUse);
       setCurrentResponse(data.response);
@@ -381,35 +381,21 @@ export default function AiDashboardPage() {
           </Link>
         </div>
 
-        {/* === DYNAMIC RESPONSE AREA (MODIFIED) === */}
+        {/* === DYNAMIC RESPONSE AREA (FINAL VERSION) === */}
         <AnimatePresence>
           {(isResponding || currentResponse) && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, y: 10 }} // Start slightly lower and invisible
+              animate={{ opacity: 1, y: 0 }} // Fade in and move to final position
+              exit={{ opacity: 0, height: 0 }} // Fade out and collapse
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="mb-12 bg-white/50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700"
             >
               {isResponding ? (
                 <ThinkingComponent userQuery={lastQuery} />
               ) : (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  {/* Re-introducing TypeAnimation for a smooth, fast reveal */}
-                  <TypeAnimation
-                    key={currentResponse} // Add key to force re-render
-                    sequence={[
-                      (el) => {
-                        if (el) {
-                          el.innerHTML = "";
-                        }
-                      },
-                      currentResponse || "",
-                    ]}
-                    wrapper="div"
-                    speed={85} // Faster speed for a better UX
-                    cursor={false}
-                    repeat={0}
-                  />
+                <div className="prose prose dark:prose-invert max-w-none">
+                  <ReactMarkdown>{currentResponse || ""}</ReactMarkdown>
                 </div>
               )}
             </motion.div>
