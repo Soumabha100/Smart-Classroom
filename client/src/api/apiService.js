@@ -26,6 +26,11 @@ export const updateUserProfile = (profileData) =>
   api.post("/users/profile", profileData);
 export const getStudentAttendance = () => api.get("/attendance/student");
 
+export const askAI = (prompt, chatId) => api.post('/ai/ask', { prompt, chatId });
+export const getChatHistories = () => api.get('/ai/history');
+export const getChatHistory = (chatId) => api.get(`/ai/history/${chatId}`);
+export const deleteChatHistory = (chatId) => api.delete(`/ai/history/${chatId}`);
+
 // --- AI Dashboard API ---
 export const generateAIDashboard = (mode) => {
   return api.post("/ai/generate-dashboard", { mode });

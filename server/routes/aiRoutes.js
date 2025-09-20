@@ -2,15 +2,15 @@ const express = require("express");
 const router = express.Router();
 const {
   generateDashboard,
-  chatWithAI,
-  getChatHistory,
+  ask,
+  getChatHistories,
+  getChatHistoryByChatId,
+  deleteChatHistory,
 } = require("../controllers/aiController");
 const { protect } = require("../middlewares/authMiddleware");
 const { checkRole } = require("../middlewares/checkRole");
 
-// @route   POST /api/ai/generate-dashboard
-// @desc    Generate personalized dashboard content for a student
-// @access  Private (Students only)
+// Route for your AI dashboard (unchanged)
 router.post(
   "/generate-dashboard",
   protect,
@@ -18,8 +18,18 @@ router.post(
   generateDashboard
 );
 
-// Use protect (a middleware function), not the module object
-router.post("/chat", protect, chatWithAI);
-router.get("/chat/history", protect, getChatHistory);
+// --- NEW, CORRECT ROUTES FOR MULTI-CHAT SYSTEM ---
+
+// Handles a message for a specific chat session
+router.post("/ask", protect, ask);
+
+// Gets all chat history summaries for the user
+router.get("/history", protect, getChatHistories);
+
+// Gets the full history for a specific chat
+router.get("/history/:chatId", protect, getChatHistoryByChatId);
+
+// Deletes a specific chat history
+router.delete("/history/:chatId", protect, deleteChatHistory);
 
 module.exports = router;

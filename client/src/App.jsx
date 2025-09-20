@@ -21,6 +21,7 @@ import SettingsPage from "./pages/SettingsPage.jsx";
 import DrivePage from "./pages/DrivePage.jsx";
 import LearningPath from "./pages/LearningPath.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
+import ChatHistoryPage from "./pages/ChatHistoryPage";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -176,6 +177,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/chat-history" element={<ChatHistoryPage />} />
       </Routes>
     </div>
   );

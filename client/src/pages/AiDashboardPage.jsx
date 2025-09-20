@@ -17,14 +17,17 @@ import {
   Mic,
   Image as ImageIcon,
   History,
-  X, // New Icons for History Modal
+  X,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
-import { fetchChatHistory, sendChatMessage } from "../api/apiService";
+import { askAI } from "../api/apiService"; // MODIFIED: Use the new 'askAI' service
+import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
 import { TypeAnimation } from "react-type-animation";
+import { Link } from "react-router-dom"; // IMPORTED: For navigation
 
-// --- Reusable Component: Message Bubble (Unchanged) ---
+// --- All of your reusable components like Message, ToolCard, etc., are preserved. ---
+// --- No changes needed for them. ---
 const Message = ({ message }) => {
   const isUser = message.role === "user";
   const messageEndRef = useRef(null);
@@ -55,59 +58,6 @@ const Message = ({ message }) => {
   );
 };
 
-// --- NEW Reusable Component: Chat History Modal ---
-const ChatHistoryModal = ({ history, isLoading, onClose }) => (
-  <AnimatePresence>
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl h-[80vh] rounded-2xl shadow-xl flex flex-col"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-      >
-        <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-slate-500" />
-            <h3 className="font-bold text-slate-800 dark:text-white">
-              Conversation History
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
-          >
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </header>
-        <div className="flex-grow overflow-y-auto p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            </div>
-          ) : history.length > 0 ? (
-            history.map((msg, index) => <Message key={index} message={msg} />)
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-slate-400 text-center">
-                No history yet. <br /> Start a conversation!
-              </p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
-  </AnimatePresence>
-);
-
-// --- All your original reusable components are preserved ---
 const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
   <div
     onClick={onClick}
@@ -118,7 +68,6 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
     }`}
     style={{ width: "calc(100% / 3 - (16px * 2 / 3))" }}
   >
-    {" "}
     <div
       className={`mb-3 w-12 h-12 flex items-center justify-center rounded-xl transition-colors duration-300 ${
         isSelected
@@ -127,21 +76,21 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
       }`}
     >
       {icon}
-    </div>{" "}
+    </div>
     <h3
       className={`font-bold transition-colors duration-300 ${
         isSelected ? "text-white" : "text-slate-800 dark:text-white"
       }`}
     >
       {title}
-    </h3>{" "}
+    </h3>
     <p
       className={`text-sm mt-1 transition-colors duration-300 ${
         isSelected ? "text-white/70" : "text-slate-500 dark:text-slate-400"
       }`}
     >
       {description}
-    </p>{" "}
+    </p>
     <div
       className={`absolute bottom-4 right-4 p-1 rounded-full transition-all duration-300 ${
         isSelected
@@ -150,9 +99,10 @@ const ToolCard = ({ icon, title, description, onClick, isSelected }) => (
       }`}
     >
       <ArrowRight className="w-4 h-4" />
-    </div>{" "}
+    </div>
   </div>
 );
+
 const FeatureDisplay = ({ feature }) => (
   <motion.div
     key={feature.id}
@@ -162,49 +112,41 @@ const FeatureDisplay = ({ feature }) => (
     transition={{ duration: 0.4, ease: "easeInOut" }}
     className="bg-white/50 dark:bg-slate-800/50 p-8 rounded-b-2xl border-x border-b border-slate-200 dark:border-slate-700"
   >
-    {" "}
     <div className="flex items-center gap-4">
-      {" "}
       <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300">
-        {" "}
-        {feature.icon}{" "}
-      </div>{" "}
+        {feature.icon}
+      </div>
       <div>
-        {" "}
         <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-          {" "}
-          {feature.title}{" "}
-        </h3>{" "}
+          {feature.title}
+        </h3>
         <p className="text-slate-500 dark:text-slate-400">
-          {" "}
-          {feature.description}{" "}
-        </p>{" "}
-      </div>{" "}
-    </div>{" "}
+          {feature.description}
+        </p>
+      </div>
+    </div>
     <div className="mt-6 h-64 bg-slate-100 dark:bg-slate-700/50 rounded-lg flex items-center justify-center">
-      {" "}
       <p className="text-slate-400 dark:text-slate-500 text-sm">
-        {" "}
-        Full implementation of {feature.title} will appear here.{" "}
-      </p>{" "}
-    </div>{" "}
+        Full implementation of {feature.title} will appear here.
+      </p>
+    </div>
   </motion.div>
 );
+
 const ActionButton = ({ icon, label }) => (
   <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
-    {" "}
-    {icon} <span>{label}</span>{" "}
+    {icon} <span>{label}</span>
   </button>
 );
 
 // --- The Main AI Dashboard Page ---
 export default function AiDashboardPage() {
   const [query, setQuery] = useState("");
-  const [currentResponse, setCurrentResponse] = useState(null); // Holds only the latest AI response
-  const [chatHistory, setChatHistory] = useState([]);
+  const [currentResponse, setCurrentResponse] = useState(null);
   const [isResponding, setIsResponding] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  // MODIFIED: State to manage the current chat session for THIS page
+  const [currentChatId, setCurrentChatId] = useState(null);
 
   // All your original state for the UI is preserved
   const [showContent, setShowContent] = useState(false);
@@ -285,23 +227,7 @@ export default function AiDashboardPage() {
   ];
   const [selectedFeature, setSelectedFeature] = useState(featureList[0]);
 
-  // Load history on mount
-  useEffect(() => {
-    const loadHistory = async () => {
-      setIsLoadingHistory(true);
-      try {
-        const history = await fetchChatHistory();
-        setChatHistory(history);
-      } catch (error) {
-        console.error("Failed to fetch chat history", error);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
-    loadHistory();
-  }, []);
-
-  // Your original UI effects
+  // Your original UI effects (Unchanged)
   useEffect(() => {
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     setShuffledPrompts(shuffle(prompts));
@@ -314,37 +240,26 @@ export default function AiDashboardPage() {
     return () => clearInterval(interval);
   }, [shuffledPrompts]);
 
+  // --- MODIFIED: Handle sending messages using the new multi-chat system ---
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!query.trim() || isResponding) return;
 
     const currentQuery = query;
+    // Every time you send a message from this page, it starts a NEW chat session.
+    const chatIdToUse = uuidv4();
+    setCurrentChatId(chatIdToUse); // Set it for this session
+
     setQuery("");
     setIsResponding(true);
-    setCurrentResponse(""); // Clear previous response
-
-    // Optimistically update history for a snappy UX
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "user", parts: [{ text: currentQuery }] },
-    ]);
+    setCurrentResponse("");
 
     try {
-      const data = await sendChatMessage(currentQuery);
-      setCurrentResponse(data.response); // Set the response for the main display
-      // Add the final AI response to the history
-      setChatHistory((prev) => [
-        ...prev,
-        { role: "model", parts: [{ text: data.response }] },
-      ]);
+      const { data } = await askAI(currentQuery, chatIdToUse);
+      setCurrentResponse(data.response);
     } catch (error) {
       console.error("Failed to send message", error);
-      const errorMessage = "Sorry, I encountered an error. Please try again.";
-      setCurrentResponse(errorMessage);
-      setChatHistory((prev) => [
-        ...prev,
-        { role: "model", parts: [{ text: errorMessage }] },
-      ]);
+      setCurrentResponse("Sorry, I encountered an error. Please try again.");
     } finally {
       setIsResponding(false);
     }
@@ -363,17 +278,8 @@ export default function AiDashboardPage() {
 
   return (
     <DashboardLayout>
-      {/* Conditionally render the Chat History Modal */}
-      {isHistoryOpen && (
-        <ChatHistoryModal
-          history={chatHistory}
-          isLoading={isLoadingHistory}
-          onClose={() => setIsHistoryOpen(false)}
-        />
-      )}
-
       <div className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
-        {/* === HERO SECTION === */}
+        {/* === HERO SECTION (Unchanged) === */}
         <div className="text-center mb-12">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -392,7 +298,7 @@ export default function AiDashboardPage() {
           </motion.p>
         </div>
 
-        {/* === MAIN CHAT INPUT FORM === */}
+        {/* === MAIN CHAT INPUT FORM (Unchanged) === */}
         <div className="relative mb-6">
           <form onSubmit={handleSendMessage} className="relative">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
@@ -408,9 +314,7 @@ export default function AiDashboardPage() {
             />
             {!isFocused && query === "" && (
               <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
-                {" "}
                 <AnimatePresence>
-                  {" "}
                   <motion.span
                     key={currentPromptIndex}
                     initial={{ opacity: 0, y: 5 }}
@@ -422,10 +326,9 @@ export default function AiDashboardPage() {
                       document.querySelector('input[type="text"]').focus()
                     }
                   >
-                    {" "}
-                    {shuffledPrompts[currentPromptIndex]}{" "}
-                  </motion.span>{" "}
-                </AnimatePresence>{" "}
+                    {shuffledPrompts[currentPromptIndex]}
+                  </motion.span>
+                </AnimatePresence>
               </div>
             )}
             <button
@@ -438,22 +341,23 @@ export default function AiDashboardPage() {
           </form>
         </div>
 
-        {/* === DYNAMIC RESPONSE & ACTION BUTTONS AREA === */}
+        {/* === ACTION BUTTONS AREA (MODIFIED) === */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <ActionButton icon={<Paperclip size={14} />} label="Attach File" />
           <ActionButton icon={<ImageIcon size={14} />} label="Upload Image" />
           <ActionButton icon={<Mic size={14} />} label="Use Voice" />
-          {/* NEW HISTORY BUTTON */}
-          <button
-            onClick={() => setIsHistoryOpen(true)}
+
+          {/* MODIFIED: This button now links to the new ChatHistoryPage */}
+          <Link
+            to="/chat-history" // This should match your route
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             <History size={14} />
-            <span>Recent Activity</span>
-          </button>
+            <span>Chat History</span>
+          </Link>
         </div>
 
-        {/* This area will show the AI's latest response */}
+        {/* === DYNAMIC RESPONSE AREA (Unchanged) === */}
         <AnimatePresence>
           {(isResponding || currentResponse) && (
             <motion.div
@@ -462,29 +366,23 @@ export default function AiDashboardPage() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-12 bg-white/50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700"
             >
-              <ReactMarkdown
-                components={{
-                  p: ({ ...props }) => <p className="mb-2" {...props} />,
-                  ul: ({ ...props }) => (
-                    <ul className="list-disc list-inside ml-4" {...props} />
-                  ),
-                }}
-              >
-                {isResponding ? "Thinking..." : ""}
-              </ReactMarkdown>
-              {currentResponse && !isResponding && (
-                <TypeAnimation
-                  sequence={[currentResponse]}
-                  wrapper="div"
-                  speed={70}
-                  cursor={true}
-                />
-              )}
+              {/* MODIFIED: Using ReactMarkdown with fast speed, no typewriter */}
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                {isResponding ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-150"></div>
+                    <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse delay-250"></div>
+                  </div>
+                ) : (
+                  <ReactMarkdown>{currentResponse || ""}</ReactMarkdown>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* === AI TOOLKIT SECTION (Your original component) === */}
+        {/* === AI TOOLKIT SECTION (Unchanged) === */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

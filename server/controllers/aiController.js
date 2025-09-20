@@ -1,5 +1,3 @@
-// server/controllers/aiController.js
-
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const NodeCache = require("node-cache");
 const User = require("../models/User");
@@ -19,7 +17,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // --- HELPER FUNCTIONS ---
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// --- MAIN CONTROLLER ---
+// ===================================================================================
+// AI DASHBOARD CONTROLLER (EXISTING CODE - UNCHANGED)
+// ===================================================================================
 exports.generateDashboard = async (req, res) => {
   const { mode } = req.body;
   const userId = req.user.id;
@@ -31,7 +31,6 @@ exports.generateDashboard = async (req, res) => {
   }
 
   try {
-    // --- 1. DATA AGGREGATION ---
     const student = await User.findById(userId).select("-password");
     if (!student) {
       return res.status(404).json({ message: "Student not found." });
@@ -66,7 +65,6 @@ exports.generateDashboard = async (req, res) => {
           submissions.length
         : 0;
 
-    // --- 2. PROMPT ENGINEERING ---
     const prompt = `
       You are an expert AI academic advisor for a platform called IntelliClass.
       Your task is to generate a personalized dashboard layout in a specific JSON format for a student.
@@ -129,7 +127,6 @@ exports.generateDashboard = async (req, res) => {
       Now, generate the JSON for this student.
     `;
 
-    // --- 3. AI API CALL WITH RETRY ---
     let retries = 3;
     while (retries > 0) {
       try {
@@ -173,13 +170,19 @@ exports.generateDashboard = async (req, res) => {
   }
 };
 
+// ===================================================================================
+// OLD CHAT SYSTEM (DEPRECATED - PRESERVED FOR BACKWARD COMPATIBILITY)
+// ===================================================================================
+
+/**
+ * @deprecated This function handles a single chat history per user.
+ */
 exports.getChatHistory = async (req, res) => {
   try {
     const chatHistory = await ChatHistory.findOne({ userId: req.user.id });
     if (chatHistory) {
       res.status(200).json(chatHistory.history);
     } else {
-      // No history, return an empty array
       res.status(200).json([]);
     }
   } catch (error) {
@@ -190,7 +193,9 @@ exports.getChatHistory = async (req, res) => {
   }
 };
 
-// NEW FUNCTION: Handle a conversation turn with the AI
+/**
+ * @deprecated This function handles a single chat history per user.
+ */
 exports.chatWithAI = async (req, res) => {
   const { prompt } = req.body;
   const userId = req.user.id;
@@ -207,34 +212,30 @@ exports.chatWithAI = async (req, res) => {
       chatHistory = new ChatHistory({ userId, history: [] });
     }
 
-    // --- THE FIX IS HERE ---
-    // The Google API only wants 'role' and 'parts'. We map the history from MongoDB
-    // to a new array that only contains the required fields, removing the '_id'.
     const sanitizedHistory = chatHistory.history.map((item) => ({
       role: item.role,
       parts: item.parts.map((part) => ({ text: part.text })),
     }));
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+    });
 
     const chat = model.startChat({
-      // We use the sanitized history here
       history: sanitizedHistory,
-      generationConfig: { maxOutputTokens: 2048 }, // Increased token limit for richer responses
+      generationConfig: { maxOutputTokens: 2048 },
     });
 
     const result = await chat.sendMessage(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // Save the new turn to our database (this part is fine)
     chatHistory.history.push(
       { role: "user", parts: [{ text: prompt }] },
       { role: "model", parts: [{ text }] }
     );
 
     await chatHistory.save();
-    // Ensure the link to the user is created if it's the first chat
     if (!user.chatHistory) {
       await User.findByIdAndUpdate(userId, { chatHistory: chatHistory._id });
     }
@@ -242,9 +243,127 @@ exports.chatWithAI = async (req, res) => {
     res.status(200).json({ response: text });
   } catch (error) {
     console.error("Error in AI chat:", error);
-    // Provide a more specific error message to the frontend if possible
     const errorMessage =
       error.message || "An error occurred with the AI service.";
     res.status(500).json({ message: errorMessage });
+  }
+};
+
+// ===================================================================================
+// NEW MULTI-CHAT SYSTEM
+// ===================================================================================
+
+/**
+ * Handles a new message in a chat session. Finds the chat by chatId or creates a new one.
+ */
+exports.ask = async (req, res) => {
+  const { prompt, chatId } = req.body;
+  const userId = req.user.id; // Correctly get user ID from auth middleware
+
+  if (!prompt || !chatId) {
+    return res.status(400).json({ message: "Prompt and chatId are required." });
+  }
+
+  try {
+    let chatHistory = await ChatHistory.findOne({ chatId, user: userId });
+
+    if (!chatHistory) {
+      chatHistory = new ChatHistory({
+        user: userId, // Ensure user ID is correctly assigned
+        chatId,
+        history: [],
+      });
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+    });
+    const chat = model.startChat({
+      history: chatHistory.history.map((item) => ({
+        role: item.role,
+        parts: item.parts.map((part) => ({ text: part.text })),
+      })),
+    });
+
+    const result = await chat.sendMessage(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    chatHistory.history.push({ role: "user", parts: [{ text: prompt }] });
+    chatHistory.history.push({ role: "model", parts: [{ text }] });
+
+    if (chatHistory.history.length === 2) {
+      const titlePrompt = `Generate a short, descriptive title (3-5 words) for a conversation that starts with: "${prompt}"`;
+      const titleResult = await model.generateContent(titlePrompt);
+      const titleResponse = await titleResult.response;
+      chatHistory.title = titleResponse.text().replace(/"/g, "").trim();
+    }
+
+    await chatHistory.save(); // This will now work without a duplicate key error
+
+    res.status(200).json({ response: text });
+  } catch (error) {
+    console.error("Error in /ai/ask:", error);
+    res.status(500).json({ message: "An error occurred with the AI service." });
+  }
+};
+
+/**
+ * Fetches all chat history summaries (id and title) for the logged-in user.
+ */
+exports.getChatHistories = async (req, res) => {
+  try {
+    const chatHistories = await ChatHistory.find({ user: req.user.id })
+      .select("chatId title createdAt")
+      .sort({ createdAt: -1 });
+    res.status(200).json(chatHistories);
+  } catch (error) {
+    console.error("Error fetching chat histories:", error);
+    res.status(500).send("Server error while fetching chat histories.");
+  }
+};
+
+/**
+ * Fetches the full message history for a single chat session by its chatId.
+ */
+exports.getChatHistoryByChatId = async (req, res) => {
+  try {
+    const chatHistory = await ChatHistory.findOne({
+      chatId: req.params.chatId,
+      user: req.user.id,
+    });
+
+    if (!chatHistory) {
+      return res
+        .status(404)
+        .json({ msg: "Chat history not found or access denied." });
+    }
+    res.status(200).json(chatHistory);
+  } catch (error) {
+    console.error("Error fetching single chat history:", error);
+    res.status(500).send("Server error while fetching chat history.");
+  }
+};
+
+/**
+ * Deletes a chat session by its chatId.
+ */
+exports.deleteChatHistory = async (req, res) => {
+  try {
+    const result = await ChatHistory.findOneAndDelete({
+      chatId: req.params.chatId,
+      user: req.user.id,
+    });
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ msg: "Chat history not found or access denied." });
+    }
+
+    res.status(200).json({ msg: "Chat history successfully deleted." });
+  } catch (error) {
+    console.error("Error deleting chat history:", error);
+    res.status(500).send("Server error while deleting chat history.");
   }
 };
