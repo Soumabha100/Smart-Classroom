@@ -3,8 +3,7 @@ const User = require("../models/User");
 // Get user profile
 exports.getUserProfile = async (req, res) => {
   try {
-    // The user ID is attached to the request by the verifyToken middleware
-    const user = await User.findById(req.user.id).select("-password"); // Exclude password from the result
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -18,23 +17,25 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     user.name = req.body.name || user.name;
-    user.phone = req.body.phone; // Allow setting an empty string
-    user.bio = req.body.bio;   // Allow setting an empty string
+    user.phone = req.body.phone;
+    user.bio = req.body.bio;
 
     const updatedUser = await user.save();
 
-    // Return the updated user object directly (excluding password)
     const userResponse = updatedUser.toObject();
     delete userResponse.password;
 
-    res.status(200).json(userResponse);
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: userResponse,
+    });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -42,7 +43,7 @@ exports.updateUserProfile = async (req, res) => {
 // Get User Count
 exports.getUserCount = async (req, res) => {
   try {
-    const { role } = req.query; // Gets role from the URL (e.g., ?role=admin)
+    const { role } = req.query;
     if (!["admin", "teacher", "student", "parent"].includes(role)) {
       return res.status(400).json({ message: "Invalid role specified" });
     }
@@ -53,7 +54,7 @@ exports.getUserCount = async (req, res) => {
   }
 };
 
-// Get All the User Count
+// Get Teachers
 exports.getTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: "teacher" }).select("name");
@@ -63,7 +64,7 @@ exports.getTeachers = async (req, res) => {
   }
 };
 
-// @desc    Get all students
+// Get Students
 exports.getStudents = async (req, res) => {
   try {
     const students = await User.find({ role: "student" }).select("name email");
@@ -73,9 +74,9 @@ exports.getStudents = async (req, res) => {
   }
 };
 
+// Get Student Data for Parent
 exports.getStudentDataForParent = async (req, res) => {
   try {
-    // req.user.students comes from the parent's JWT token
     const studentIds = req.user.students;
     if (!studentIds || studentIds.length === 0) {
       return res.json([]);
@@ -83,7 +84,6 @@ exports.getStudentDataForParent = async (req, res) => {
     const students = await User.find({ _id: { $in: studentIds } }).select(
       "-password"
     );
-    // You can also populate attendance records here later
     res.json(students);
   } catch (err) {
     res.status(500).json({ message: "Server error" });

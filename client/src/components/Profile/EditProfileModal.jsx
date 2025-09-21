@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, LoaderCircle } from "lucide-react";
+import React, { useState } from "react";
+import { X, LoaderCircle, CheckCircle } from "lucide-react";
 import { updateUserProfile } from "../../api/apiService";
 
 const EditProfileModal = ({ user, onClose, onSave }) => {
@@ -8,7 +8,8 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
     phone: user.phone || "",
     bio: user.bio || "",
   });
-  const [isSaving, setIsSaving] = useState(false);
+
+  const [saveState, setSaveState] = useState("idle");
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -20,39 +21,30 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
     e.preventDefault();
     setError("");
 
-    // --- NEW VALIDATION LOGIC ---
-    // 1. Check for blank name
     if (!formData.name.trim()) {
       setError("Name field cannot be empty.");
       return;
     }
 
-    // 2. Check if any changes were actually made
     const hasChanged =
       formData.name !== user.name ||
-      formData.phone !== user.phone ||
-      formData.bio !== user.bio;
+      formData.phone !== (user.phone || "") ||
+      formData.bio !== (user.bio || "");
     if (!hasChanged) {
       setError("No changes have been made.");
       return;
     }
-    // --- END OF VALIDATION ---
 
-    setIsSaving(true);
+    setSaveState("saving");
     try {
-      const updatedUserFromApi = await updateUserProfile(formData);
+      const response = await updateUserProfile(formData);
+      onSave(response.user);
+      setSaveState("success");
 
-      // --- THIS IS THE FIX for the "weird glitch" ---
-      // We pass the direct response from the API to the onSave function.
-      onSave(updatedUserFromApi);
-      // --- END OF FIX ---
-
-      onClose(); // Close the modal on success
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
       setError("Failed to save changes. Please try again.");
-      console.error(err);
-    } finally {
-      setIsSaving(false);
+      setSaveState("idle");
     }
   };
 
@@ -78,11 +70,7 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
               alt="Profile"
               className="w-24 h-24 mx-auto mb-2 rounded-full object-cover"
             />
-            <p className="text-xs text-slate-400">
-              Profile picture updates can be added later.
-            </p>
           </div>
-
           <div>
             <label
               htmlFor="name"
@@ -99,7 +87,6 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
               className="w-full input-style"
             />
           </div>
-
           <div>
             <label
               htmlFor="phone"
@@ -116,7 +103,6 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
               className="w-full input-style"
             />
           </div>
-
           <div>
             <label
               htmlFor="bio"
@@ -133,33 +119,36 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
               className="w-full input-style"
             ></textarea>
           </div>
-
           {error && (
             <p className="text-sm text-center text-yellow-500">{error}</p>
           )}
-
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
               onClick={onClose}
-              disabled={isSaving}
+              disabled={saveState === "saving"}
               className="px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center justify-center w-32 gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
+              disabled={saveState !== "idle"}
+              className="inline-flex items-center justify-center w-36 gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-75"
             >
-              {isSaving ? (
+              {saveState === "saving" && (
                 <>
                   <LoaderCircle className="w-4 h-4 animate-spin" />
                   Saving...
                 </>
-              ) : (
-                "Save Changes"
               )}
+              {saveState === "success" && (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Success!
+                </>
+              )}
+              {saveState === "idle" && "Save Changes"}
             </button>
           </div>
         </form>

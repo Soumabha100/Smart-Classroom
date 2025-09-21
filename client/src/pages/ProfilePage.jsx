@@ -11,7 +11,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-// We will create these new components next
 import EditProfileModal from "../components/Profile/EditProfileModal";
 import StudentProfileDetails from "../components/Profile/StudentProfileDetails";
 import TeacherProfileDetails from "../components/Profile/TeacherProfileDetails";
@@ -41,7 +40,8 @@ const RoleBadge = ({ role }) => {
 };
 
 const ProfilePage = () => {
-  const { user, setUser } = useAuth(); // Assuming setUser updates the context
+  // This will now correctly receive the `updateUser` function
+  const { user, updateUser } = useAuth();
   const [isEditModalOpen, setEditModalOpen] = useState(false);
 
   const renderRoleSpecificDetails = () => {
@@ -62,11 +62,9 @@ const ProfilePage = () => {
       <div className="flex-1 p-6 overflow-auto bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Main Profile Card */}
             <div className="lg:col-span-1">
               <div className="p-6 text-center bg-white border rounded-lg shadow-sm dark:bg-slate-800 dark:border-slate-700">
                 <img
-                  // Use your custom default avatar as a fallback
                   src={user.profilePicture || "/assets/default_avatar.png"}
                   alt="Profile"
                   className="w-32 h-32 mx-auto mb-4 object-cover rounded-full ring-4 ring-indigo-500/50"
@@ -80,9 +78,7 @@ const ProfilePage = () => {
                 <p className="text-slate-500 dark:text-slate-400">
                   {user.bio || "No bio available."}
                 </p>
-
                 <hr className="my-6 border-slate-200 dark:border-slate-700" />
-
                 <div className="space-y-3 text-left">
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-slate-400" />
@@ -97,7 +93,6 @@ const ProfilePage = () => {
                     </span>
                   </div>
                 </div>
-
                 <button
                   onClick={() => setEditModalOpen(true)}
                   className="inline-flex items-center justify-center w-full gap-2 px-4 py-3 mt-8 font-bold text-white transition-transform transform bg-indigo-600 rounded-md shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95"
@@ -107,8 +102,6 @@ const ProfilePage = () => {
                 </button>
               </div>
             </div>
-
-            {/* Right Column: Role-Specific Details */}
             <div className="lg:col-span-2">
               <div className="space-y-8">{renderRoleSpecificDetails()}</div>
             </div>
@@ -119,9 +112,9 @@ const ProfilePage = () => {
         <EditProfileModal
           user={user}
           onClose={() => setEditModalOpen(false)}
-          onSave={(updatedUser) => {
-            // This is where you would call your API and then update the context
-            setUser(updatedUser);
+          onSave={(updatedUserData) => {
+            // This will now work perfectly.
+            updateUser(updatedUserData);
             setEditModalOpen(false);
           }}
         />

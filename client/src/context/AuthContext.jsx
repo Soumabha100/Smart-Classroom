@@ -65,6 +65,10 @@ export const AuthProvider = ({ children }) => {
     navigate("/login");
   }, [navigate]);
 
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+  };
+
   const fetchAndSetUser = useCallback(async () => {
     try {
       const res = await getUserProfile();
@@ -145,6 +149,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    updateUser,
     updateTheme,
     theme: user?.profile?.theme || "light",
   };
