@@ -24,6 +24,7 @@ import AttendancePage from "./pages/AttendancePage.jsx";
 import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ForumPage from "./pages/ForumPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
+import ManageClassesPage from "./pages/ManageClassesPage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -193,6 +194,14 @@ function App() {
           element={
             <ProtectedRoute>
               <PostDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-classes"
+          element={
+            <ProtectedRoute>
+              <ManageClassesPage />
             </ProtectedRoute>
           }
         />

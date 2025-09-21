@@ -93,6 +93,11 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             icon: <LayoutDashboard className="h-4 w-4" />,
             label: "Dashboard",
           },
+          {
+            to: "/manage-classes",
+            icon: <Presentation className="h-4 w-4" />,
+            label: "Manage Classes",
+          },
           ...commonLinks,
         ];
       case "student":

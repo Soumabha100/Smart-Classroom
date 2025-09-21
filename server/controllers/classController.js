@@ -17,24 +17,38 @@ exports.getClasses = async (req, res) => {
 
 // @desc    Create a new class
 // @route   POST /api/classes
-// @access  Private (Admin)
+// @access  Private (Admin, Teacher)
 exports.createClass = async (req, res) => {
-  const { name, teacherId } = req.body;
   try {
-    const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found." });
+    const { name, subject, students, teacherId } = req.body; // Admins can optionally provide a teacherId
+
+    let assignedTeacherId;
+
+    // --- NEW ROBUST LOGIC ---
+    if (req.user.role === 'admin' && teacherId) {
+      // If an admin is creating the class and specifies a teacher
+      assignedTeacherId = teacherId;
+    } else {
+      // For teachers creating their own class, or admins creating for themselves
+      assignedTeacherId = req.user.id;
     }
+    // --- END OF LOGIC ---
 
-    let newClass = new Class({ name, teacher: teacherId });
-    await newClass.save();
+    const newClass = new Class({
+      name,
+      subject,
+      students,
+      teacher: assignedTeacherId, // Assign the correct teacher ID
+    });
 
-    // FIX: Populate teacher details before sending the response
-    newClass = await newClass.populate("teacher", "name");
-
-    res.status(201).json(newClass);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err });
+    const savedClass = await newClass.save();
+    res.status(201).json(savedClass);
+  } catch (error) {
+    console.error("Error creating class:", error);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "A class with this name already exists." });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -113,5 +127,23 @@ exports.getClassById = async (req, res) => {
     res.status(200).json(classItem);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+// @desc    Get all classes for the logged-in teacher
+// @route   GET /api/classes/my-classes
+// @access  Private (Teacher)
+exports.getTeacherClasses = async (req, res) => {
+  try {
+    // req.user.id is available from the verifyToken middleware
+    const classes = await Class.find({ teacher: req.user.id }).select("name");
+    if (!classes) {
+      return res
+        .status(404)
+        .json({ message: "No classes found for this teacher." });
+    }
+    res.status(200).json(classes);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

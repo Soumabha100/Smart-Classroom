@@ -6,6 +6,7 @@ const {
   updateClass,
   deleteClass,
   getClassById,
+  getTeacherClasses,
 } = require("../controllers/classController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { checkRole } = require("../middlewares/checkRole"); // Assuming you'll adapt this for 'admin'
@@ -32,5 +33,6 @@ router.post(
 router.put("/:classId", verifyToken, checkAdminRole, updateClass);
 router.delete("/:classId", verifyToken, checkAdminRole, deleteClass);
 router.get('/:classId', verifyToken, getClassById);
+router.get('/my-classes', verifyToken, checkRole(['teacher']), getTeacherClasses);
 
 module.exports = router;
