@@ -8,31 +8,62 @@ const {
   getClassById,
   getTeacherClasses,
 } = require("../controllers/classController");
+
+
 const { verifyToken } = require("../middlewares/authMiddleware");
-const { checkRole } = require("../middlewares/checkRole"); // Assuming you'll adapt this for 'admin'
 
-// Middleware to check for Admin role (you can create a specific one)
-const checkAdminRole = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    return res.status(403).json({ message: "Access denied. Admins only." });
-  }
-};
+// --- THIS IS THE FIX ---
+// We now import the 'checkRole' function directly as a default export,
+// which matches our corrected 'checkRole.js' file.
+const checkRole = require("../middlewares/checkRole");
+// --- END OF FIX ---
 
-router.get("/", verifyToken, getClasses);
-router.post("/", verifyToken, checkAdminRole, createClass);
 
+
+// @desc    Get all classes (for Admins)
+router.get("/", verifyToken, checkRole(["admin"]), getClasses);
+
+// @desc    Create a new class (for Admins AND Teachers)
+router.post("/", verifyToken, checkRole(["admin", "teacher"]), createClass);
+
+// @desc    Get classes for the logged-in teacher
+router.get(
+  "/my-classes",
+  verifyToken,
+  checkRole(["teacher"]),
+  getTeacherClasses
+);
+
+// @desc    Get a single class by its ID
+router.get(
+  "/:classId",
+  verifyToken,
+  checkRole(["admin", "teacher"]),
+  getClassById
+);
+
+// @desc    Add a student to a class (for Admins)
 router.post(
   "/:classId/students",
   verifyToken,
-  checkAdminRole,
+  checkRole(["admin"]),
   addStudentToClass
 );
 
-router.put("/:classId", verifyToken, checkAdminRole, updateClass);
-router.delete("/:classId", verifyToken, checkAdminRole, deleteClass);
-router.get('/:classId', verifyToken, getClassById);
-router.get('/my-classes', verifyToken, checkRole(['teacher']), getTeacherClasses);
+// @desc    Update a class (for Admins and the class's own Teacher)
+router.put(
+  "/:classId",
+  verifyToken,
+  checkRole(["admin", "teacher"]),
+  updateClass
+);
+
+// @desc    Delete a class (for Admins and the class's own Teacher)
+router.delete(
+  "/:classId",
+  verifyToken,
+  checkRole(["admin", "teacher"]),
+  deleteClass
+);
 
 module.exports = router;

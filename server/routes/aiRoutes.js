@@ -8,7 +8,7 @@ const {
   deleteChatHistory,
 } = require("../controllers/aiController");
 const { protect } = require("../middlewares/authMiddleware");
-const { checkRole } = require("../middlewares/checkRole");
+const  checkRole  = require("../middlewares/checkRole");
 
 // Route for your AI dashboard (unchanged)
 router.post(

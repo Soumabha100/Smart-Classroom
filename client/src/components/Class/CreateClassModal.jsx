@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, LoaderCircle, Presentation, BookCopy } from "lucide-react";
-import InputWithIcon from "../ui/InputWithIcon"; // <-- Import our new component
+import InputWithIcon from "../ui/InputWithIcon";
 
 const CreateClassModal = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("");
@@ -18,7 +18,6 @@ const CreateClassModal = ({ isOpen, onClose, onSave }) => {
     setIsSaving(true);
     try {
       await onSave({ name, subject });
-      // The onSave function (from ManageClassesPage) will now handle closing the modal
     } catch (err) {
       setError(err.response?.data?.message || "An unexpected error occurred.");
     } finally {
@@ -29,8 +28,8 @@ const CreateClassModal = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300">
-      <div className="w-full max-w-lg p-6 mx-4 bg-white border rounded-lg shadow-xl dark:bg-slate-800 dark:border-slate-700 transform transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-lg p-6 mx-4 bg-white border rounded-lg shadow-xl dark:bg-slate-800 dark:border-slate-700">
         <div className="flex items-center justify-between pb-4 mb-4 border-b dark:border-slate-700">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             Create a New Class
@@ -43,7 +42,6 @@ const CreateClassModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Class Name Input */}
           <div>
             <label
               htmlFor="name"
@@ -61,7 +59,6 @@ const CreateClassModal = ({ isOpen, onClose, onSave }) => {
             />
           </div>
 
-          {/* Subject Input */}
           <div>
             <label
               htmlFor="subject"

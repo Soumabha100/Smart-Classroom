@@ -7,7 +7,7 @@ const {
 } = require("../controllers/attendanceController");
 
 const { verifyToken } = require("../middlewares/authMiddleware");
-const { checkRole } = require("../middlewares/checkRole");
+const  checkRole  = require("../middlewares/checkRole");
 
 // Teacher routes
 router.post("/generate-qr", verifyToken, checkRole, generateQrToken);
