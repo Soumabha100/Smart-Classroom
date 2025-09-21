@@ -22,18 +22,20 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✨ UPDATE to merge profile data correctly
-    // This allows updating any part of the profile, including the new 'theme'
-    const updatedProfile = { ...user.profile, ...req.body };
-    user.profile = updatedProfile;
+    user.name = req.body.name || user.name;
+    user.phone = req.body.phone; // Allow setting an empty string
+    user.bio = req.body.bio;   // Allow setting an empty string
 
-    await user.save();
+    const updatedUser = await user.save();
 
-    // Return the updated user object (excluding password)
-    const updatedUser = await User.findById(req.user.id).select("-password");
-    res.status(200).json(updatedUser);
+    // Return the updated user object directly (excluding password)
+    const userResponse = updatedUser.toObject();
+    delete userResponse.password;
+
+    res.status(200).json(userResponse);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err });
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 

@@ -20,6 +20,18 @@ const UserSchema = new mongoose.Schema(
       enum: ["student", "teacher", "admin"], // Role must be one of these values
       default: "student", // If no role is provided, it defaults to 'student'
     },
+    phone: {
+      type: String,
+      default: "", // Default to an empty string
+    },
+    bio: {
+      type: String,
+      default: "", // Default to an empty string
+    },
+    profilePicture: {
+      type: String,
+      default: "", // Default to an empty string
+    },
     profile: {
       academicInterests: [String],
       careerGoals: [String],

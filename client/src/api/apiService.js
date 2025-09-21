@@ -42,8 +42,19 @@ api.interceptors.response.use(
 export const getUserCount = (role) => api.get(`/users/count?role=${role}`);
 export const getTeachers = () => api.get("/users/teachers");
 export const getUserProfile = () => api.get("/users/profile");
-export const updateUserProfile = (profileData) =>
-  api.post("/users/profile", profileData);
+export const updateUserProfile = async (profileData) => {
+  try {
+    // The '/users/profile' endpoint should match your backend route in userRoutes.js
+    const response = await api.put("/users/profile", profileData);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error updating user profile:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
 export const getStudentAttendance = () => api.get("/attendance/student");
 
 // --- AI Chat APIs (Cleaned and Finalized) ---

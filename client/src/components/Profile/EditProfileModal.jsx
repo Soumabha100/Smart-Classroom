@@ -1,36 +1,59 @@
-import React, { useState } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, LoaderCircle } from "lucide-react";
+import { updateUserProfile } from "../../api/apiService";
 
 const EditProfileModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: user.name || "",
     phone: user.phone || "",
     bio: user.bio || "",
-    profilePicture: user.profilePicture || "",
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    // Basic file handling, you might want a more robust solution
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, profilePicture: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would call an API to update the user profile
-    // For now, we simulate it by calling the onSave prop
-    onSave({ ...user, ...formData });
+    setError("");
+
+    // --- NEW VALIDATION LOGIC ---
+    // 1. Check for blank name
+    if (!formData.name.trim()) {
+      setError("Name field cannot be empty.");
+      return;
+    }
+
+    // 2. Check if any changes were actually made
+    const hasChanged =
+      formData.name !== user.name ||
+      formData.phone !== user.phone ||
+      formData.bio !== user.bio;
+    if (!hasChanged) {
+      setError("No changes have been made.");
+      return;
+    }
+    // --- END OF VALIDATION ---
+
+    setIsSaving(true);
+    try {
+      const updatedUserFromApi = await updateUserProfile(formData);
+
+      // --- THIS IS THE FIX for the "weird glitch" ---
+      // We pass the direct response from the API to the onSave function.
+      onSave(updatedUserFromApi);
+      // --- END OF FIX ---
+
+      onClose(); // Close the modal on success
+    } catch (err) {
+      setError("Failed to save changes. Please try again.");
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -51,19 +74,13 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-center">
             <img
-              src={
-                formData.profilePicture ||
-                `https://api.multiavatar.com/${formData.name}.png`
-              }
-              alt="Profile Preview"
-              className="w-24 h-24 mx-auto mb-2 rounded-full"
+              src={user.profilePicture || `/assets/default_avatar.png`}
+              alt="Profile"
+              className="w-24 h-24 mx-auto mb-2 rounded-full object-cover"
             />
-            <input
-              type="file"
-              id="profilePicture"
-              onChange={handleFileChange}
-              className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
+            <p className="text-xs text-slate-400">
+              Profile picture updates can be added later.
+            </p>
           </div>
 
           <div>
@@ -117,19 +134,32 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
             ></textarea>
           </div>
 
+          {error && (
+            <p className="text-sm text-center text-yellow-500">{error}</p>
+          )}
+
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500"
+              disabled={isSaving}
+              className="px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+              disabled={isSaving}
+              className="inline-flex items-center justify-center w-32 gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
             >
-              Save Changes
+              {isSaving ? (
+                <>
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </button>
           </div>
         </form>
