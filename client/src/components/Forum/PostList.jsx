@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getPosts } from "../../api/apiService"; // Make sure this path is correct
+import { Link } from "react-router-dom"; // Import Link
+import { getPosts } from "../../api/apiService";
 import { MessageSquareText } from "lucide-react";
 
 const PostList = ({ activeSection, setActiveSection }) => {
@@ -15,7 +16,7 @@ const PostList = ({ activeSection, setActiveSection }) => {
       }
     };
     fetchPosts();
-  }, [activeSection]); // Refetch posts if needed when section becomes active
+  }, [activeSection]);
 
   const isActive = activeSection === "discussions";
 
@@ -33,17 +34,22 @@ const PostList = ({ activeSection, setActiveSection }) => {
       <div className="space-y-4">
         {posts.length > 0 ? (
           posts.map((post) => (
-            <div
+            // Wrap each post in a Link component
+            <Link
+              to={`/forum/post/${post._id}`}
               key={post._id}
-              className="p-4 transition-colors bg-slate-50 rounded-lg dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700"
+              className="block"
             >
-              <h3 className="font-bold text-md text-slate-800 dark:text-white">
-                {post.title}
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                by {post.author?.name || "Unknown"}
-              </p>
-            </div>
+              <div className="p-4 transition-colors bg-slate-50 rounded-lg dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
+                <h3 className="font-bold text-md text-slate-800 dark:text-white">
+                  {post.title}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  by {post.author?.name || "Unknown"} -{" "}
+                  {post.comments?.length || 0} comments
+                </p>
+              </div>
+            </Link>
           ))
         ) : (
           <p className="text-center text-slate-500 dark:text-slate-400">

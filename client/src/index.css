@@ -1,6 +1,38 @@
 @import "tailwindcss";
 @import 'highlight.js/styles/github-dark.css';
 
+.input-style {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.input-style::placeholder {
+  color: #94a3b8;
+}
+
+.input-style:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+}
+
+@media (min-width: 640px) {
+  .input-style {
+    font-size: 0.875rem;
+  }
+}
+
+.dark .input-style {
+  background-color: #334155;
+  border-color: #475569;
+  color: #fff;
+}
+
 /* ===== Base Reset ===== */
 body {
   margin: 0;

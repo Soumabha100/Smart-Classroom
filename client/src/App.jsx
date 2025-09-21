@@ -23,6 +23,7 @@ import LearningPath from "./pages/LearningPath.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
 import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ForumPage from "./pages/ForumPage.jsx";
+import PostDetailPage from "./pages/PostDetailPage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -184,6 +185,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ForumPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/forum/post/:postId"
+          element={
+            <ProtectedRoute>
+              <PostDetailPage />
             </ProtectedRoute>
           }
         />

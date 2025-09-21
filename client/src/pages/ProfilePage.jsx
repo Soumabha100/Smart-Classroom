@@ -1,231 +1,131 @@
-import React, { useState, useEffect } from "react";
-import { Mail, Phone, User, Edit, Save } from "lucide-react";
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../components/DashboardLayout";
-import { getUserProfile, updateUserProfile } from "../api/apiService"; // Assuming you have these API functions
+import {
+  User,
+  Mail,
+  Phone,
+  Edit,
+  Award,
+  Briefcase,
+  ShieldCheck,
+} from "lucide-react";
+
+// We will create these new components next
+import EditProfileModal from "../components/Profile/EditProfileModal";
+import StudentProfileDetails from "../components/Profile/StudentProfileDetails";
+import TeacherProfileDetails from "../components/Profile/TeacherProfileDetails";
+import AdminProfileDetails from "../components/Profile/AdminProfileDetails";
+
+const RoleBadge = ({ role }) => {
+  const roleStyles = {
+    student: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+    teacher:
+      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+    admin:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+  };
+  const roleIcons = {
+    student: <Award className="w-4 h-4" />,
+    teacher: <Briefcase className="w-4 h-4" />,
+    admin: <ShieldCheck className="w-4 h-4" />,
+  };
+  return (
+    <div
+      className={`inline-flex items-center gap-2 px-3 py-1 text-sm font-semibold rounded-full ${roleStyles[role]}`}
+    >
+      {roleIcons[role]}
+      {role.charAt(0).toUpperCase() + role.slice(1)}
+    </div>
+  );
+};
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    bio: "",
-  });
+  const { user, setUser } = useAuth(); // Assuming setUser updates the context
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        // Replace with your actual API call to get the user's profile
-        const userProfile = await getUserProfile();
-        setUser(userProfile);
-        setFormData({
-          name: userProfile.name,
-          email: userProfile.email,
-          phone: userProfile.phone || "",
-          bio: userProfile.bio || "",
-        });
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        // Handle error (e.g., show a toast notification)
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
-
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Replace with your actual API call to update the user's profile
-      const updatedUser = await updateUserProfile(formData);
-      setUser(updatedUser);
-      setIsEditing(false);
-      // Optionally, show a success message
-    } catch (error) {
-      console.error("Error updating user profile:", error);
-      // Handle error
+  const renderRoleSpecificDetails = () => {
+    switch (user.role) {
+      case "student":
+        return <StudentProfileDetails user={user} />;
+      case "teacher":
+        return <TeacherProfileDetails user={user} />;
+      case "admin":
+        return <AdminProfileDetails user={user} />;
+      default:
+        return null;
     }
   };
 
-  if (!user) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-full">
-          <p className="text-lg text-gray-500">Loading profile...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <div className="p-8 bg-gray-100 dark:bg-gray-900 min-h-screen">
-        <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="relative">
-            <img
-              className="w-full h-48 object-cover"
-              src="/images/hero-background.jpg" // Replace with a dynamic cover photo
-              alt="Cover"
-            />
-            <div className="absolute top-24 left-1/2 -translate-x-1/2">
-              <img
-                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-lg"
-                src={`https://ui-avatars.com/api/?name=${user.name}&background=random`} // Replace with user's avatar
-                alt="Profile"
-              />
-            </div>
-          </div>
+      <div className="flex-1 p-6 overflow-auto bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Main Profile Card */}
+            <div className="lg:col-span-1">
+              <div className="p-6 text-center bg-white border rounded-lg shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                <img
+                  // Use your custom default avatar as a fallback
+                  src={user.profilePicture || "/assets/default_avatar.png"}
+                  alt="Profile"
+                  className="w-32 h-32 mx-auto mb-4 object-cover rounded-full ring-4 ring-indigo-500/50"
+                />
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {user.name}
+                </h1>
+                <div className="my-3">
+                  <RoleBadge role={user.role} />
+                </div>
+                <p className="text-slate-500 dark:text-slate-400">
+                  {user.bio || "No bio available."}
+                </p>
 
-          <div className="p-8 pt-20 text-center">
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {user.name}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {user.role}
-            </p>
-          </div>
+                <hr className="my-6 border-slate-200 dark:border-slate-700" />
 
-          <div className="p-8 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                Profile Information
-              </h3>
-              <button
-                onClick={handleEditToggle}
-                className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                {isEditing ? (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </>
-                ) : (
-                  <>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Profile
-                  </>
-                )}
-              </button>
-            </div>
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-slate-400" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {user.email}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-slate-400" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {user.phone || "Not provided"}
+                    </span>
+                  </div>
+                </div>
 
-            {isEditing ? (
-              <form onSubmit={handleFormSubmit} className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    id="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    id="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    disabled // Usually, email is not editable
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    id="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="bio"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Bio
-                  </label>
-                  <textarea
-                    name="bio"
-                    id="bio"
-                    rows="4"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  ></textarea>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center">
-                  <User className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                  <p className="ml-4 text-gray-800 dark:text-gray-200">
-                    {user.name}
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                  <p className="ml-4 text-gray-800 dark:text-gray-200">
-                    {user.email}
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                  <p className="ml-4 text-gray-800 dark:text-gray-200">
-                    {user.phone || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800 dark:text-white">
-                    Bio
-                  </h4>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    {user.bio || "No bio available."}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setEditModalOpen(true)}
+                  className="inline-flex items-center justify-center w-full gap-2 px-4 py-3 mt-8 font-bold text-white transition-transform transform bg-indigo-600 rounded-md shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Profile
+                </button>
               </div>
-            )}
+            </div>
+
+            {/* Right Column: Role-Specific Details */}
+            <div className="lg:col-span-2">
+              <div className="space-y-8">{renderRoleSpecificDetails()}</div>
+            </div>
           </div>
         </div>
       </div>
+      {isEditModalOpen && (
+        <EditProfileModal
+          user={user}
+          onClose={() => setEditModalOpen(false)}
+          onSave={(updatedUser) => {
+            // This is where you would call your API and then update the context
+            setUser(updatedUser);
+            setEditModalOpen(false);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };
