@@ -14,6 +14,7 @@ const classRoutes = require("./routes/classRoutes");
 const parentRoutes = require("./routes/parentRoutes");
 const inviteRoutes = require("./routes/inviteRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const forumRoutes = require("./routes/forumRoutes");
 
 // Connect to MongoDB
 mongoose
@@ -56,6 +57,15 @@ app.use("/api/classes", classRoutes);
 app.use("/api/parents", parentRoutes);
 app.use("/api/invites", inviteRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/forum", forumRoutes);
+
+const assignmentRoutes = require("./routes/assignmentRoutes");
+app.use("/api/assignments", assignmentRoutes);
+
+app.use("/api/classes", classRoutes);
+
+const hodFeedRoutes = require("./routes/hodFeedRoutes");
+app.use("/api/hodfeed", hodFeedRoutes);
 
 // Socket.IO connection logic
 io.on("connection", (socket) => {
@@ -72,7 +82,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
 // A simple test route
 app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
@@ -82,13 +91,3 @@ app.get("/api/test", (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
-
-const assignmentRoutes = require("./routes/assignmentRoutes");
-app.use("/api/assignments", assignmentRoutes);
-
-
-app.use("/api/classes", classRoutes);
-
-
-const hodFeedRoutes = require("./routes/hodFeedRoutes");
-app.use("/api/hodfeed", hodFeedRoutes);

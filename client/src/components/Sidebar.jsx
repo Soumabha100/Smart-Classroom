@@ -14,6 +14,7 @@ import {
   Mail,
   CalendarCheck,
   Sparkles,
+  MessageSquare, // 1. Imported the MessageSquare icon
 } from "lucide-react";
 
 const SidebarLink = ({ to, icon, children, currentPath }) => {
@@ -42,6 +43,12 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   const getLinks = (role) => {
     const commonLinks = [
+      // 2. Added the new "Doubt Forum" link here
+      {
+        to: "/forum",
+        icon: <MessageSquare className="h-4 w-4" />,
+        label: "Doubt Forum",
+      },
       {
         to: "/profile",
         icon: <BookUser className="h-4 w-4" />,

@@ -71,8 +71,10 @@ export const getAssignments = (classId) =>
 export const createAssignment = (data) => api.post("/assignments", data);
 export const deleteAssignment = (id) => api.delete(`/assignments/${id}`);
 
-// --- DEPRECATED FUNCTIONS REMOVED ---
-// The old `fetchChatHistory` and `sendChatMessage` functions have been removed
-// to prevent any possibility of them being called by mistake.
+export const getPosts = () => api.get("/forum/posts");
+export const createPost = (postData) => api.post("/forum/posts", postData);
+export const getPostById = (id) => api.get(`/forum/posts/${id}`);
+export const createComment = (postId, commentData) =>
+  api.post(`/forum/posts/${postId}/comments`, commentData);
 
 export default api;
