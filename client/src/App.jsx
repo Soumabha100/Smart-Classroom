@@ -198,9 +198,9 @@ function App() {
           }
         />
         <Route
-          path="/manage-classes"
+          path="/teacher/manage-classes"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute role="teacher">
               <ManageClassesPage />
             </ProtectedRoute>
           }

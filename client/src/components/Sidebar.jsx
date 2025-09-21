@@ -14,7 +14,7 @@ import {
   Mail,
   CalendarCheck,
   Sparkles,
-  MessageSquare, // 1. Imported the MessageSquare icon
+  MessageSquare,
 } from "lucide-react";
 
 const SidebarLink = ({ to, icon, children, currentPath }) => {
@@ -43,7 +43,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   const getLinks = (role) => {
     const commonLinks = [
-      // 2. Added the new "Doubt Forum" link here
       {
         to: "/forum",
         icon: <MessageSquare className="h-4 w-4" />,
@@ -93,11 +92,13 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             icon: <LayoutDashboard className="h-4 w-4" />,
             label: "Dashboard",
           },
+
           {
-            to: "/manage-classes",
+            to: "/teacher/manage-classes",
             icon: <Presentation className="h-4 w-4" />,
             label: "Manage Classes",
           },
+
           ...commonLinks,
         ];
       case "student":
@@ -151,7 +152,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           bg-white text-slate-800 dark:bg-slate-900 dark:border-r-slate-800 dark:text-white`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-6 dark:border-b-slate-800">
-          {/* This is the updated brand name and logo */}
           <Link
             to="/"
             className="flex items-center gap-2 text-xl font-bold text-slate-800 dark:text-white"
