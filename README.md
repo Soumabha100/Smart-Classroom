@@ -1,232 +1,129 @@
-IntelliClass: Smart Curriculum, Activity & Attendance App
-IntelliClass is an intelligent, all-in-one educational platform designed to address the challenges of manual attendance, student engagement, and personalized learning in modern academic institutions. This project is our solution for the Problem Statement IDSIH25011 for the Smart India Hackathon 2025.
-
-Our platform replaces time-consuming manual processes with a seamless, automated system, while empowering students to take control of their learning journey through AI-driven personalization and activity recommendations.
-
-Table of Contents
-Problem Statement
-
-Our Solution
-
-Live Demo
-
-Key Features
-
-Technology Stack
-
-System Architecture
-
-Getting Started
-
-Prerequisites
-
-Installation
-
-Project Structure
-
-Current Progress
-
-Future Roadmap
-
-Contributing
-
-Our Team
-
-License
-
-Problem Statement
-(SIH 2025 - IDSIH25011)
-
-Many educational institutions rely on manual attendance systems that are inefficient and prone to errors, consuming valuable class time. Furthermore, students often lack structured guidance for utilizing their free periods productively, leading to poor time management and a disconnect from their long-term academic and career goals. There is a clear need for an integrated tool that combines daily schedules with personalized student planning and automated tracking.
-
-Our Solution
-IntelliClass is a multi-faceted platform that tackles these issues head-on:
-
-Automated & Efficient: We introduce a QR-code-based attendance system, managed through a dedicated mobile app for students and a web dashboard for faculty, which drastically reduces administrative overhead.
-
-Student-Centric: Our platform helps students utilize their free time effectively by providing personalized learning paths, activity suggestions, and AI-powered academic support.
-
-Data-Driven Insights: We provide administrators, teachers, and parents with actionable insights into student attendance, engagement, and academic performance through comprehensive dashboards.
-
-Unified Ecosystem: IntelliClass connects students, teachers, administrators, and parents through a single, cohesive platform, fostering better communication and collaboration.
-
-Live Demo
-(Link to the deployed application will be here)
-
-Key Features
-For Students (Mobile App)
-QR Code Attendance: Scan a unique QR code to mark attendance in seconds.
-
-AI-Powered Dashboard: A personalized dashboard that adapts to your learning needs and goals.
-
-Personalized Learning Paths: Receive suggestions for articles, videos, and courses during free periods.
-
-AI Assistant: An integrated chatbot to answer academic questions and provide guidance.
-
-Gamified Progress Tracking: Stay motivated with streaks, points, and leaderboards for attendance and completed activities.
-
-View Schedule & Grades: Access your class timetable and academic performance on the go.
-
-For Teachers (Web Dashboard)
-Class Management: Create and manage classes, enroll students, and set up schedules.
-
-QR Code Generation: Generate unique, time-sensitive QR codes for each lecture.
-
-Real-time Attendance Tracking: Monitor student attendance live from the dashboard.
-
-HOD Feed: Post announcements and updates for students and other faculty members.
-
-Assignment Management: Create, distribute, and grade assignments.
-
-For Administrators (Web Dashboard)
-Institution-wide Overview: A holistic view of all classes, students, and teachers.
-
-User Management: Onboard and manage profiles for students, teachers, and parents.
-
-Analytics & Reporting: Generate detailed reports on attendance, user activity, and academic trends.
-
-Role-Based Access Control: Securely manage permissions for different user roles.
-
-For Parents (Web Dashboard)
-Child's Progress Monitoring: View your child's attendance records and academic performance.
-
-Stay Informed: Receive updates and announcements from the institution.
-
-Technology Stack
-Backend
-Node.js: JavaScript runtime environment
-
-Express.js: Web framework for Node.js
-
-MongoDB: NoSQL database for data storage
-
-Mongoose: ODM for MongoDB
-
-JWT (JSON Web Tokens): For secure authentication
-
-Frontend (Web Client)
-React.js: A JavaScript library for building user interfaces
-
-React Router: For declarative routing
-
-Axios: Promise-based HTTP client
-
-Tailwind CSS: A utility-first CSS framework
-
-Mobile App
-React Native: Framework for building native apps using React
-
-Expo: A platform for making universal React applications
-
-System Architecture
-Our application is built on a monorepo structure with a decoupled frontend and backend, ensuring scalability and maintainability.
-
-Client (Web): The React-based single-page application that serves teachers and administrators.
-
-Mobile App: The React Native application for students.
-
-Server: The central Node.js/Express backend that handles all business logic and exposes a RESTful API.
-
-Database: A MongoDB instance for persistent data storage.
-
-Getting Started
-Follow these instructions to set up the project locally for development and testing.
-
-Prerequisites
-Node.js (v18.x or higher)
-
-npm or yarn
-
-MongoDB (local instance or a cloud service like MongoDB Atlas)
-
-Expo Go app (for running the mobile app on a physical device)
-
-Installation
-Clone the repository:
-
-git clone [https://github.com/soumabha100/smart-classroom.git](https://github.com/soumabha100/smart-classroom.git)
-cd smart-classroom
-
-Setup the Backend Server:
-
-cd server
-npm install
-
-Create a .env file in the server directory and add your environment variables (e.g., database connection string, JWT secret).
-
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-
-Start the server:
-
-npm start
-
-Setup the Web Client:
-
-cd ../client
-npm install
-
-Start the React development server:
-
-npm start
-
-Setup the Mobile App:
-
-cd ../mobile-app
-npm install
-
-Start the Metro bundler:
-
-npx expo start
-
-Scan the QR code with the Expo Go app on your phone.
-
-Project Structure
-The project is organized as a monorepo:
-
-/smart-classroom
-|-- /client # React Web Application (for Teachers/Admins)
-|-- /mobile-app # React Native Mobile App (for Students)
-|-- /server # Node.js/Express Backend Server
-`-- README.md
-
-Current Progress
-[x] User authentication (student, teacher, admin, parent) with JWT.
-
-[x] Role-based access control.
-
-[x] Core dashboard functionalities for all user roles.
-
-[x] QR code generation and scanning for attendance.
-
-[x] Real-time attendance tracking.
-
-[x] Class and user management for admins.
-
-[ ] AI-powered personalized dashboard and learning path recommendations.
-
-[ ] Gamification features (streaks, points).
-
-[ ] Comprehensive analytics and reporting module.
-
-Future Roadmap
-Offline Capabilities: Allow students to mark attendance even with intermittent internet connectivity.
-
-Advanced Biometrics: Integrate face recognition as an alternative attendance method.
-
-Integration with LMS: Connect with existing Learning Management Systems for seamless data flow.
-
-Push Notifications: Send real-time alerts for announcements, class reminders, and attendance updates.
-
-Enhanced AI Models: Improve the recommendation engine with more sophisticated machine learning models.
-
-Contributing
-We welcome contributions to IntelliClass! If you'd like to contribute, please fork the repository and create a pull request. For major changes, please open an issue first to discuss what you would like to change.
-
-Our Team
-Soumabha Das - Project Lead & Full-Stack Developer
-
-(Add other team members here)
-
-License
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+# 🎓 IntelliClass: Smart Classroom Management System
+
+![IntelliClass Application Showcase](assets/IntelliClass-Showcase.gif)
+![Student Mobile Dashboard](assets/Student-Dashboard.png)
+![Teacher QR Generation](assets/Teacher-QR-Code.png)
+![Admin Analytics Portal](assets/Admin-Analytics.png)
+![Parent Monitoring View](assets/Parent-Portal.png)
+
+IntelliClass is an intelligent, all-in-one educational platform engineered to revolutionize the modern classroom. Designed as our solution for **Problem Statement IDSIH25011** for the **Smart India Hackathon 2025**, it replaces outdated manual processes with a seamless, automated system while empowering students through AI-driven personalization and activity recommendations.
+
+**Live Application:** **[Link to Deployed Application - Coming Soon!]**
+
+---
+
+## 🏛️ Architectural Overview
+
+The application is built on a modern, decoupled architecture to ensure scalability, maintainability, and a clear separation of concerns.
+
+- **Frontend (Web Client):** A dynamic Single-Page Application (SPA) built with **React** and **Vite**. It provides a comprehensive dashboard for administrators and teachers to manage the entire ecosystem.
+- **Mobile App (Student Client):** A cross-platform mobile application for students, built with **React Native** and **Expo**, designed for on-the-go access to schedules, attendance marking, and personalized learning.
+- **Backend (Server):** A secure and stateless RESTful API powered by **Node.js** and **Express.js**, serving as the central nervous system that handles all business logic, user authentication, and data management.
+- **Database:** A **MongoDB** cluster acts as the persistence layer, with schemas optimized for efficient querying, scalability, and data integrity across the platform.
+
+This architecture allows for independent development and scaling of the client and server components, ensuring a robust and high-performance system.
+
+---
+
+## ✨ Core Features
+
+### 📱 For Students (Mobile App)
+
+- **🚀 Instant Attendance:** Scan a unique, time-sensitive QR code with the mobile app to mark attendance in seconds. No more manual roll calls.
+- **🧠 AI-Personalized Dashboard:** A smart, adaptive dashboard that suggests relevant academic tasks, articles, and videos during free periods, tailored to your interests and career goals.
+- **🗺️ Personalized Learning Paths:** Discover a structured routine combining your class schedule, free-time activities, and long-term personal goals, all powered by AI.
+- **🤖 AI Assistant:** An integrated chatbot for instant answers to academic questions, study guidance, and support.
+- **🏆 Gamified Experience:** Stay motivated with attendance streaks, achievement points, and friendly leaderboards for consistent engagement.
+- **🗓️ Schedule & Grade Access:** Instantly view your class timetable and academic performance on the go.
+
+### 👩‍🏫 For Teachers & Faculty (Web Dashboard)
+
+- **📋 Effortless Class Management:** Easily create, update, and manage your classes, schedules, and student rosters from a centralized dashboard.
+- **🔑 Secure QR Code Generation:** Generate unique QR codes for each lecture to ensure accurate and fraud-proof attendance.
+- **📊 Real-Time Attendance Monitoring:** View live attendance data and get instant updates as students check in.
+- **📢 HOD Feed & Announcements:** Broadcast important updates, announcements, and notices to students and other faculty members.
+- **📝 Assignment & Grading:** A complete module to create, distribute, and grade assignments digitally, streamlining the academic workflow.
+
+### 🏢 For Administrators & Parents (Web Dashboard)
+
+- **🌐 Institution-Wide Control:** A powerful admin dashboard providing a holistic, bird's-eye view of all academic activities, user roles, and system settings.
+- **👤 Unified User Management:** Seamlessly onboard and manage profiles for students, teachers, and parents with fine-grained, role-based access control.
+- **📈 Analytics & Reporting:** Generate insightful reports on attendance patterns, user activity, and academic trends to make data-driven decisions.
+- **👨‍👩‍👧 Parent Portal:** A dedicated dashboard for parents to monitor their child's attendance records, academic progress, and receive important communications.
+
+---
+
+## 🛠️ Tech Stack & Key Libraries
+
+| Category             | Technology / Library                                 |
+| -------------------- | ---------------------------------------------------- |
+| **Frontend (Web)**   | `React.js`, `Vite`, `React Router DOM`               |
+| **Mobile App**       | `React Native`, `Expo`                               |
+| **Styling**          | `Tailwind CSS`                                       |
+| **Backend**          | `Node.js`, `Express.js`                              |
+| **Database**         | `MongoDB`, `Mongoose`                                |
+| **Authentication**   | `JSON Web Tokens (JWT)`, `bcryptjs`, `cookie-parser` |
+| **API & Networking** | `Axios`, `RESTful Principles`                        |
+
+---
+
+## ⚙️ Local Development Setup
+
+Follow these steps to get the project running on your local machine.
+
+**Prerequisites:**
+
+- Node.js (v18.x or higher) & npm
+- MongoDB (local instance or a cloud service like MongoDB Atlas)
+- Expo Go app (for running the mobile app on a physical device)
+
+1.  **Clone the Repository**
+    ```bash
+    git clone [https://github.com/soumabha100/smart-classroom.git](https://github.com/soumabha100/smart-classroom.git)
+    cd smart-classroom
+    ```
+2.  **Backend Setup**
+    ```bash
+    cd server
+    npm install
+    ```
+    Create a `.env` file in the `/server` directory and add your environment variables:
+    ```env
+    MONGO_URI=your_mongodb_connection_string
+    JWT_SECRET=your_super_secret_jwt_key
+    ```
+    Then, start the backend server:
+    ```bash
+    npm start
+    ```
+3.  **Web Client Setup**
+    ```bash
+    cd ../client
+    npm install
+    ```
+    Start the frontend development server:
+    ```bash
+    npm run dev
+    ```
+4.  **Mobile App Setup**
+    ```bash
+    cd ../mobile-app
+    npm install
+    ```
+    Start the Metro bundler and scan the QR code with the Expo Go app on your phone:
+    ```bash
+    npx expo start
+    ```
+
+---
+
+### 👥 Project Authors
+
+This project was brought to life by a dedicated team of students for the Smart India Hackathon 2025.
+
+- **[Your Name]**
+- **[Teammate Name]**
+- **[Teammate Name]**
+
+_Department of Computer Science & Engineering_
+_Swami Vivekananda Institute of Science and Technology (SVIST)_
