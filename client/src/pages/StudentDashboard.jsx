@@ -37,6 +37,8 @@ import OnlineResources from "../components/learning/onlineResource.jsx";
 import PeriodManagement from "../components/learning/periodManagement.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/apiService.js";
+import StudentAssignments from "../components/StudentAssignments.jsx";
+import AnnouncementsList from "../components/AnnouncementsList";
 
 // --- Reusable UI Components (No changes here) ---
 
@@ -414,6 +416,9 @@ export default function StudentDashboard() {
         )}
       </AnimatePresence>
       <AIAssistant />
+      <AnnouncementsList audience="student" limit={6} />
+
+      <StudentAssignments/>
     </DashboardLayout>
   );
 }
