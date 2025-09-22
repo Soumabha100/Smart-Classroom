@@ -8,6 +8,8 @@ import UpcomingEvents from "../components/upcomingevent";
 import RecentActivity from "../components/RecentActivity";
 import AccessControl from "../components/AccessControl";
 import AuditLogs from "../components/AuditLogs";
+import AnnouncementsList from "../components/AnnouncementsList";
+
 const AdminDashboard = () => {
   return (
     <DashboardLayout>
@@ -45,6 +47,8 @@ const AdminDashboard = () => {
       <UpcomingEvents/>
       <AccessControl/>
       <AuditLogs/>
+      <AnnouncementsList audience="admin" limit={6} />
+
     </DashboardLayout>
   );
 };

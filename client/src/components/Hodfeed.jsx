@@ -1,99 +1,142 @@
+// src/components/Hodfeed.jsx
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { load, save, genId } from "../utils/storage";
+import { load, save } from "../utils/storage";
 
-export default function HODFeed() {
-  const [items, setItems] = useState([]);
-  const [msg, setMsg] = useState("");
+/**
+ * HOD feed (frontend-only)
+ * - saves posts to localStorage key "td_hod_posts"
+ * - dispatches window CustomEvent 'td_hod_posts_updated' with updated posts
+ */
+export default function Hodfeed() {
+  const [posts, setPosts] = useState([]);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [audience, setAudience] = useState("all"); // "all" | "admin" | "parents"
 
   useEffect(() => {
-    setItems(load("td_hod_feed", []));
+    const existing = load("td_hod_posts", []);
+    setPosts(existing);
   }, []);
 
-  const post = () => {
-    if (!msg.trim()) return;
-    const n = {
-      id: genId(),
-      text: msg.trim(),
+  const publish = () => {
+    if (!title.trim() && !body.trim()) return;
+
+    const newPost = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: title.trim() || "Untitled announcement",
+      body: body.trim(),
+      audience,
+      author: "HOD",
       createdAt: new Date().toISOString(),
-      createdBy: "Teacher",
     };
-    const updated = [n, ...load("td_hod_feed", [])];
-    save("td_hod_feed", updated);
-    setItems(updated);
-    setMsg("");
+
+    const updated = [newPost, ...posts];
+    save("td_hod_posts", updated);
+    setPosts(updated);
+    setTitle("");
+    setBody("");
+
+    // notify same-tab listeners
+    window.dispatchEvent(
+      new CustomEvent("td_hod_posts_updated", { detail: updated })
+    );
   };
 
-  const remove = (id) => {
+  const removePost = (id) => {
     if (!window.confirm("Delete announcement?")) return;
-    const updated = load("td_hod_feed", []).filter((i) => i.id !== id);
-    save("td_hod_feed", updated);
-    setItems(updated);
+    const updated = posts.filter((p) => p.id !== id);
+    save("td_hod_posts", updated);
+    setPosts(updated);
+    window.dispatchEvent(
+      new CustomEvent("td_hod_posts_updated", { detail: updated })
+    );
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow transition-colors duration-300">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
-        📢 HOD Feed
+    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700">
+      <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
+        HOD Announcements
       </h2>
 
-      {/* Input */}
-      <textarea
-        value={msg}
-        onChange={(e) => setMsg(e.target.value)}
-        placeholder="Write announcement..."
-        className="w-full px-3 py-2 border rounded dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-      />
-      <div className="flex justify-end mt-2">
-        <button
-          onClick={post}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Post
-        </button>
+      <div className="space-y-3">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="w-full px-3 py-2 border rounded dark:bg-slate-900 dark:border-slate-700"
+        />
+
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Write announcement..."
+          className="w-full px-3 py-2 border rounded h-24 resize-none dark:bg-slate-900 dark:border-slate-700"
+        />
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm">Audience:</label>
+          <select
+            value={audience}
+            onChange={(e) => setAudience(e.target.value)}
+            className="px-2 py-1 border rounded dark:bg-slate-900 dark:border-slate-700"
+          >
+            <option value="all">All (students / parents / admin)</option>
+            <option value="admin">Admin</option>
+            <option value="parents">Parents</option>
+          </select>
+
+          <button
+            onClick={publish}
+            className="ml-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60"
+            disabled={!title.trim() && !body.trim()}
+          >
+            Publish
+          </button>
+        </div>
       </div>
 
-      {/* Feed List */}
-      <div className="mt-4 space-y-3">
-        {items.length === 0 && (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            No announcements yet.
-          </p>
-        )}
+      <hr className="my-4" />
 
-        <AnimatePresence>
-          {items.map((i) => (
-            <motion.div
-              key={i.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="p-3 border rounded dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:shadow-md transition"
+      <div className="space-y-3">
+        {posts.length === 0 ? (
+          <p className="text-sm text-slate-500">No announcements yet.</p>
+        ) : (
+          posts.map((p) => (
+            <div
+              key={p.id}
+              className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border dark:border-slate-700"
             >
-              <div className="flex justify-between">
+              <div className="flex justify-between items-start gap-3">
                 <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {i.createdBy} •{" "}
-                    {new Date(i.createdAt).toLocaleString()}
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-800 dark:text-white">
+                      {p.title}
+                    </p>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200">
+                      {p.audience}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    {p.body}
                   </p>
-                  <p className="mt-1 text-gray-800 dark:text-gray-100">
-                    {i.text}
+                  <p className="text-xs text-slate-400 mt-2">
+                    {p.author} • {new Date(p.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <div className="flex flex-col gap-2">
+
+                <div className="flex flex-col items-end gap-2">
                   <button
-                    onClick={() => remove(i.id)}
-                    className="px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition"
+                    onClick={() => removePost(p.id)}
+                    className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
                   >
                     Delete
                   </button>
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            </div>
+          ))
+        )}
       </div>
-    </div>
-  );
+    </div>
+  );
 }
