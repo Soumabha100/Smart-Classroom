@@ -6,18 +6,31 @@ const {
   getTeachers,
   getStudents,
   getStudentDataForParent,
+  getTeacherAnalytics,
 } = require("../controllers/userController");
-const { verifyToken } = require("../middlewares/authMiddleware");
 
-// This route is now protected.
+// import both middlewares from authMiddleware in one line
+const { verifyToken, protect } = require("../middlewares/authMiddleware");
+
+// import checkRole factory (you must call it with allowed roles)
+const checkRole = require("../middlewares/checkRole");
+
+// Profile routes
 router.get("/profile", verifyToken, getUserProfile);
 router.put("/profile", verifyToken, updateUserProfile);
 
-// 2. Add the new route for getting user counts
+// Counts and lists
 router.get("/count", verifyToken, getUserCount);
-
 router.get("/teachers", verifyToken, getTeachers);
-router.get('/students', verifyToken, getStudents);
-router.get('/parent', verifyToken, getStudentDataForParent);
+router.get("/students", verifyToken, getStudents);
+router.get("/parent", verifyToken, getStudentDataForParent);
+
+// Teacher analytics — protect + role check
+router.get(
+  "/teacher/analytics",
+  protect,
+  checkRole(["teacher"]),
+  getTeacherAnalytics
+);
 
 module.exports = router;

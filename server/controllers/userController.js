@@ -1,4 +1,8 @@
 const User = require("../models/User");
+const Class = require("../models/Class");
+const Assignment = require("../models/Assignment");
+const Submission = require("../models/Submission");
+const Attendance = require("../models/Attendance");
 
 // Get user profile
 exports.getUserProfile = async (req, res) => {
@@ -87,5 +91,68 @@ exports.getStudentDataForParent = async (req, res) => {
     res.json(students);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// --- THIS IS THE NEW FUNCTION YOU MUST ADD ---
+exports.getTeacherAnalytics = async (req, res) => {
+  try {
+    // req.user.id is automatically added by your auth middleware
+    const teacherId = req.user.id;
+
+    const classes = await Class.find({ teacher: teacherId });
+    const classCount = classes.length;
+
+    if (classCount === 0) {
+      return res.json({
+        classCount: 0,
+        studentCount: 0,
+        assignmentCount: 0,
+        submissionRate: "0.00",
+        attendanceRate: "0.00",
+      });
+    }
+
+    const classIds = classes.map((c) => c._id);
+    const studentCount = await User.countDocuments({
+      role: "student",
+      classes: { $in: classIds },
+    });
+    const assignments = await Assignment.find({ class: { $in: classIds } });
+    const assignmentCount = assignments.length;
+
+    // Use 'assignmentId' based on your Submission.js model
+    const submissionCount = await Submission.countDocuments({
+      assignmentId: { $in: assignments.map((a) => a._id) },
+    });
+
+    const totalPossibleSubmissions = assignmentCount * studentCount;
+    const submissionRate =
+      totalPossibleSubmissions > 0
+        ? (submissionCount / totalPossibleSubmissions) * 100
+        : 0;
+
+    // Use 'classId' based on your Attendance.js model
+    const attendanceRecords = await Attendance.find({
+      classId: { $in: classIds },
+    });
+    const totalAttendance = attendanceRecords.length;
+    // Use 'Present' (capitalized) based on your Attendance.js model
+    const presentCount = attendanceRecords.filter(
+      (a) => a.status === "Present"
+    ).length;
+    const attendanceRate =
+      totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
+
+    res.json({
+      classCount,
+      studentCount,
+      assignmentCount,
+      submissionRate: submissionRate.toFixed(2),
+      attendanceRate: attendanceRate.toFixed(2),
+    });
+  } catch (error) {
+    console.error("Error fetching teacher analytics:", error);
+    res.status(500).json({ message: "Server error while fetching analytics" });
   }
 };

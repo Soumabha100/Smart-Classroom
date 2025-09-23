@@ -36,6 +36,7 @@ api.interceptors.response.use(
 export const getUserCount = (role) => api.get(`/users/count?role=${role}`);
 export const getTeachers = () => api.get("/users/teachers");
 export const getUserProfile = () => api.get("/users/profile");
+export const getTeacherAnalytics = () => api.get("/users/teacher/analytics");
 export const updateUserProfile = async (profileData) => {
   try {
     const response = await api.put("/users/profile", profileData);
