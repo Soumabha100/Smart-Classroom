@@ -41,13 +41,19 @@ async function generateQrCode(req, res) {
     return res.status(400).json({ message: "classId is required" });
   }
 
+  // --- DEBUG PROBE 1 ---
+  console.log(`\n--- TEACHER ACTION: GENERATE QR ---`);
+  console.log(
+    `[TEACHER] Received request to generate QR for Class ID: ${classId}`
+  );
+  // --- END PROBE ---
+
   try {
     const targetClass = await Class.findById(classId);
     if (!targetClass) {
       return res.status(404).json({ message: "Class not found" });
     }
 
-    // optional: ensure the teacher owns the class
     if (targetClass.teacher && targetClass.teacher.toString() !== teacherId) {
       return res
         .status(403)
@@ -57,10 +63,15 @@ async function generateQrCode(req, res) {
     const qrToken = crypto.randomBytes(20).toString("hex");
     const expiry = Date.now() + 2 * 60 * 1000; // 2 minutes
 
-    // store token
     qrTokenStore.set(qrToken, { classId: classId.toString(), expiry });
 
-    // optionally invalidate previous tokens for same class
+    // --- DEBUG PROBE 2 ---
+    console.log(
+      `[TEACHER] Stored token. Associated Class ID: ${classId.toString()}`
+    );
+    console.log(`-------------------------------------\n`);
+    // --- END PROBE ---
+
     for (const [token, data] of qrTokenStore.entries()) {
       if (data.classId === classId.toString() && token !== qrToken) {
         qrTokenStore.delete(token);
@@ -87,6 +98,15 @@ async function markAttendance(req, res) {
   const { qrToken, classId } = req.body;
   const studentId = req.user && req.user.id;
 
+  // --- DEBUG PROBE 3 ---
+  console.log(`\n--- STUDENT ACTION: MARK ATTENDANCE ---`);
+  console.log(`[STUDENT] Received scan request.`);
+  console.log(`[STUDENT] QR Token from app: ${qrToken}`);
+  console.log(
+    `[STUDENT] Class ID from app: ${classId} (Type: ${typeof classId})`
+  );
+  // --- END PROBE ---
+
   if (!qrToken || !classId) {
     return res
       .status(400)
@@ -105,13 +125,26 @@ async function markAttendance(req, res) {
       return res.status(400).json({ message: "QR token expired" });
     }
 
+    // --- DEBUG PROBE 4 ---
+    console.log(
+      `[SERVER] Class ID stored in token: ${
+        tokenData.classId
+      } (Type: ${typeof tokenData.classId})`
+    );
+    console.log(
+      `[SERVER] Comparing -> Stored: "${
+        tokenData.classId
+      }" | Received: "${classId.toString()}"`
+    );
+    console.log(`---------------------------------------\n`);
+    // --- END PROBE ---
+
     if (tokenData.classId !== classId.toString()) {
       return res
         .status(400)
         .json({ message: "QR token does not match selected class" });
     }
 
-    // verify student enrolled
     const targetClass = await Class.findOne({
       _id: classId,
       students: studentId,
@@ -122,36 +155,35 @@ async function markAttendance(req, res) {
         .json({ message: "You are not enrolled in this class" });
     }
 
-    // prevent double-marking for same day
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // --- FIX: Using 'studentId' and 'classId' to match the schema error ---
     const existing = await Attendance.findOne({
-      student: studentId,
-      class: classId,
+      studentId: studentId, // Changed from 'student'
+      classId: classId, // Changed from 'class'
       timestamp: { $gte: today },
     });
+    // --- END FIX ---
 
     if (existing) {
-      return res
-        .status(409)
-        .json({
-          message: `Attendance already marked for ${targetClass.name} today`,
-        });
+      return res.status(409).json({
+        message: `Attendance already marked for ${targetClass.name} today`,
+      });
     }
 
+    // --- FIX: Using 'studentId' and 'classId' to match the schema error ---
     const record = new Attendance({
-      student: studentId,
-      class: classId,
+      studentId: studentId, // Changed from 'student'
+      classId: classId, // Changed from 'class'
       status: "Present",
       timestamp: new Date(),
     });
+    // --- END FIX ---
     await record.save();
 
-    // invalidate token
     qrTokenStore.delete(qrToken);
 
-    // optionally emit websocket event if socket module present
     try {
       const io = getIo();
       if (io) {
@@ -190,7 +222,9 @@ async function getAttendanceAnalytics(req, res) {
   }
 
   try {
-    const match = { class: mongoose.Types.ObjectId(classId) };
+    // --- FIX: Using 'classId' to match schema ---
+    const match = { classId: mongoose.Types.ObjectId(classId) };
+    // --- END FIX ---
     if (from || to) {
       match.timestamp = {};
       if (from) match.timestamp.$gte = new Date(from);
@@ -208,10 +242,12 @@ async function getAttendanceAnalytics(req, res) {
 
     const byStudent = await Attendance.aggregate([
       { $match: { ...match, status: "Present" } },
-      { $group: { _id: "$student", presentCount: { $sum: 1 } } },
+      // --- FIX: Grouping by 'studentId' ---
+      { $group: { _id: "$studentId", presentCount: { $sum: 1 } } },
+      // --- END FIX ---
       {
         $lookup: {
-          from: "users", // change if your users collection has a different name
+          from: "users",
           localField: "_id",
           foreignField: "_id",
           as: "studentInfo",
@@ -254,10 +290,12 @@ async function getAttendanceAnalytics(req, res) {
 async function getStudentAttendance(req, res) {
   const studentId = req.user && req.user.id;
   try {
-    const records = await Attendance.find({ student: studentId })
-      .populate("class", "name")
+    // --- FIX: Using 'studentId' and populating 'classId' ---
+    const records = await Attendance.find({ studentId: studentId }) // Changed from 'student'
+      .populate("classId", "name") // Changed from 'class'
       .sort({ timestamp: -1 })
       .lean();
+    // --- END FIX ---
 
     return res.status(200).json({ records });
   } catch (error) {

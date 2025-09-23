@@ -254,21 +254,33 @@ const TeacherDashboard = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="text-center p-6 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                  // --- FIX START: Changed to a flex column layout for better alignment ---
+                  className="text-center p-6 bg-slate-50 dark:bg-slate-800 rounded-lg flex flex-col items-center"
+                  // --- FIX END ---
                 >
                   <h3 className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                     {selectedClassName}
                   </h3>
-                  <div className="p-4 bg-white inline-block rounded-lg my-4 shadow-inner relative">
+
+                  {/* --- FIX START: QR Code is now in its own clean div --- */}
+                  <div className="p-4 bg-white inline-block rounded-lg my-4 shadow-inner">
                     <QRCode value={qrCodeDetails.data} size={180} />
-                    <button
-                      onClick={() => setIsQrModalOpen(true)}
-                      className="absolute top-2 right-2 p-2 bg-white/70 rounded-full hover:bg-white transition-all duration-200"
-                    >
-                      <Expand size={20} />
-                    </button>
                   </div>
-                  <p className="flex items-center justify-center gap-2 mt-2 text-lg font-bold text-red-600 dark:text-red-400">
+                  {/* --- FIX END --- */}
+
+                  {/* --- FIX START: New button is outside the QR code with nice styling and animation --- */}
+                  <motion.button
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Expand size={18} />
+                    <span>View Fullscreen</span>
+                  </motion.button>
+                  {/* --- FIX END --- */}
+
+                  <p className="flex items-center justify-center gap-2 mt-4 text-lg font-bold text-red-600 dark:text-red-400">
                     <Clock className="w-5 h-5" /> Expires in: {countdown}s
                   </p>
                 </motion.div>

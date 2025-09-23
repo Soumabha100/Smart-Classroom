@@ -1,3 +1,5 @@
+// client/src/pages/StudentClassesPage.jsx
+
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,9 +32,8 @@ export default function StudentClassesPage() {
       try {
         const { data } = await getStudentClasses();
         setClasses(data);
-        // This logic handles the redirect from the dashboard's "Scan" button
         if (location.state?.openScanner && data.length > 0) {
-          openScannerForClass(data[0]); // Open scanner for the first class by default
+          openScannerForClass(data[0]);
         }
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -49,12 +50,21 @@ export default function StudentClassesPage() {
     setShowScanner(true);
   };
 
-  const handleScan = async (result) => {
-    if (!result || !selectedClass) return;
+  // --- THIS IS THE FIX ---
+  // The 'result' from the scanner is an array of detected codes.
+  // We need to take the first one and get its raw string value.
+  const handleScan = async (detectedCodes) => {
+    if (!detectedCodes || detectedCodes.length === 0 || !selectedClass) return;
+
+    // Extract the actual QR code text from the first detected code object
+    const qrToken = detectedCodes[0].rawValue;
+
     setShowScanner(false);
+    console.log(`[FRONTEND] Scanned QR Token: ${qrToken}`); // For verification
+
     try {
       const res = await api.post("/attendance/mark", {
-        qrToken: result,
+        qrToken: qrToken, // Send the extracted string, not the whole object
         classId: selectedClass._id,
       });
       setScanResult({ type: "success", message: res.data.message });
@@ -67,6 +77,7 @@ export default function StudentClassesPage() {
       setTimeout(() => setScanResult(null), 5000);
     }
   };
+  // --- END OF FIX ---
 
   return (
     <DashboardLayout>
@@ -180,37 +191,53 @@ export default function StudentClassesPage() {
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map((c, index) => (
-              <motion.div
-                key={c._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:border-indigo-500/50 dark:hover:border-indigo-500 transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                      {c.name}
-                    </h2>
-                    <BookOpen className="w-6 h-6 text-slate-400 dark:text-slate-500" />
-                  </div>
-                  <p className="text-sm text-indigo-500 dark:text-indigo-400 font-semibold mb-2">
-                    {c.subject}
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Taught by: {c.teacher.name}
-                  </p>
-                </div>
-                <button
-                  onClick={() => openScannerForClass(c)}
-                  className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+            {classes.length > 0 ? (
+              classes.map((c, index) => (
+                <motion.div
+                  key={c._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:border-indigo-500/50 dark:hover:border-indigo-500 transition-all duration-300 flex flex-col justify-between"
                 >
-                  <QrCode className="w-5 h-5" />
-                  <span>Scan Attendance</span>
-                </button>
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                        {c.name}
+                      </h2>
+                      <BookOpen className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <p className="text-sm text-indigo-500 dark:text-indigo-400 font-semibold mb-2">
+                      {c.subject}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Taught by: {c.teacher.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => openScannerForClass(c)}
+                    className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+                  >
+                    <QrCode className="w-5 h-5" />
+                    <span>Scan Attendance</span>
+                  </button>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
+              >
+                <BookOpen size={48} className="mx-auto text-slate-400" />
+                <h3 className="mt-4 text-xl font-semibold text-slate-700 dark:text-slate-200">
+                  No classes joined yet
+                </h3>
+                <p className="mt-1 text-slate-500 dark:text-slate-400">
+                  Once you are added to a class, it will appear here.
+                </p>
               </motion.div>
-            ))}
+            )}
           </div>
         )}
       </div>
