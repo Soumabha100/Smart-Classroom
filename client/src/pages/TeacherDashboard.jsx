@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../components/DashboardLayout";
 import QRCode from "react-qr-code";
 import { motion, AnimatePresence } from "framer-motion";
+// --- FIX: Import Link for navigation and BarChart2 for the new icon ---
+import { Link } from "react-router-dom";
 import {
   QrCode,
   LoaderCircle,
@@ -14,11 +16,12 @@ import {
   Megaphone,
   Users,
   ClipboardCheck,
-  Percent,
+  BarChart2, // Changed from Percent
   Expand,
   X,
   CheckCircle,
 } from "lucide-react";
+// --- END FIX ---
 import {
   getTeacherClasses,
   generateQrCode,
@@ -218,13 +221,17 @@ const TeacherDashboard = () => {
                 color="bg-amber-500"
                 delay={0.3}
               />
-              <StatCard
-                icon={<Percent size={24} className="text-white" />}
-                label="Attendance Rate"
-                value={`${analytics?.attendanceRate ?? 0}%`}
-                color="bg-violet-500"
-                delay={0.4}
-              />
+              {/* --- FIX START: Wrapped StatCard with Link and updated content --- */}
+              <Link to="/teacher/attendance" className="flex-1">
+                <StatCard
+                  icon={<BarChart2 size={24} className="text-white" />}
+                  label="Attendance Analytics"
+                  value={"View Report"}
+                  color="bg-violet-500"
+                  delay={0.4}
+                />
+              </Link>
+              {/* --- FIX END --- */}
             </div>
           )}
         </div>
@@ -254,21 +261,14 @@ const TeacherDashboard = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  // --- FIX START: Changed to a flex column layout for better alignment ---
                   className="text-center p-6 bg-slate-50 dark:bg-slate-800 rounded-lg flex flex-col items-center"
-                  // --- FIX END ---
                 >
                   <h3 className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                     {selectedClassName}
                   </h3>
-
-                  {/* --- FIX START: QR Code is now in its own clean div --- */}
                   <div className="p-4 bg-white inline-block rounded-lg my-4 shadow-inner">
                     <QRCode value={qrCodeDetails.data} size={180} />
                   </div>
-                  {/* --- FIX END --- */}
-
-                  {/* --- FIX START: New button is outside the QR code with nice styling and animation --- */}
                   <motion.button
                     onClick={() => setIsQrModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-300 dark:hover:bg-slate-600 transition-all duration-200"
@@ -278,8 +278,6 @@ const TeacherDashboard = () => {
                     <Expand size={18} />
                     <span>View Fullscreen</span>
                   </motion.button>
-                  {/* --- FIX END --- */}
-
                   <p className="flex items-center justify-center gap-2 mt-4 text-lg font-bold text-red-600 dark:text-red-400">
                     <Clock className="w-5 h-5" /> Expires in: {countdown}s
                   </p>
@@ -360,6 +358,15 @@ const TeacherDashboard = () => {
                 isActive={activeTab === "chat"}
                 onClick={() => setActiveTab("chat")}
               />
+              {/* --- FIX START: Added a Link styled like a TabButton for navigation --- */}
+              <Link
+                to="/teacher/attendance"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-300 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                <BarChart2 size={16} />
+                <span>Attendance Analytics</span>
+              </Link>
+              {/* --- FIX END --- */}
             </div>
           </motion.div>
         </div>

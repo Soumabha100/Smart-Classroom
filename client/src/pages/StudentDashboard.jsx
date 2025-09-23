@@ -1,6 +1,7 @@
+// client/src/pages/StudentDashboard.jsx
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-// 1. ✨ IMPORT THE 'Sparkles' ICON FOR THE NEW BUTTON
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
@@ -36,11 +37,11 @@ import QuickWins from "../components/learning/QuickWins.jsx";
 import OnlineResources from "../components/learning/onlineResource.jsx";
 import PeriodManagement from "../components/learning/periodManagement.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import api from "../api/apiService.js";
+import api, { getStudentAttendance } from "../api/apiService.js"; // Import getStudentAttendance
 import StudentAssignments from "../components/StudentAssignments.jsx";
 import AnnouncementsList from "../components/AnnouncementsList";
 
-// --- Reusable UI Components (No changes here) ---
+// --- Reusable UI Components ---
 
 const StatCardSkeleton = () => (
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
@@ -129,28 +130,37 @@ export default function StudentDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Data Fetching
+  // --- FIX START: Fetch real data including attendance percentage ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        await new Promise((res) => setTimeout(res, 1500));
+        const { data } = await getStudentAttendance();
         setDashboardData({
           stats: {
-            attendance: "95%",
-            grade: "A-",
-            assignmentsDue: 3,
-            activitiesDone: 12,
+            attendance: `${data.overallAttendancePercentage || 0}%`,
+            grade: "A-", // This can be replaced with a real API call later
+            assignmentsDue: 3, // This can be replaced with a real API call later
+            activitiesDone: 12, // This can be replaced with a real API call later
           },
         });
       } catch (error) {
         console.error("Failed to load dashboard:", error);
+        setDashboardData({
+          stats: {
+            attendance: "N/A",
+            grade: "N/A",
+            assignmentsDue: 0,
+            activitiesDone: 0,
+          },
+        });
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
   }, []);
+  // --- FIX END ---
 
   // Scanner Logic
   const handleScan = async (result) => {
@@ -175,17 +185,11 @@ export default function StudentDashboard() {
     );
   };
 
-  const openScanner = () => {
-    setScannerError(null);
-    setShowScanner(true);
-  };
-
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="p-4 md:p-6 lg:p-8 space-y-8">
         {/* --- Header --- */}
         <header>
-          {/* 2. ✨ THE MAIN HEADER IS NOW CLEANER. THE BUTTON HAS BEEN REMOVED. ✨ */}
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
               Welcome back, {user?.name.split(" ")[0]} 👋
@@ -196,7 +200,7 @@ export default function StudentDashboard() {
           </div>
         </header>
 
-        {/* --- Quick Stats Overview (No changes here) --- */}
+        {/* --- Quick Stats Overview --- */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           initial="hidden"
@@ -214,7 +218,7 @@ export default function StudentDashboard() {
                 label="Attendance"
                 value={dashboardData.stats.attendance}
                 color="green"
-                to="/attendance"
+                to="/student/attendance" // --- FIX: Ensure this route exists in App.jsx ---
               />
               <StatCard
                 icon={<Trophy size={24} />}
@@ -227,6 +231,7 @@ export default function StudentDashboard() {
                 label="Assignments Due"
                 value={dashboardData.stats.assignmentsDue}
                 color="blue"
+                to="/student/assignments" // Example link
               />
               <StatCard
                 icon={<Activity size={24} />}
@@ -240,9 +245,7 @@ export default function StudentDashboard() {
 
         {/* --- Main Dashboard Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* --- LEFT COLUMN --- */}
           <div className="lg:col-span-2 space-y-8">
-            {/* ✨ AI PERSONALIZED DASHBOARD (NOW WITH INTEGRATED HEADER) ✨ */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -251,7 +254,6 @@ export default function StudentDashboard() {
             >
               <div className="absolute -inset-2 bg-grid-slate-900/10 bg-[length:100px_100px] [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-100/10 -z-10"></div>
               <div className="bg-slate-50 dark:bg-slate-900 rounded-[22px] p-4 sm:p-6">
-                {/* 3. ✨ THIS IS THE NEW, PREMIUM HEADER INSIDE THE WIDGET ✨ */}
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -275,7 +277,6 @@ export default function StudentDashboard() {
               </div>
             </motion.div>
 
-            {/* Other components... */}
             <PersonalizedLearningPath
               onOpenLesson={(lesson) => console.log("Open", lesson)}
             />
@@ -291,7 +292,6 @@ export default function StudentDashboard() {
             <PeriodManagement />
           </div>
 
-          {/* --- RIGHT COLUMN (No changes here) --- */}
           <div className="lg:col-span-1">
             <div className="lg:sticky top-24 space-y-8">
               <SectionWrapper
@@ -301,8 +301,7 @@ export default function StudentDashboard() {
                 }
               >
                 <Link
-                  to="/classes"
-                  state={{ openScanner: true }} // <-- This state tells the new page to open the scanner
+                  to="/student/classes"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
                 >
                   <QrCode className="w-5 h-5" />
@@ -330,71 +329,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* --- MODALS & FLOATING ELEMENTS (No changes here) --- */}
-      <AnimatePresence>
-        {showScanner && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowScanner(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative bg-slate-800 p-6 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl"
-            >
-              <button
-                onClick={() => setShowScanner(false)}
-                className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-transform transform hover:scale-110"
-              >
-                <X size={20} />
-              </button>
-              <div className="w-full overflow-hidden rounded-lg aspect-square bg-slate-900 flex items-center justify-center">
-                {scannerError ? (
-                  <div className="text-center text-red-400 p-4">
-                    <CameraOff size={48} className="mx-auto" />
-                    <p className="mt-4 font-semibold">Camera Error</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {scannerError}
-                    </p>
-                  </div>
-                ) : (
-                  <Scanner
-                    onScan={handleScan}
-                    onError={handleScannerError}
-                    components={{ finder: false }}
-                    constraints={{ facingMode: "environment" }}
-                    styles={{
-                      container: {
-                        width: "100%",
-                        paddingTop: "100%",
-                        position: "relative",
-                      },
-                      video: {
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      },
-                    }}
-                  />
-                )}
-              </div>
-              <p className="text-center text-slate-400 mt-4 text-sm font-semibold">
-                {scannerError
-                  ? "Please try again."
-                  : "Point the camera at the QR code"}
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* MODALS AND FLOATING ELEMENTS */}
       <AnimatePresence>
         {scanResult && (
           <motion.div

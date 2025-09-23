@@ -130,4 +130,12 @@ export const removeStudentFromClass = (classId, studentId) => {
 // The URL has been corrected to match the backend route "/api/classes/student"
 export const getStudentClasses = () => api.get("/classes/student");
 
+export const getTeacherAttendanceAnalytics = (classId, from, to) => {
+  let url = `/attendance/analytics?classId=${classId}`;
+  if (from) url += `&from=${from}`;
+  if (to) url += `&to=${to}`;
+  return api.get(url);
+};
+
+
 export default api;

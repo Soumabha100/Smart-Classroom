@@ -26,6 +26,7 @@ import ForumPage from "./pages/ForumPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
 import ManageClassesPage from "./pages/ManageClassesPage.jsx";
 import StudentClassesPage from "./pages/StudentClassesPage.jsx";
+import TeacherAttendancePage from "./pages/TeacherAttendancePage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -100,6 +101,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+         <Route path="/student/attendance" element={<AttendancePage />} />
         {/* Teacher Routes */}
         <Route
           path="/teacher-dashboard"
@@ -125,6 +127,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/teacher/attendance" element={<TeacherAttendancePage />} />
         {/* Admin Routes */}
         <Route
           path="/admin-dashboard"

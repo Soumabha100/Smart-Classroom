@@ -1,22 +1,44 @@
+// client/src/pages/AttendancePage.jsx
+
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { format, isSameDay, differenceInCalendarDays, subDays } from "date-fns";
+import {
+  format,
+  isSameDay,
+  differenceInCalendarDays,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+} from "date-fns";
 import {
   ArrowLeft,
   CheckCircle,
   XCircle,
   TrendingUp,
-  TrendingDown,
   Calendar,
   ClipboardList,
+  LoaderCircle,
+  List,
+  BarChart2,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 import DashboardLayout from "../components/DashboardLayout.jsx";
-import { getStudentAttendance } from "../api/apiService.js";
+import { getStudentAttendance, getStudentClasses } from "../api/apiService.js";
 import WeeklyCalendar from "../components/Attendance/WeeklyCalendar.jsx";
 import AttendanceCalendarModal from "../components/Attendance/AttendanceCalendarModal.jsx";
-import AttendanceStreak from "../components/Attendance/AttendanceStreak.jsx"; // ✨ Import the new component
+import AttendanceStreak from "../components/Attendance/AttendanceStreak.jsx";
+import FullAttendanceLog from "../components/Attendance/FullAttendanceLog.jsx";
 
 const StatCard = ({ icon, label, value, color, isLoading }) => {
   const colors = {
@@ -51,79 +73,73 @@ const StatCard = ({ icon, label, value, color, isLoading }) => {
 };
 
 const AttendancePage = () => {
-  const [attendance, setAttendance] = useState([]);
+  const [allAttendance, setAllAttendance] = useState([]);
+  const [enrolledClasses, setEnrolledClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [isFullLogModalOpen, setIsFullLogModalOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState("all");
 
   useEffect(() => {
-    const fetchAttendance = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        await new Promise((res) => setTimeout(res, 1500));
-        const today = new Date();
-        const mockData = [
-          {
-            _id: "1",
-            classId: "CS101 Web Development",
-            status: "Present",
-            timestamp: new Date(
-              new Date().setDate(today.getDate() - 1)
-            ).toISOString(),
-          },
-          {
-            _id: "2",
-            classId: "MA202 Advanced Calculus",
-            status: "Present",
-            timestamp: new Date(
-              new Date().setDate(today.getDate() - 1)
-            ).toISOString(),
-          },
-          {
-            _id: "3",
-            classId: "PH105 Quantum Physics",
-            status: "Absent",
-            timestamp: new Date(
-              new Date().setDate(today.getDate() - 2)
-            ).toISOString(),
-          },
-          {
-            _id: "4",
-            classId: "CS101 Web Development",
-            status: "Present",
-            timestamp: new Date(
-              new Date().setDate(today.getDate() - 4)
-            ).toISOString(),
-          },
-          {
-            _id: "6",
-            classId: "CS301 Algorithms",
-            status: "Present",
-            timestamp: today.toISOString(),
-          },
-        ];
-        const sorted = mockData.sort(
+        const [attendanceRes, classesRes] = await Promise.all([
+          getStudentAttendance(),
+          getStudentClasses(),
+        ]);
+
+        const sorted = attendanceRes.data.records.sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
-        setAttendance(sorted);
+        setAllAttendance(sorted);
+        setEnrolledClasses(classesRes.data);
+      } catch (error) {
+        console.error("Failed to fetch attendance data:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchAttendance();
+    fetchData();
   }, []);
+
+  const filteredAttendance = useMemo(() => {
+    if (selectedClassId === "all") {
+      return allAttendance;
+    }
+    return allAttendance.filter(
+      (record) => record.classId?._id === selectedClassId
+    );
+  }, [allAttendance, selectedClassId]);
 
   const {
     presentDays,
     absentDays,
     overallPercentage,
     totalPresent,
-    totalAbsent,
     currentStreak,
   } = useMemo(() => {
+    // --- FIX START: Added a filter to ensure we only process records with valid dates ---
+    const validAttendance = filteredAttendance.filter(
+      (rec) => rec.timestamp && !isNaN(new Date(rec.timestamp).getTime())
+    );
+
+    if (validAttendance.length === 0) {
+      return {
+        presentDays: [],
+        absentDays: [],
+        overallPercentage: "0.0",
+        totalPresent: 0,
+        currentStreak: 0,
+      };
+    }
+    // --- FIX END ---
+
     const present = new Set();
     const absent = new Set();
-    attendance.forEach((record) => {
+    // Use the sanitized 'validAttendance' array for all calculations
+    validAttendance.forEach((record) => {
       const dateStr = new Date(record.timestamp).toDateString();
       if (record.status === "Present") present.add(dateStr);
       else absent.add(dateStr);
@@ -131,21 +147,18 @@ const AttendancePage = () => {
 
     const presentDates = [...present]
       .map((d) => new Date(d))
-      .sort((a, b) => b - a);
+      .sort((a, b) => b.getTime() - a.getTime()); // Use .getTime() for safer date sorting
 
     let streak = 0;
     if (presentDates.length > 0) {
       const today = new Date();
-      const todayString = today.toDateString();
-      const yesterdayString = subDays(today, 1).toDateString();
-
-      // Check if today or yesterday is the most recent present day
       if (
-        presentDates[0].toDateString() === todayString ||
-        presentDates[0].toDateString() === yesterdayString
+        isSameDay(presentDates[0], today) ||
+        isSameDay(presentDates[0], subDays(today, 1))
       ) {
         streak = 1;
         for (let i = 0; i < presentDates.length - 1; i++) {
+          // This calculation is now safe from errors
           const diff = differenceInCalendarDays(
             presentDates[i],
             presentDates[i + 1]
@@ -164,35 +177,72 @@ const AttendancePage = () => {
       totalDays === 0 ? "0.0" : ((present.size / totalDays) * 100).toFixed(1);
 
     return {
-      presentDays: presentDates,
+      presentDays: presentDates, // --- FIX: Correctly assign presentDates to presentDays ---
       absentDays: [...absent].map((d) => new Date(d)),
       overallPercentage: percentage,
       totalPresent: present.size,
-      totalAbsent: absent.size,
       currentStreak: streak,
     };
-  }, [attendance]);
+  }, [filteredAttendance]);
+
+  const weeklyTrendData = useMemo(() => {
+    const validAttendance = filteredAttendance.filter(
+      (rec) => rec.timestamp && !isNaN(new Date(rec.timestamp).getTime())
+    );
+    const weeks = [];
+    for (let i = 4; i >= 0; i--) {
+      const targetDate = subDays(new Date(), i * 7);
+      const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
+
+      const presentDaysInWeek = new Set(
+        validAttendance
+          .filter((rec) => {
+            const recDate = new Date(rec.timestamp);
+            return (
+              rec.status === "Present" &&
+              recDate >= weekStart &&
+              recDate <= weekEnd
+            );
+          })
+          .map((rec) => new Date(rec.timestamp).toDateString())
+      ).size;
+
+      weeks.push({
+        name: `${format(weekStart, "MMM d")}`,
+        "Days Attended": presentDaysInWeek,
+      });
+    }
+    return weeks;
+  }, [filteredAttendance]);
 
   const recordsForSelectedDay = useMemo(() => {
     if (!selectedDay) return [];
-    return attendance.filter((record) =>
+    return filteredAttendance.filter((record) =>
       isSameDay(new Date(record.timestamp), selectedDay)
     );
-  }, [attendance, selectedDay]);
+  }, [filteredAttendance, selectedDay]);
 
   return (
     <DashboardLayout>
       <AttendanceCalendarModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
         presentDays={presentDays}
         absentDays={absentDays}
         setSelectedDay={setSelectedDay}
       />
+      <FullAttendanceLog
+        isOpen={isFullLogModalOpen}
+        onClose={() => setIsFullLogModalOpen(false)}
+        records={filteredAttendance}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="p-4 md:p-6 lg:p-8"
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex items-center">
@@ -206,13 +256,44 @@ const AttendancePage = () => {
               Attendance
             </h1>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-purple-500 hover:to-indigo-500 transition-transform transform hover:scale-105"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsFullLogModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-lg text-indigo-600 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-transform transform hover:scale-105"
+            >
+              <List size={16} />
+              <span>View Full Log</span>
+            </button>
+            <button
+              onClick={() => setIsCalendarModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-purple-500 hover:to-indigo-500 transition-transform transform hover:scale-105"
+            >
+              <Calendar size={16} />
+              <span>View Full Calendar</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <label
+            htmlFor="class-filter"
+            className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2"
           >
-            <Calendar size={16} />
-            <span>View Full Calendar</span>
-          </button>
+            Filter by Class
+          </label>
+          <select
+            id="class-filter"
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="w-full max-w-sm p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+          >
+            <option value="all">All Classes</option>
+            {enrolledClasses.map((cls) => (
+              <option key={cls._id} value={cls._id}>
+                {cls.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -232,6 +313,51 @@ const AttendancePage = () => {
           />
           <AttendanceStreak streak={currentStreak} isLoading={isLoading} />
         </div>
+
+        <motion.div
+          className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
+            <BarChart2 className="text-indigo-500" />
+            Weekly Attendance Trend
+          </h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart
+              data={weeklyTrendData}
+              margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "currentColor" }}
+                className="text-xs text-slate-500 dark:text-slate-400"
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fill: "currentColor" }}
+                className="text-xs text-slate-500 dark:text-slate-400"
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(128, 128, 128, 0.1)" }}
+                contentStyle={{
+                  backgroundColor: "rgba(30, 41, 59, 0.9)",
+                  borderColor: "rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                }}
+                labelStyle={{ color: "#cbd5e1" }}
+              />
+              <Legend wrapperStyle={{ fontSize: "14px" }} />
+              <Bar
+                dataKey="Days Attended"
+                fill="#4f46e5"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <motion.div
@@ -265,12 +391,9 @@ const AttendancePage = () => {
             </h2>
             <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
               {isLoading ? (
-                Array.from({ length: 2 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-14 w-full bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"
-                  ></div>
-                ))
+                <div className="flex justify-center items-center h-full">
+                  <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+                </div>
               ) : recordsForSelectedDay.length > 0 ? (
                 recordsForSelectedDay.map((record) => (
                   <div
@@ -284,7 +407,7 @@ const AttendancePage = () => {
                     )}
                     <div className="flex-grow">
                       <p className="font-semibold text-slate-800 dark:text-slate-200">
-                        {record.classId}
+                        {record.classId?.name || "Unknown Class"}
                       </p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         {format(new Date(record.timestamp), "p")}

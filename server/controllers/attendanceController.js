@@ -158,13 +158,11 @@ async function markAttendance(req, res) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // --- FIX: Using 'studentId' and 'classId' to match the schema error ---
     const existing = await Attendance.findOne({
-      studentId: studentId, // Changed from 'student'
-      classId: classId, // Changed from 'class'
+      studentId: studentId,
+      classId: classId,
       timestamp: { $gte: today },
     });
-    // --- END FIX ---
 
     if (existing) {
       return res.status(409).json({
@@ -172,14 +170,12 @@ async function markAttendance(req, res) {
       });
     }
 
-    // --- FIX: Using 'studentId' and 'classId' to match the schema error ---
     const record = new Attendance({
-      studentId: studentId, // Changed from 'student'
-      classId: classId, // Changed from 'class'
+      studentId: studentId,
+      classId: classId,
       status: "Present",
       timestamp: new Date(),
     });
-    // --- END FIX ---
     await record.save();
 
     qrTokenStore.delete(qrToken);
@@ -217,14 +213,25 @@ async function markAttendance(req, res) {
  */
 async function getAttendanceAnalytics(req, res) {
   const { classId, from, to } = req.query;
+  const teacherId = req.user && req.user.id; // Assuming teacher context
+
   if (!classId) {
     return res.status(400).json({ message: "classId query param is required" });
   }
 
   try {
-    // --- FIX: Using 'classId' to match schema ---
+    const targetClass = await Class.findById(classId);
+    if (!targetClass) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+    // Optional: Ensure teacher owns the class for analytics
+    if (targetClass.teacher && targetClass.teacher.toString() !== teacherId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized: You do not teach this class." });
+    }
+
     const match = { classId: mongoose.Types.ObjectId(classId) };
-    // --- END FIX ---
     if (from || to) {
       match.timestamp = {};
       if (from) match.timestamp.$gte = new Date(from);
@@ -235,19 +242,22 @@ async function getAttendanceAnalytics(req, res) {
       }
     }
 
+    // Total attendance records for the class within the period
+    const totalRecords = await Attendance.countDocuments(match);
     const totalPresent = await Attendance.countDocuments({
       ...match,
       status: "Present",
     });
+    const attendancePercentage =
+      totalRecords > 0 ? ((totalPresent / totalRecords) * 100).toFixed(2) : 0;
 
+    // Attendance by Student
     const byStudent = await Attendance.aggregate([
       { $match: { ...match, status: "Present" } },
-      // --- FIX: Grouping by 'studentId' ---
       { $group: { _id: "$studentId", presentCount: { $sum: 1 } } },
-      // --- END FIX ---
       {
         $lookup: {
-          from: "users",
+          from: "users", // Your users collection name
           localField: "_id",
           foreignField: "_id",
           as: "studentInfo",
@@ -265,6 +275,7 @@ async function getAttendanceAnalytics(req, res) {
       { $sort: { presentCount: -1 } },
     ]);
 
+    // Daily Attendance Count (for a line chart or bar chart)
     const byDay = await Attendance.aggregate([
       { $match: { ...match, status: "Present" } },
       {
@@ -276,7 +287,23 @@ async function getAttendanceAnalytics(req, res) {
       { $sort: { _id: 1 } },
     ]);
 
-    return res.status(200).json({ totalPresent, byStudent, byDay });
+    // Recent Attendance Logs (detailed list)
+    const recentLogs = await Attendance.find(match)
+      .populate("studentId", "name email")
+      .sort({ timestamp: -1 })
+      .limit(20) // Limit to recent 20 logs for display
+      .lean();
+
+    return res.status(200).json({
+      classId: targetClass._id,
+      className: targetClass.name,
+      totalRecords,
+      totalPresent,
+      attendancePercentage,
+      byStudent,
+      byDay,
+      recentLogs,
+    });
   } catch (error) {
     console.error("[getAttendanceAnalytics] error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -290,14 +317,28 @@ async function getAttendanceAnalytics(req, res) {
 async function getStudentAttendance(req, res) {
   const studentId = req.user && req.user.id;
   try {
-    // --- FIX: Using 'studentId' and populating 'classId' ---
-    const records = await Attendance.find({ studentId: studentId }) // Changed from 'student'
-      .populate("classId", "name") // Changed from 'class'
+    const records = await Attendance.find({ studentId: studentId })
+      .populate("classId", "name subject") // Populating classId to get class details
       .sort({ timestamp: -1 })
       .lean();
-    // --- END FIX ---
 
-    return res.status(200).json({ records });
+    // Calculate total attendance percentage for the student across all classes
+    const totalStudentAttendance = await Attendance.countDocuments({
+      studentId,
+    });
+    const studentPresentCount = await Attendance.countDocuments({
+      studentId,
+      status: "Present",
+    });
+    const overallStudentAttendancePercentage =
+      totalStudentAttendance > 0
+        ? ((studentPresentCount / totalStudentAttendance) * 100).toFixed(2)
+        : 0;
+
+    return res.status(200).json({
+      records,
+      overallAttendancePercentage: overallStudentAttendancePercentage,
+    });
   } catch (error) {
     console.error("[getStudentAttendance] error:", error);
     return res.status(500).json({ message: "Server error" });
