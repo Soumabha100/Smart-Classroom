@@ -1,21 +1,23 @@
 const router = require("express").Router();
+
+// controllers — adjust path if needed
 const {
-  generateQrToken,
+  generateQrCode,
   markAttendance,
   getAttendanceAnalytics,
-  getStudentAttendance, // ✨ Import the new controller
+  getStudentAttendance,
 } = require("../controllers/attendanceController");
 
+// middlewares
 const { verifyToken } = require("../middlewares/authMiddleware");
-const  checkRole  = require("../middlewares/checkRole");
+const checkRole = require("../middlewares/checkRole");
 
-// Teacher routes
-router.post("/generate-qr", verifyToken, checkRole, generateQrToken);
-router.get("/analytics", verifyToken, checkRole, getAttendanceAnalytics);
+// routes (call checkRole(...) — it's a factory that returns a middleware)
+router.post("/generate-qr", verifyToken, checkRole(["teacher"]), generateQrCode);
+router.get("/analytics", verifyToken, checkRole(["teacher"]), getAttendanceAnalytics);
 
 // Student routes
-router.post("/mark", verifyToken, markAttendance);
-// ✨ ADDED: New route for a student to get their own attendance history
-router.get("/student", verifyToken, getStudentAttendance);
+router.post("/mark", verifyToken, checkRole(["student"]), markAttendance);
+router.get("/student", verifyToken, checkRole(["student"]), getStudentAttendance);
 
 module.exports = router;
