@@ -300,13 +300,14 @@ export default function StudentDashboard() {
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 }
               >
-                <button
-                  onClick={openScanner}
+                <Link
+                  to="/classes"
+                  state={{ openScanner: true }} // <-- This state tells the new page to open the scanner
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
                 >
                   <QrCode className="w-5 h-5" />
                   <span>Scan Attendance</span>
-                </button>
+                </Link>
                 <Link
                   to="/learning-path"
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
@@ -418,7 +419,7 @@ export default function StudentDashboard() {
       <AIAssistant />
       <AnnouncementsList audience="student" limit={6} />
 
-      <StudentAssignments/>
+      <StudentAssignments />
     </DashboardLayout>
   );
 }

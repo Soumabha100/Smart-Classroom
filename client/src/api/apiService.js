@@ -120,4 +120,6 @@ export const removeStudentFromClass = (classId, studentId) => {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
 };
+
+export const getStudentClasses = () => api.get("/classes/my-classes/student");
 export default api;

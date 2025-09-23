@@ -1,17 +1,44 @@
+// server/controllers/attendanceController.js
+
+const mongoose = require("mongoose");
 const Class = require("../models/Class");
 const Attendance = require("../models/Attendance");
+const User = require("../models/User");
 const crypto = require("crypto");
 
-// ---------------- existing functions ----------------
+// Safely attempt to load a socket helper. If it doesn't exist, we fall back to a no-op.
+let getIo = () => null;
+try {
+  // require may throw if ../socket.js doesn't exist
+  const socketModule = require("../socket");
+  // support both named export getIo and default export
+  if (socketModule && typeof socketModule.getIo === "function") {
+    getIo = socketModule.getIo;
+  } else if (typeof socketModule === "function") {
+    getIo = socketModule;
+  }
+} catch (err) {
+  // If socket module not present, just warn and continue — we won't emit any events.
+  /* eslint-disable no-console */
+  console.warn(
+    "[attendanceController] socket module not found; websocket notifications disabled."
+  );
+  /* eslint-enable no-console */
+}
 
-// @desc    Generate a QR code for attendance
-// @route   POST /api/attendance/generate-qr
-// @access  Private (Teacher)
+// In-memory store for short-lived QR tokens (fast; resets on server restart)
+const qrTokenStore = new Map();
+
+/**
+ * Generate a QR token for attendance (teacher-only)
+ * POST /api/attendance/generate-qr
+ */
 async function generateQrCode(req, res) {
   const { classId } = req.body;
+  const teacherId = req.user && req.user.id;
 
   if (!classId) {
-    return res.status(400).json({ message: "Class ID is required" });
+    return res.status(400).json({ message: "classId is required" });
   }
 
   try {
@@ -20,128 +47,171 @@ async function generateQrCode(req, res) {
       return res.status(404).json({ message: "Class not found" });
     }
 
+    // optional: ensure the teacher owns the class
+    if (targetClass.teacher && targetClass.teacher.toString() !== teacherId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized: not the class teacher" });
+    }
+
     const qrToken = crypto.randomBytes(20).toString("hex");
-    const qrTokenExpires = new Date(Date.now() + 2 * 60 * 1000);
+    const expiry = Date.now() + 2 * 60 * 1000; // 2 minutes
 
-    targetClass.qrToken = qrToken;
-    targetClass.qrTokenExpires = qrTokenExpires;
-    await targetClass.save();
+    // store token
+    qrTokenStore.set(qrToken, { classId: classId.toString(), expiry });
 
-    res.status(200).json({
-      message: "QR Code generated successfully",
+    // optionally invalidate previous tokens for same class
+    for (const [token, data] of qrTokenStore.entries()) {
+      if (data.classId === classId.toString() && token !== qrToken) {
+        qrTokenStore.delete(token);
+      }
+    }
+
+    return res.status(200).json({
+      message: "QR token generated",
       qrToken,
+      expiresAt: new Date(expiry).toISOString(),
     });
   } catch (error) {
-    console.error("Error generating QR code:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("[generateQrCode] error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-// @desc    Mark attendance by scanning a QR code
-// @route   POST /api/attendance/mark
-// @access  Private (Student)
+/**
+ * Mark attendance (student)
+ * POST /api/attendance/mark
+ * Body: { qrToken, classId }
+ */
 async function markAttendance(req, res) {
-  const { qrToken } = req.body;
-  const studentId = req.user.id; // From auth middleware
+  const { qrToken, classId } = req.body;
+  const studentId = req.user && req.user.id;
 
-  if (!qrToken) {
-    return res.status(400).json({ message: "QR token is required" });
+  if (!qrToken || !classId) {
+    return res
+      .status(400)
+      .json({ message: "qrToken and classId are required" });
   }
 
   try {
-    const targetClass = await Class.findOne({
-      qrToken: qrToken,
-      qrTokenExpires: { $gt: Date.now() },
-    });
+    const tokenData = qrTokenStore.get(qrToken);
 
-    if (!targetClass) {
-      return res.status(400).json({ message: "Invalid or expired QR code" });
+    if (!tokenData) {
+      return res.status(400).json({ message: "Invalid QR token" });
     }
 
-    if (!targetClass.students.includes(studentId)) {
+    if (Date.now() > tokenData.expiry) {
+      qrTokenStore.delete(qrToken);
+      return res.status(400).json({ message: "QR token expired" });
+    }
+
+    if (tokenData.classId !== classId.toString()) {
+      return res
+        .status(400)
+        .json({ message: "QR token does not match selected class" });
+    }
+
+    // verify student enrolled
+    const targetClass = await Class.findOne({
+      _id: classId,
+      students: studentId,
+    }).select("name");
+    if (!targetClass) {
       return res
         .status(403)
-        .json({ message: "You are not enrolled in this class." });
+        .json({ message: "You are not enrolled in this class" });
     }
 
+    // prevent double-marking for same day
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingAttendance = await Attendance.findOne({
+    const existing = await Attendance.findOne({
       student: studentId,
-      class: targetClass._id,
+      class: classId,
       timestamp: { $gte: today },
     });
 
-    if (existingAttendance) {
+    if (existing) {
       return res
         .status(409)
-        .json({ message: "Attendance already marked for this class today" });
+        .json({
+          message: `Attendance already marked for ${targetClass.name} today`,
+        });
     }
 
-    const newAttendance = new Attendance({
+    const record = new Attendance({
       student: studentId,
-      class: targetClass._id,
+      class: classId,
       status: "Present",
+      timestamp: new Date(),
     });
-
-    await newAttendance.save();
+    await record.save();
 
     // invalidate token
-    targetClass.qrToken = undefined;
-    targetClass.qrTokenExpires = undefined;
-    await targetClass.save();
+    qrTokenStore.delete(qrToken);
 
-    res.status(201).json({ message: "Attendance marked successfully" });
+    // optionally emit websocket event if socket module present
+    try {
+      const io = getIo();
+      if (io) {
+        const student = await User.findById(studentId).select("name").lean();
+        io.emit("new_attendance", {
+          student_name: student ? student.name : studentId,
+          class_name: targetClass.name || classId,
+          timestamp: new Date(),
+          status: "Present",
+        });
+      }
+    } catch (socketErr) {
+      console.warn(
+        "[markAttendance] socket emit failed:",
+        socketErr && socketErr.message
+      );
+    }
+
+    return res
+      .status(201)
+      .json({ message: `Attendance marked for ${targetClass.name}` });
   } catch (error) {
-    console.error("Error marking attendance:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("[markAttendance] error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-
-// @desc    Get attendance analytics for a class (teacher only)
-// @route   GET /api/attendance/analytics?classId=...&from=YYYY-MM-DD&to=YYYY-MM-DD
-// @access  Private (Teacher)
+/**
+ * Get attendance analytics (teacher)
+ * GET /api/attendance/analytics?classId=...&from=...&to=...
+ */
 async function getAttendanceAnalytics(req, res) {
   const { classId, from, to } = req.query;
-
   if (!classId) {
     return res.status(400).json({ message: "classId query param is required" });
   }
 
   try {
-    // Build date range if provided
-    const match = { class: classId };
+    const match = { class: mongoose.Types.ObjectId(classId) };
     if (from || to) {
       match.timestamp = {};
       if (from) match.timestamp.$gte = new Date(from);
       if (to) {
         const toDate = new Date(to);
-        // include the whole day for 'to'
         toDate.setHours(23, 59, 59, 999);
         match.timestamp.$lte = toDate;
       }
     }
 
-    // Simple aggregation: count presents per student, and total present count per day
     const totalPresent = await Attendance.countDocuments({
       ...match,
       status: "Present",
     });
 
     const byStudent = await Attendance.aggregate([
-      { $match: match },
-      { $match: { status: "Present" } },
-      {
-        $group: {
-          _id: "$student",
-          presentCount: { $sum: 1 },
-        },
-      },
+      { $match: { ...match, status: "Present" } },
+      { $group: { _id: "$student", presentCount: { $sum: 1 } } },
       {
         $lookup: {
-          from: "users",
+          from: "users", // change if your users collection has a different name
           localField: "_id",
           foreignField: "_id",
           as: "studentInfo",
@@ -159,52 +229,43 @@ async function getAttendanceAnalytics(req, res) {
       { $sort: { presentCount: -1 } },
     ]);
 
-    // Attendance per day (optional)
     const byDay = await Attendance.aggregate([
-      { $match: match },
-      { $match: { status: "Present" } },
+      { $match: { ...match, status: "Present" } },
       {
         $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$timestamp" },
-          },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
           count: { $sum: 1 },
         },
       },
       { $sort: { _id: 1 } },
     ]);
 
-    res.status(200).json({
-      totalPresent,
-      byStudent,
-      byDay,
-    });
+    return res.status(200).json({ totalPresent, byStudent, byDay });
   } catch (error) {
-    console.error("Error getting attendance analytics:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("[getAttendanceAnalytics] error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-// @desc    Get current student's attendance history
-// @route   GET /api/attendance/student
-// @access  Private (Student)
+/**
+ * Get attendance records for current student
+ * GET /api/attendance/student
+ */
 async function getStudentAttendance(req, res) {
-  const studentId = req.user.id;
-
+  const studentId = req.user && req.user.id;
   try {
     const records = await Attendance.find({ student: studentId })
-      .populate("class", "name") // populate class name if your Class model has 'name'
+      .populate("class", "name")
       .sort({ timestamp: -1 })
       .lean();
 
-    res.status(200).json({ records });
+    return res.status(200).json({ records });
   } catch (error) {
-    console.error("Error getting student attendance:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("[getStudentAttendance] error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-// ---------------- exports ----------------
 module.exports = {
   generateQrCode,
   markAttendance,

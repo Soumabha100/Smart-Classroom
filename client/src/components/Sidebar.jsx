@@ -129,6 +129,11 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             icon: <FileArchive className="h-4 w-4" />,
             label: "My Drive",
           },
+          {
+            to: "/classes",
+            icon: <GraduationCap />,
+            label: "My Classes",
+          },
           ...commonLinks,
         ];
     }

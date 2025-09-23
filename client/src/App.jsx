@@ -25,6 +25,7 @@ import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ForumPage from "./pages/ForumPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
 import ManageClassesPage from "./pages/ManageClassesPage.jsx";
+import StudentClassesPage from "./pages/StudentClassesPage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -91,6 +92,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/classes"
+          element={
+            <ProtectedRoute role="student">
+              <StudentClassesPage />
+            </ProtectedRoute>
+          }
+        />
         {/* Teacher Routes */}
         <Route
           path="/teacher-dashboard"
@@ -104,7 +113,7 @@ function App() {
           path="/teacher/manage-classes"
           element={
             <ProtectedRoute role="teacher">
-            <ManageClassesPage />
+              <ManageClassesPage />
             </ProtectedRoute>
           }
         />
