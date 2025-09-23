@@ -50,7 +50,6 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
         {/* Student Routes */}
         <Route
           path="/dashboard"
@@ -92,7 +91,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Teacher Routes */}
         <Route
           path="/teacher-dashboard"
@@ -102,7 +100,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Admin Routes */}
         <Route
           path="/admin-dashboard"
@@ -144,7 +141,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Parent Routes */}
         <Route
           path="/parent-dashboard"
@@ -154,7 +150,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Authenticated Routes */}
         <Route
           path="/profile"
@@ -202,6 +197,18 @@ function App() {
           element={
             <ProtectedRoute role="teacher">
               <ManageClassesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/class/:classId"
+          element={
+            // This component now needs to be accessible by teachers as well
+            // NOTE: We are assuming that a teacher should be able to see their class details.
+            // If you need more complex logic (e.g. is this teacher PART of this class?),
+            // that would be handled inside the ClassDetailsPage component itself.
+            <ProtectedRoute>
+              <ClassDetailsPage />
             </ProtectedRoute>
           }
         />

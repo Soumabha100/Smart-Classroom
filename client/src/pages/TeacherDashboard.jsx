@@ -40,7 +40,7 @@ const TabButton = ({ label, icon, isActive, onClick }) => (
 
 const TeacherDashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' is the default view
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [qrCodeData, setQrCodeData] = useState(null);
@@ -49,7 +49,7 @@ const TeacherDashboard = () => {
   const [countdown, setCountdown] = useState(120);
   const [liveAttendance, setLiveAttendance] = useState([]);
 
-  // Fetch classes (no changes needed here)
+  // Fetch classes
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -65,7 +65,7 @@ const TeacherDashboard = () => {
     fetchClasses();
   }, []);
 
-  // Countdown timer (no changes needed here)
+  // Countdown timer
   useEffect(() => {
     if (!qrCodeData) return;
     setCountdown(120);
@@ -91,7 +91,7 @@ const TeacherDashboard = () => {
     return () => socket.disconnect();
   }, []);
 
-  // QR Code generation (no changes needed here)
+  // QR Code generation
   const handleGenerateQr = async () => {
     if (!selectedClass) {
       setError("Please select a class first.");
@@ -117,12 +117,39 @@ const TeacherDashboard = () => {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Teacher Tools
           </h1>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-500 dark:text-slate-400 mb-4">
             Welcome back, {user?.name}! Select a tool to get started.
           </p>
+
+          {/* --- MOVED CLASS SELECTOR HERE --- */}
+          <div className="max-w-xs">
+            <label
+              htmlFor="class-select-global"
+              className="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Current Class
+            </label>
+            <select
+              id="class-select-global"
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="w-full input-style"
+              disabled={classes.length === 0}
+            >
+              {classes.length > 0 ? (
+                classes.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))
+              ) : (
+                <option>Loading classes...</option>
+              )}
+            </select>
+          </div>
         </header>
 
-        {/* --- NEW TAB NAVIGATION --- */}
+        {/* --- TAB NAVIGATION --- */}
         <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-4 mb-6">
           <TabButton
             label="Dashboard"
@@ -162,40 +189,19 @@ const TeacherDashboard = () => {
           {activeTab === "dashboard" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 space-y-8">
+                {/* QR Code Generator */}
                 <div className="p-6 bg-white border rounded-lg shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   <h2 className="flex items-center gap-3 text-xl font-semibold text-slate-800 dark:text-white mb-4">
                     <QrCode className="w-6 h-6 text-indigo-500" />
                     Attendance QR Code
                   </h2>
+                  {/* The class selector was here, now it's global */}
                   <div className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="class-select"
-                        className="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-300"
-                      >
-                        Select Class
-                      </label>
-                      <select
-                        id="class-select"
-                        value={selectedClass}
-                        onChange={(e) => setSelectedClass(e.target.value)}
-                        className="w-full input-style"
-                        disabled={classes.length === 0 || isLoading}
-                      >
-                        {classes.length > 0 ? (
-                          classes.map((c) => (
-                            <option key={c._id} value={c._id}>
-                              {c.name}
-                            </option>
-                          ))
-                        ) : (
-                          <option>Loading classes...</option>
-                        )}
-                      </select>
-                    </div>
                     <button
                       onClick={handleGenerateQr}
-                      disabled={isLoading || classes.length === 0}
+                      disabled={
+                        isLoading || classes.length === 0 || !selectedClass
+                      }
                       className="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-bold text-white transition-transform transform bg-indigo-600 rounded-md shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 disabled:bg-indigo-400"
                     >
                       {isLoading ? (
@@ -226,6 +232,7 @@ const TeacherDashboard = () => {
                 )}
               </div>
               <div className="lg:col-span-2 space-y-8">
+                {/* Live Attendance */}
                 <div className="p-6 bg-white border rounded-lg shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
                     Live Attendance Feed
