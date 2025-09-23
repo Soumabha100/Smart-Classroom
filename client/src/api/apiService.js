@@ -1,3 +1,5 @@
+// client/src/api/apiService.js
+
 import axios from "axios";
 
 // Create a single, configured instance of Axios.
@@ -102,24 +104,30 @@ export const getClassDetails = (classId) => {
 };
 
 export const getAllStudents = () => {
-  return axios.get('/api/users/students', {
+  return axios.get("/api/users/students", {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
 };
 
 // Function to add a student to a class
 export const addStudentToClass = (classId, studentId) => {
-  return axios.post(`/api/classes/${classId}/students`, { studentId }, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  return axios.post(
+    `/api/classes/${classId}/students`,
+    { studentId },
+    {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }
+  );
 };
 
 // Function to remove a student from a class (Good to have for the future)
 export const removeStudentFromClass = (classId, studentId) => {
-    return axios.delete(`/api/classes/${classId}/students/${studentId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
+  return axios.delete(`/api/classes/${classId}/students/${studentId}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
 };
 
-export const getStudentClasses = () => api.get("/classes/my-classes/student");
+// The URL has been corrected to match the backend route "/api/classes/student"
+export const getStudentClasses = () => api.get("/classes/student");
+
 export default api;

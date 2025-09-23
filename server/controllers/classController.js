@@ -56,29 +56,34 @@ exports.createClass = async (req, res) => {
 
 // Adds Students to class
 exports.addStudentToClass = async (req, res) => {
-  const { classId } = req.params;
-  const { studentId } = req.body;
-
   try {
-    const student = await User.findOne({ _id: studentId, role: "student" });
-    if (!student) {
-      return res.status(404).json({ message: "Student not found." });
+    const { classId } = req.params;
+    const { studentId } = req.body;
+
+    // Find both the class and the student
+    const course = await Class.findById(classId);
+    const student = await User.findById(studentId);
+
+    if (!course || !student) {
+      return res.status(404).json({ message: "Class or Student not found" });
+    }
+    
+    // Add student to class's student list (if not already there)
+    if (!course.students.includes(studentId)) {
+        course.students.push(studentId);
+        await course.save();
     }
 
-    // Find the class and add the student's ID to its 'students' array
-    const updatedClass = await Class.findByIdAndUpdate(
-      classId,
-      { $addToSet: { students: studentId } }, // $addToSet prevents duplicate entries
-      { new: true } // This option returns the updated document
-    ).populate("students", "name");
-
-    if (!updatedClass) {
-      return res.status(404).json({ message: "Class not found." });
+    // Add class to student's class list (if not already there)
+    if (!student.classes.includes(classId)) {
+        student.classes.push(classId);
+        await student.save();
     }
 
-    res.status(200).json(updatedClass);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(200).json({ message: "Student added successfully" });
+  } catch (error) {
+    console.error("Error adding student to class:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -151,5 +156,30 @@ exports.getTeacherClasses = async (req, res) => {
     res.status(200).json(classes);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get all classes for a specific student
+exports.getStudentClasses = async (req, res) => {
+  try {
+    // Find the student by their ID from the authenticated user token
+    const student = await User.findById(req.user.id).populate({
+      path: 'classes',
+      // Further populate the teacher details within each class
+      populate: {
+        path: 'teacher',
+        select: 'name email'
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Respond with the populated list of classes from the student's document
+    res.json(student.classes);
+  } catch (error) {
+    console.error("Error fetching student classes:", error);
+    res.status(500).json({ message: "Server error, please try again later." });
   }
 };

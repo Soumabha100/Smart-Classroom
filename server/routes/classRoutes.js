@@ -7,6 +7,7 @@ const {
   deleteClass,
   getClassById,
   getTeacherClasses,
+  getStudentClasses,
 } = require("../controllers/classController");
 
 
@@ -25,6 +26,9 @@ router.get("/", verifyToken, checkRole(["admin"]), getClasses);
 
 // @desc    Create a new class (for Admins AND Teachers)
 router.post("/", verifyToken, checkRole(["admin", "teacher"]), createClass);
+
+// @desc    Get all classes for the logged-in student
+router.get("/student", verifyToken, checkRole(["student"]), getStudentClasses);
 
 // @desc    Get classes for the logged-in teacher
 router.get(
