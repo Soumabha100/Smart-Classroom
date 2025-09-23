@@ -25,7 +25,7 @@ exports.createClass = async (req, res) => {
     let assignedTeacherId;
 
     // --- NEW ROBUST LOGIC ---
-    if (req.user.role === 'admin' && teacherId) {
+    if (req.user.role === "admin" && teacherId) {
       // If an admin is creating the class and specifies a teacher
       assignedTeacherId = teacherId;
     } else {
@@ -46,7 +46,9 @@ exports.createClass = async (req, res) => {
   } catch (error) {
     console.error("Error creating class:", error);
     if (error.code === 11000) {
-      return res.status(400).json({ message: "A class with this name already exists." });
+      return res
+        .status(400)
+        .json({ message: "A class with this name already exists." });
     }
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -135,8 +137,12 @@ exports.getClassById = async (req, res) => {
 // @access  Private (Teacher)
 exports.getTeacherClasses = async (req, res) => {
   try {
-    // req.user.id is available from the verifyToken middleware
-    const classes = await Class.find({ teacher: req.user.id }).select("name");
+    // --- THIS IS THE ONLY CHANGE ---
+    // Removed .select("name") and added .populate() to include student/teacher details
+    const classes = await Class.find({ teacher: req.user.id })
+      .populate("students")
+      .populate("teacher");
+
     if (!classes) {
       return res
         .status(404)

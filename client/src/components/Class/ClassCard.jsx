@@ -28,13 +28,18 @@ const Stat = ({ icon, count, label }) => (
 );
 
 const ClassCard = ({ cls, onDelete, onEdit }) => {
-  // Added onEdit prop
   const navigate = useNavigate();
 
-  // Function to handle navigation to the class details page
   const handleViewDetails = () => {
     navigate(`/class/${cls._id}`);
   };
+
+  // This logic handles both old and new data structures
+  const teacherCount = Array.isArray(cls.teachers)
+    ? cls.teachers.length // If 'teachers' is an array, use its length
+    : cls.teacher
+    ? 1
+    : 0; // Otherwise, check if the single 'teacher' exists
 
   return (
     <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 dark:bg-slate-800 dark:border-slate-700">
@@ -104,7 +109,7 @@ const ClassCard = ({ cls, onDelete, onEdit }) => {
           />
           <Stat
             icon={<User size={16} />}
-            count={(cls.teachers || []).length}
+            count={teacherCount} // Use the new calculated count
             label="Teachers"
           />
         </div>

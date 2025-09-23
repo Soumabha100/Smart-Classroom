@@ -100,6 +100,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/teacher/manage-classes"
+          element={
+            <ProtectedRoute role="teacher">
+            <ManageClassesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/class/:classId"
+          element={
+            <ProtectedRoute>
+              <ClassDetailsPage />
+            </ProtectedRoute>
+          }
+        />
         {/* Admin Routes */}
         <Route
           path="/admin-dashboard"
@@ -189,26 +205,6 @@ function App() {
           element={
             <ProtectedRoute>
               <PostDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/teacher/manage-classes"
-          element={
-            <ProtectedRoute role="teacher">
-              <ManageClassesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/class/:classId"
-          element={
-            // This component now needs to be accessible by teachers as well
-            // NOTE: We are assuming that a teacher should be able to see their class details.
-            // If you need more complex logic (e.g. is this teacher PART of this class?),
-            // that would be handled inside the ClassDetailsPage component itself.
-            <ProtectedRoute>
-              <ClassDetailsPage />
             </ProtectedRoute>
           }
         />
