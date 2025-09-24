@@ -28,6 +28,7 @@ import ManageClassesPage from "./pages/ManageClassesPage.jsx";
 import StudentClassesPage from "./pages/StudentClassesPage.jsx";
 import TeacherAttendancePage from "./pages/TeacherAttendancePage.jsx";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
+import AdminClassManagement from "./pages/AdminClassManagement.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -143,7 +144,7 @@ function App() {
           path="/manage-classes"
           element={
             <ProtectedRoute role="admin">
-              <ClassManagement />
+              <AdminClassManagement />
             </ProtectedRoute>
           }
         />
