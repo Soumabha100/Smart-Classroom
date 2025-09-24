@@ -172,7 +172,7 @@ async function markAttendance(req, res) {
 
     const record = new Attendance({
       studentId: studentId,
-      classId: classId,
+      classId: new mongoose.Types.ObjectId(classId),
       status: "Present",
       timestamp: new Date(),
     });
@@ -231,19 +231,21 @@ async function getAttendanceAnalytics(req, res) {
 
     const targetClass = await Class.findById(classId).lean();
     if (!targetClass) {
-        return res.status(404).json({ message: "Class not found" });
+      return res.status(404).json({ message: "Class not found" });
     }
 
     const totalPresent = await Attendance.countDocuments({
       ...match,
       status: "Present",
     });
-    
+
     // Note: A more accurate percentage would compare present students against total enrolled students over a number of sessions.
     // This simplified version shows the percentage of records marked "Present".
     const totalRecords = await Attendance.countDocuments(match);
-    const attendancePercentage = totalRecords > 0 ? ((totalPresent / totalRecords) * 100).toFixed(1) : "0.0";
-
+    const attendancePercentage =
+      totalRecords > 0
+        ? ((totalPresent / totalRecords) * 100).toFixed(1)
+        : "0.0";
 
     const byStudent = await Attendance.aggregate([
       { $match: { ...match, status: "Present" } },
@@ -281,10 +283,10 @@ async function getAttendanceAnalytics(req, res) {
     ]);
 
     const recentLogs = await Attendance.find(match)
-        .populate("studentId", "name email")
-        .sort({ timestamp: -1 })
-        .limit(20)
-        .lean();
+      .populate("studentId", "name email")
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .lean();
 
     return res.status(200).json({
       className: targetClass.name,
@@ -293,7 +295,7 @@ async function getAttendanceAnalytics(req, res) {
       attendancePercentage,
       byStudent,
       byDay,
-      recentLogs
+      recentLogs,
     });
   } catch (error) {
     console.error("[getAttendanceAnalytics] error:", error);
@@ -312,15 +314,25 @@ async function getStudentAttendance(req, res) {
       .populate("classId", "name subject")
       .sort({ timestamp: -1 })
       .lean();
-    
-    // To provide a consistent experience, we rename classId to class for the frontend
-    const formattedRecords = records.map(r => ({ ...r, class: r.classId, classId: undefined }));
 
-    const totalUniqueDays = await Attendance.distinct('timestamp', { studentId: studentId });
-    const presentUniqueDays = await Attendance.distinct('timestamp', { studentId: studentId, status: 'Present' });
-    const overallAttendancePercentage = totalUniqueDays.length > 0
-      ? ((presentUniqueDays.length / totalUniqueDays.length) * 100).toFixed(1)
-      : 0;
+    // To provide a consistent experience, we rename classId to class for the frontend
+    const formattedRecords = records.map((r) => ({
+      ...r,
+      class: r.classId,
+      classId: undefined,
+    }));
+
+    const totalUniqueDays = await Attendance.distinct("timestamp", {
+      studentId: studentId,
+    });
+    const presentUniqueDays = await Attendance.distinct("timestamp", {
+      studentId: studentId,
+      status: "Present",
+    });
+    const overallAttendancePercentage =
+      totalUniqueDays.length > 0
+        ? ((presentUniqueDays.length / totalUniqueDays.length) * 100).toFixed(1)
+        : 0;
 
     return res.status(200).json({
       records: formattedRecords,

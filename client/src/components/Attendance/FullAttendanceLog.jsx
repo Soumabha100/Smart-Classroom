@@ -68,7 +68,8 @@ const FullAttendanceLog = ({ isOpen, onClose, records }) => {
                         className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {record.classId?.name || "Unknown Class"}
+                          {/* --- FIX: Read class name from record.class.name --- */}
+                          {record.class?.name || "Unknown Class"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                           <span

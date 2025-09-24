@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Scanner } from "@yudiel/react-qr-scanner";
 
 // --- ICONS ---
 import {
@@ -91,7 +90,8 @@ const StatCard = ({ icon, label, value, color, to }) => {
 
   return to ? (
     <Link
-      to={to}
+      to={to.path}
+      state={to.state} // Pass state for navigation
       className="block hover:shadow-xl dark:hover:shadow-blue-900/30 rounded-2xl transition-all duration-300 transform hover:-translate-y-1"
     >
       {cardContent}
@@ -124,13 +124,10 @@ const SectionWrapper = ({ title, icon, children, className }) => (
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
-  const [scannerError, setScannerError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- FIX START: Fetch real data including attendance percentage ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -160,30 +157,6 @@ export default function StudentDashboard() {
     };
     fetchData();
   }, []);
-  // --- FIX END ---
-
-  // Scanner Logic
-  const handleScan = async (result) => {
-    if (!result) return;
-    setShowScanner(false);
-    try {
-      const res = await api.post("/attendance/mark", { qrToken: result });
-      setScanResult({ type: "success", message: res.data.message });
-    } catch (error) {
-      setScanResult({
-        type: "error",
-        message: error.response?.data?.message || "Failed to mark attendance.",
-      });
-    }
-    setTimeout(() => setScanResult(null), 5000);
-  };
-
-  const handleScannerError = (error) => {
-    console.error("Scanner Error:", error);
-    setScannerError(
-      "Could not access camera. Grant permission and use a secure (HTTPS) connection."
-    );
-  };
 
   return (
     <DashboardLayout>
@@ -218,7 +191,7 @@ export default function StudentDashboard() {
                 label="Attendance"
                 value={dashboardData.stats.attendance}
                 color="green"
-                to="/student/attendance" // --- FIX: Ensure this route exists in App.jsx ---
+                to={{ path: "/student/attendance" }}
               />
               <StatCard
                 icon={<Trophy size={24} />}
@@ -231,7 +204,7 @@ export default function StudentDashboard() {
                 label="Assignments Due"
                 value={dashboardData.stats.assignmentsDue}
                 color="blue"
-                to="/student/assignments" // Example link
+                to={{ path: "/student/assignments" }} // Example link
               />
               <StatCard
                 icon={<Activity size={24} />}
@@ -300,8 +273,10 @@ export default function StudentDashboard() {
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 }
               >
+                {/* --- FIX: Updated the Link to pass state to the target route --- */}
                 <Link
                   to="/student/classes"
+                  state={{ openScanner: true }}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
                 >
                   <QrCode className="w-5 h-5" />
@@ -353,7 +328,6 @@ export default function StudentDashboard() {
       </AnimatePresence>
       <AIAssistant />
       <AnnouncementsList audience="student" limit={6} />
-
       <StudentAssignments />
     </DashboardLayout>
   );

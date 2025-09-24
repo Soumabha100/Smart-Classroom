@@ -90,6 +90,9 @@ const AttendancePage = () => {
           getStudentClasses(),
         ]);
 
+        // --- FIX: Log the incoming data to verify its structure ---
+        console.log("API Response:", attendanceRes.data.records);
+
         const sorted = attendanceRes.data.records.sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -108,8 +111,9 @@ const AttendancePage = () => {
     if (selectedClassId === "all") {
       return allAttendance;
     }
+    // --- FIX: Filter by record.class._id instead of record.classId._id ---
     return allAttendance.filter(
-      (record) => record.classId?._id === selectedClassId
+      (record) => record.class?._id === selectedClassId
     );
   }, [allAttendance, selectedClassId]);
 
@@ -120,7 +124,6 @@ const AttendancePage = () => {
     totalPresent,
     currentStreak,
   } = useMemo(() => {
-    // --- FIX START: Added a filter to ensure we only process records with valid dates ---
     const validAttendance = filteredAttendance.filter(
       (rec) => rec.timestamp && !isNaN(new Date(rec.timestamp).getTime())
     );
@@ -134,11 +137,9 @@ const AttendancePage = () => {
         currentStreak: 0,
       };
     }
-    // --- FIX END ---
 
     const present = new Set();
     const absent = new Set();
-    // Use the sanitized 'validAttendance' array for all calculations
     validAttendance.forEach((record) => {
       const dateStr = new Date(record.timestamp).toDateString();
       if (record.status === "Present") present.add(dateStr);
@@ -147,7 +148,7 @@ const AttendancePage = () => {
 
     const presentDates = [...present]
       .map((d) => new Date(d))
-      .sort((a, b) => b.getTime() - a.getTime()); // Use .getTime() for safer date sorting
+      .sort((a, b) => b.getTime() - a.getTime());
 
     let streak = 0;
     if (presentDates.length > 0) {
@@ -158,7 +159,6 @@ const AttendancePage = () => {
       ) {
         streak = 1;
         for (let i = 0; i < presentDates.length - 1; i++) {
-          // This calculation is now safe from errors
           const diff = differenceInCalendarDays(
             presentDates[i],
             presentDates[i + 1]
@@ -177,7 +177,7 @@ const AttendancePage = () => {
       totalDays === 0 ? "0.0" : ((present.size / totalDays) * 100).toFixed(1);
 
     return {
-      presentDays: presentDates, // --- FIX: Correctly assign presentDates to presentDays ---
+      presentDays: presentDates,
       absentDays: [...absent].map((d) => new Date(d)),
       overallPercentage: percentage,
       totalPresent: present.size,
@@ -406,8 +406,9 @@ const AttendancePage = () => {
                       <XCircle className="h-6 w-6 text-red-500 shrink-0" />
                     )}
                     <div className="flex-grow">
+                      {/* --- FIX: Read class name from record.class.name --- */}
                       <p className="font-semibold text-slate-800 dark:text-slate-200">
-                        {record.classId?.name || "Unknown Class"}
+                        {record.class?.name || "Unknown Class"}
                       </p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         {format(new Date(record.timestamp), "p")}

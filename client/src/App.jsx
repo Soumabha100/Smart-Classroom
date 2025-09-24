@@ -93,15 +93,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* --- FIX: Corrected the route from "/classes" to "/student/classes" --- */}
         <Route
-          path="/classes"
+          path="/student/classes"
           element={
             <ProtectedRoute role="student">
               <StudentClassesPage />
             </ProtectedRoute>
           }
         />
-         <Route path="/student/attendance" element={<AttendancePage />} />
+        <Route path="/student/attendance" element={<AttendancePage />} />
         {/* Teacher Routes */}
         <Route
           path="/teacher-dashboard"
@@ -145,6 +146,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* This was a duplicate route, but keeping the more specific one is fine */}
         <Route
           path="/class/:classId"
           element={
