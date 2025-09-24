@@ -68,13 +68,29 @@ exports.getTeachers = async (req, res) => {
   }
 };
 
-// Get Students
+// Get Students (General Purpose)
 exports.getStudents = async (req, res) => {
   try {
     const students = await User.find({ role: "student" }).select("name email");
     res.status(200).json(students);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+// ✨ FIX: This function is now correctly defined and exported.
+// @desc    Get all users with the role of student (for Admin)
+// @route   GET /api/users/students
+// @access  Private (Admin)
+exports.getAllStudents = async (req, res) => {
+  try {
+    const students = await User.find({ role: "student" }).select(
+      "_id name email"
+    );
+    res.json(students);
+  } catch (err) {
+    console.error("Error fetching students:", err);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -94,12 +110,10 @@ exports.getStudentDataForParent = async (req, res) => {
   }
 };
 
-// --- THIS IS THE NEW FUNCTION YOU MUST ADD ---
+// Get Teacher Analytics
 exports.getTeacherAnalytics = async (req, res) => {
   try {
-    // req.user.id is automatically added by your auth middleware
     const teacherId = req.user.id;
-
     const classes = await Class.find({ teacher: teacherId });
     const classCount = classes.length;
 
@@ -121,7 +135,6 @@ exports.getTeacherAnalytics = async (req, res) => {
     const assignments = await Assignment.find({ class: { $in: classIds } });
     const assignmentCount = assignments.length;
 
-    // Use 'assignmentId' based on your Submission.js model
     const submissionCount = await Submission.countDocuments({
       assignmentId: { $in: assignments.map((a) => a._id) },
     });
@@ -132,12 +145,10 @@ exports.getTeacherAnalytics = async (req, res) => {
         ? (submissionCount / totalPossibleSubmissions) * 100
         : 0;
 
-    // Use 'classId' based on your Attendance.js model
     const attendanceRecords = await Attendance.find({
       classId: { $in: classIds },
     });
     const totalAttendance = attendanceRecords.length;
-    // Use 'Present' (capitalized) based on your Attendance.js model
     const presentCount = attendanceRecords.filter(
       (a) => a.status === "Present"
     ).length;

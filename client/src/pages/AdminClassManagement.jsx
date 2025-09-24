@@ -1,5 +1,12 @@
-// src/pages/AdminClassManagement.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+// client/src/pages/AdminClassManagement.jsx
+
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,63 +20,115 @@ import {
   Users,
   UserCog,
   Search,
+  CheckCircle,
 } from "lucide-react";
 
 import DashboardLayout from "../components/DashboardLayout";
 import CreateClassForm from "../components/CreateClassForm";
 import AdminEditClassModal from "../components/Admin/AdminEditClassModal";
 
-// ✨ New component for the expanded details view
+// ✨ This component gets a major upgrade for a better UX
 const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
-  const [studentId, setStudentId] = useState("");
+  const [error, setError] = useState({});
+  const [success, setSuccess] = useState({});
+  const token = localStorage.getItem("token");
+  const dropdownRef = useRef(null);
+
+  // --- State for the new searchable student dropdown ---
+  const [allStudents, setAllStudents] = useState([]);
+  const [studentSearchTerm, setStudentSearchTerm] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // --- State for teacher assignment ---
   const [newTeacherId, setNewTeacherId] = useState(
     classItem.teacher?._id || ""
   );
   const [allTeachers, setAllTeachers] = useState([]);
-  const [error, setError] = useState({});
-  const [success, setSuccess] = useState({});
-  const token = localStorage.getItem("token");
 
-  // Fetch all available teachers for the assignment dropdown
+  // Fetch all students and teachers when component mounts
   useEffect(() => {
+    const api = axios.create({ headers: { Authorization: `Bearer ${token}` } });
+
+    const fetchStudents = async () => {
+      try {
+        const res = await api.get("/api/users/students");
+        setAllStudents(res.data);
+      } catch (err) {
+        setError((prev) => ({ ...prev, student: "Failed to load students." }));
+      }
+    };
+
     const fetchTeachers = async () => {
       try {
-        const api = axios.create({
-          headers: { Authorization: `Bearer ${token}` },
-        });
         const res = await api.get("/api/users/teachers");
         setAllTeachers(res.data);
       } catch (err) {
         setError((prev) => ({ ...prev, teacher: "Failed to load teachers." }));
       }
     };
+
+    fetchStudents();
     fetchTeachers();
   }, [token]);
 
-  const handleStudentAction = async (action, studentToUpdateId = null) => {
-    let res;
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Memoized list of students available for enrollment
+  const availableStudents = useMemo(() => {
+    const enrolledStudentIds = new Set(classItem.students.map((s) => s._id));
+    return allStudents
+      .filter((student) => !enrolledStudentIds.has(student._id))
+      .filter((student) =>
+        student.name.toLowerCase().includes(studentSearchTerm.toLowerCase())
+      );
+  }, [allStudents, classItem.students, studentSearchTerm]);
+
+  const handleAddStudent = async () => {
+    if (!selectedStudent) {
+      setError({ student: "Please select a student from the list." });
+      return;
+    }
     try {
       const api = axios.create({
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (action === "add") {
-        if (!studentId) {
-          setError({ student: "Please enter a student ID." });
-          return;
-        }
-        res = await api.post(`/api/classes/${classItem._id}/students`, {
-          studentId,
-        });
-        setSuccess({ student: "Student added!" });
-        setStudentId("");
-      } else {
-        // remove
-        res = await api.delete(
-          `/api/classes/${classItem._id}/students/${studentToUpdateId}`
-        );
-        setSuccess({ student: "Student removed!" });
-      }
+      const res = await api.post(`/api/classes/${classItem._id}/students`, {
+        studentId: selectedStudent._id,
+      });
       onClassUpdate(res.data);
+      setSuccess({ student: `${selectedStudent.name} added successfully!` });
+
+      // Reset the form
+      setSelectedStudent(null);
+      setStudentSearchTerm("");
+      setIsDropdownOpen(false);
+
+      setTimeout(() => setSuccess({}), 3000);
+    } catch (err) {
+      setError({ student: err.response?.data?.message || "Action failed." });
+    }
+  };
+
+  const handleRemoveStudent = async (studentToRemove) => {
+    try {
+      const api = axios.create({
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const res = await api.delete(
+        `/api/classes/${classItem._id}/students/${studentToRemove._id}`
+      );
+      onClassUpdate(res.data);
+      setSuccess({ student: `${studentToRemove.name} removed.` });
       setTimeout(() => setSuccess({}), 3000);
     } catch (err) {
       setError({ student: err.response?.data?.message || "Action failed." });
@@ -101,13 +160,13 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
       exit={{ opacity: 0, height: 0 }}
       className="mt-4 border-t border-gray-700 pt-4 overflow-hidden"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Student Management */}
         <div>
           <h4 className="font-semibold text-gray-300 mb-3 flex items-center gap-2">
-            <Users size={18} /> Enrolled Students
+            <Users size={18} /> Enrolled Students ({classItem.students.length})
           </h4>
-          <div className="mb-4 pr-2 max-h-48 overflow-y-auto space-y-2">
+          <div className="mb-4 pr-2 max-h-40 overflow-y-auto space-y-2">
             {classItem.students.length > 0 ? (
               classItem.students.map((student) => (
                 <div
@@ -116,7 +175,7 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
                 >
                   <span className="text-gray-400">{student.name}</span>
                   <button
-                    onClick={() => handleStudentAction("remove", student._id)}
+                    onClick={() => handleRemoveStudent(student)}
                     className="text-red-500 hover:text-red-400"
                   >
                     <Trash2 size={16} />
@@ -127,32 +186,71 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
               <p className="text-gray-500 italic">No students enrolled.</p>
             )}
           </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleStudentAction("add");
-            }}
-            className="flex items-center gap-2"
-          >
-            <input
-              type="text"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              placeholder="Enter Student ID"
-              className="flex-grow bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white"
-            />
-            <button
-              type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 rounded-lg"
-            >
-              <UserPlus size={16} />
-            </button>
-          </form>
+
+          <h4 className="font-semibold text-gray-300 mb-2 flex items-center gap-2">
+            <UserPlus size={18} /> Enroll New Student
+          </h4>
+          <div className="relative" ref={dropdownRef}>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={
+                  selectedStudent ? selectedStudent.name : studentSearchTerm
+                }
+                onChange={(e) => {
+                  setStudentSearchTerm(e.target.value);
+                  setSelectedStudent(null);
+                  setIsDropdownOpen(true);
+                }}
+                onFocus={() => setIsDropdownOpen(true)}
+                placeholder="Search for a student to add..."
+                className="flex-grow bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white"
+              />
+              <button
+                onClick={handleAddStudent}
+                disabled={!selectedStudent}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {isDropdownOpen && availableStudents.length > 0 && (
+                <motion.ul
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute z-10 w-full mt-2 bg-gray-900 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                >
+                  {availableStudents.map((student) => (
+                    <li
+                      key={student._id}
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setStudentSearchTerm(student.name);
+                        setIsDropdownOpen(false);
+                      }}
+                      className="px-4 py-2 text-gray-300 hover:bg-indigo-600 hover:text-white cursor-pointer flex justify-between items-center"
+                    >
+                      <span>
+                        {student.name}{" "}
+                        <span className="text-xs text-gray-500">
+                          {student.email}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </div>
+
           {error.student && (
-            <p className="text-red-500 text-xs mt-1">{error.student}</p>
+            <p className="text-red-500 text-xs mt-2">{error.student}</p>
           )}
           {success.student && (
-            <p className="text-green-500 text-xs mt-1">{success.student}</p>
+            <p className="text-green-500 text-xs mt-2">{success.student}</p>
           )}
         </div>
         {/* Teacher Management */}
@@ -164,7 +262,7 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
             <select
               value={newTeacherId}
               onChange={(e) => setNewTeacherId(e.target.value)}
-              className="flex-grow bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white appearance-none"
+              className="flex-grow bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white appearance-none"
             >
               <option value="" disabled>
                 Select a teacher
@@ -177,16 +275,16 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
             </select>
             <button
               onClick={handleChangeTeacher}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-lg"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
             >
               Save
             </button>
           </div>
           {error.teacher && (
-            <p className="text-red-500 text-xs mt-1">{error.teacher}</p>
+            <p className="text-red-500 text-xs mt-2">{error.teacher}</p>
           )}
           {success.teacher && (
-            <p className="text-green-500 text-xs mt-1">{success.teacher}</p>
+            <p className="text-green-500 text-xs mt-2">{success.teacher}</p>
           )}
         </div>
       </div>
@@ -194,7 +292,16 @@ const ClassDetailsManager = ({ classItem, onClassUpdate }) => {
   );
 };
 
-const AdminClassManagement = () => {
+// Main Page Component (No changes needed here)
+const AdminClassManagement = (
+  {
+    // ... props
+  }
+) => {
+  // ... existing state and functions
+  // The main component remains the same as before.
+  // I am omitting it for brevity, but you should keep your existing code for this part.
+  // Ensure you have the `AdminClassManagement` component code from our previous conversations.
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -210,7 +317,6 @@ const AdminClassManagement = () => {
       const api = axios.create({
         headers: { Authorization: `Bearer ${token}` },
       });
-      // ✨ Admin-specific API endpoint
       const res = await api.get("/api/classes/all");
       setClasses(res.data);
     } catch (err) {
@@ -258,9 +364,8 @@ const AdminClassManagement = () => {
       });
       const res = await api.put(`/api/classes/${classId}`, classData);
       handleClassUpdate(res.data);
-      setEditingClass(null); // Close modal on success
+      setEditingClass(null);
     } catch (err) {
-      // Handle error inside the modal for better UX
       console.error("Failed to update class", err);
       throw err;
     }
@@ -330,7 +435,6 @@ const AdminClassManagement = () => {
         )}
       </AnimatePresence>
 
-      {/* Edit Class Modal */}
       <AdminEditClassModal
         isOpen={!!editingClass}
         onClose={() => setEditingClass(null)}

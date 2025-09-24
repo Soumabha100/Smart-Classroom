@@ -7,6 +7,7 @@ const {
   getStudents,
   getStudentDataForParent,
   getTeacherAnalytics,
+  getAllStudents,
 } = require("../controllers/userController");
 
 // import both middlewares from authMiddleware in one line
@@ -24,6 +25,9 @@ router.get("/count", verifyToken, getUserCount);
 router.get("/teachers", verifyToken, getTeachers);
 router.get("/students", verifyToken, getStudents);
 router.get("/parent", verifyToken, getStudentDataForParent);
+
+router.get("/students", protect, checkRole(["admin"]), getAllStudents);
+
 
 // Teacher analytics — protect + role check
 router.get(
