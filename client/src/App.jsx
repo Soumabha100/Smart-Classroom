@@ -1,46 +1,53 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import { useTheme } from "./context/ThemeContext.jsx";
 
-// Import Pages
+// --- Page Imports ---
+// Public Pages
 import HomePage from "./pages/HomePage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
-import TeacherDashboard from "./pages/TeacherDashboard.jsx";
+
+// Student Pages
 import StudentDashboard from "./pages/StudentDashboard.jsx";
-import AiDashboardPage from "./pages/AiDashboardPage.jsx";
+import StudentClassesPage from "./pages/StudentClassesPage.jsx";
+import AttendancePage from "./pages/AttendancePage.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+import LearningPath from "./pages/LearningPath.jsx";
+import AiDashboardPage from "./pages/AiDashboardPage.jsx";
+
+// Teacher Pages
+import TeacherDashboard from "./pages/TeacherDashboard.jsx";
+import ManageClassesPage from "./pages/ManageClassesPage.jsx";
+import TeacherAttendancePage from "./pages/TeacherAttendancePage.jsx";
+
+// Admin Pages
 import AdminDashboard from "./pages/AdminDashboard.jsx";
-import ClassManagement from "./pages/ClassManagement.jsx";
-import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
+import AdminClassManagement from "./pages/AdminClassManagement.jsx";
 import ParentManagementPage from "./pages/ParentManagementPage";
-import ParentDashboard from "./pages/ParentDashboard";
 import InvitationManagement from "./pages/InvitationManagement";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
+
+// Parent Pages
+import ParentDashboard from "./pages/ParentDashboard";
+
+// Shared Authenticated Pages
 import ProfilePage from "./pages/ProfilePage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import DrivePage from "./pages/DrivePage.jsx";
-import LearningPath from "./pages/LearningPath.jsx";
-import AttendancePage from "./pages/AttendancePage.jsx";
-import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ForumPage from "./pages/ForumPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
-import ManageClassesPage from "./pages/ManageClassesPage.jsx";
-import StudentClassesPage from "./pages/StudentClassesPage.jsx";
-import TeacherAttendancePage from "./pages/TeacherAttendancePage.jsx";
-import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
-import AdminClassManagement from "./pages/AdminClassManagement.jsx";
+import ClassDetailsPage from "./pages/ClassDetailsPage.jsx";
+import ChatHistoryPage from "./pages/ChatHistoryPage";
 
-// Import Components
+// --- Component Imports ---
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
-// ✅ Import theme hook
-import { useTheme } from "./context/ThemeContext.jsx";
-
 function App() {
-  const { theme } = useTheme(); // light or dark
+  const { theme } = useTheme();
 
   return (
-    // ✅ Apply Tailwind dark mode class here
     <div
       className={
         theme === "dark"
@@ -49,12 +56,17 @@ function App() {
       }
     >
       <Routes>
-        {/* Public Routes */}
+        {/* ================================================================== */}
+        {/* PUBLIC ROUTES                              */}
+        {/* ================================================================== */}
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        {/* Student Routes */}
+
+        {/* ================================================================== */}
+        {/* STUDENT ROUTES                             */}
+        {/* ================================================================== */}
         <Route
           path="/dashboard"
           element={
@@ -64,7 +76,15 @@ function App() {
           }
         />
         <Route
-          path="/attendance"
+          path="/student/classes" // Correct path for student classes
+          element={
+            <ProtectedRoute role="student">
+              <StudentClassesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/attendance"
           element={
             <ProtectedRoute role="student">
               <AttendancePage />
@@ -80,32 +100,17 @@ function App() {
           }
         />
         <Route
-          path="/drive"
+          path="/ai-dashboard"
           element={
             <ProtectedRoute role="student">
-              <DrivePage />
+              <AiDashboardPage />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/learning-path"
-          element={
-            <ProtectedRoute role="student">
-              <LearningPath />
-            </ProtectedRoute>
-          }
-        />
-        {/* --- FIX: Corrected the route from "/classes" to "/student/classes" --- */}
-        <Route
-          path="/student/classes"
-          element={
-            <ProtectedRoute role="student">
-              <StudentClassesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/student/attendance" element={<AttendancePage />} />
-        {/* Teacher Routes */}
+
+        {/* ================================================================== */}
+        {/* TEACHER ROUTES                             */}
+        {/* ================================================================== */}
         <Route
           path="/teacher-dashboard"
           element={
@@ -123,15 +128,17 @@ function App() {
           }
         />
         <Route
-          path="/class/:classId"
+          path="/teacher/attendance"
           element={
-            <ProtectedRoute>
-              <ClassDetailsPage />
+            <ProtectedRoute role="teacher">
+              <TeacherAttendancePage />
             </ProtectedRoute>
           }
         />
-        <Route path="/teacher/attendance" element={<TeacherAttendancePage />} />
-        {/* Admin Routes */}
+
+        {/* ================================================================== */}
+        {/* ADMIN ROUTES                              */}
+        {/* ================================================================== */}
         <Route
           path="/admin-dashboard"
           element={
@@ -145,14 +152,6 @@ function App() {
           element={
             <ProtectedRoute role="admin">
               <AdminClassManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/class/:classId"
-          element={
-            <ProtectedRoute role="admin">
-              <ClassDetailsPage />
             </ProtectedRoute>
           }
         />
@@ -180,7 +179,10 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Parent Routes */}
+
+        {/* ================================================================== */}
+        {/* PARENT ROUTES                             */}
+        {/* ================================================================== */}
         <Route
           path="/parent-dashboard"
           element={
@@ -189,7 +191,19 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Authenticated Routes */}
+
+        {/* ================================================================== */}
+        {/* SHARED ROUTES (All Authenticated Users)                */}
+        {/* ================================================================== */}
+        {/* ✨ CLEANUP: A single route for class details, accessible by any authenticated user */}
+        <Route
+          path="/class/:classId"
+          element={
+            <ProtectedRoute>
+              <ClassDetailsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile"
           element={
@@ -207,14 +221,21 @@ function App() {
           }
         />
         <Route
-          path="/ai-dashboard"
+          path="/drive"
           element={
-            <ProtectedRoute role="student">
-              <AiDashboardPage />
+            <ProtectedRoute>
+              <DrivePage />
             </ProtectedRoute>
           }
         />
-        <Route path="/chat-history" element={<ChatHistoryPage />} />
+        <Route
+          path="/learning-path"
+          element={
+            <ProtectedRoute>
+              <LearningPath />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/forum"
           element={
@@ -228,6 +249,14 @@ function App() {
           element={
             <ProtectedRoute>
               <PostDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat-history"
+          element={
+            <ProtectedRoute>
+              <ChatHistoryPage />
             </ProtectedRoute>
           }
         />

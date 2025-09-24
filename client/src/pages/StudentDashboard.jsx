@@ -1,5 +1,3 @@
-// client/src/pages/StudentDashboard.jsx
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -36,11 +34,12 @@ import QuickWins from "../components/learning/QuickWins.jsx";
 import OnlineResources from "../components/learning/onlineResource.jsx";
 import PeriodManagement from "../components/learning/periodManagement.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import api, { getStudentAttendance } from "../api/apiService.js"; // Import getStudentAttendance
+// ✨ MERGE: Keep the import for getStudentClasses
+import { getStudentAttendance, getStudentClasses } from "../api/apiService.js";
 import StudentAssignments from "../components/StudentAssignments.jsx";
 import AnnouncementsList from "../components/AnnouncementsList";
 
-// --- Reusable UI Components ---
+// --- Reusable UI Components (No Changes Needed Here) ---
 
 const StatCardSkeleton = () => (
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
@@ -132,13 +131,19 @@ export default function StudentDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data } = await getStudentAttendance();
+        const [attendanceRes, classesRes] = await Promise.all([
+          getStudentAttendance(),
+          getStudentClasses(),
+        ]);
+
         setDashboardData({
           stats: {
-            attendance: `${data.overallAttendancePercentage || 0}%`,
-            grade: "A-", // This can be replaced with a real API call later
-            assignmentsDue: 3, // This can be replaced with a real API call later
-            activitiesDone: 12, // This can be replaced with a real API call later
+            attendance: `${
+              attendanceRes.data.overallAttendancePercentage || 0
+            }%`,
+            enrolledClasses: classesRes.data.length || 0,
+            grade: "A-", // Placeholder
+            assignmentsDue: 3, // Placeholder
           },
         });
       } catch (error) {
@@ -146,9 +151,9 @@ export default function StudentDashboard() {
         setDashboardData({
           stats: {
             attendance: "N/A",
+            enrolledClasses: 0,
             grade: "N/A",
             assignmentsDue: 0,
-            activitiesDone: 0,
           },
         });
       } finally {
@@ -194,23 +199,25 @@ export default function StudentDashboard() {
                 to={{ path: "/student/attendance" }}
               />
               <StatCard
-                icon={<Trophy size={24} />}
-                label="Avg. Grade"
-                value={dashboardData.stats.grade}
-                color="yellow"
+                icon={<GraduationCap size={24} />}
+                label="My Classes"
+                value={dashboardData.stats.enrolledClasses}
+                color="blue"
+                to={{ path: "/student/classes" }}
               />
               <StatCard
                 icon={<BookOpen size={24} />}
                 label="Assignments Due"
                 value={dashboardData.stats.assignmentsDue}
-                color="blue"
-                to={{ path: "/student/assignments" }} // Example link
+                color="purple"
+                // This correctly links to the classes page where assignments are shown
+                to={{ path: "/student/classes" }}
               />
               <StatCard
-                icon={<Activity size={24} />}
-                label="Activities Done"
-                value={dashboardData.stats.activitiesDone}
-                color="purple"
+                icon={<Trophy size={24} />}
+                label="Avg. Grade"
+                value={dashboardData.stats.grade}
+                color="yellow"
               />
             </>
           )}
@@ -219,6 +226,7 @@ export default function StudentDashboard() {
         {/* --- Main Dashboard Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {/* AI Dashboard Section */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -245,11 +253,11 @@ export default function StudentDashboard() {
                     <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                   </Link>
                 </div>
-
                 <AIDrivenDashboard />
               </div>
             </motion.div>
 
+            {/* Other Components */}
             <PersonalizedLearningPath
               onOpenLesson={(lesson) => console.log("Open", lesson)}
             />
@@ -273,7 +281,6 @@ export default function StudentDashboard() {
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 }
               >
-                {/* --- FIX: Updated the Link to pass state to the target route --- */}
                 <Link
                   to="/student/classes"
                   state={{ openScanner: true }}

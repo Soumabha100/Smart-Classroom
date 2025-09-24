@@ -115,7 +115,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             label: "AI Hub",
           },
           {
-            to: "/attendance",
+            to: "/student/attendance", // Corrected this from /attendance for clarity
             icon: <CalendarCheck className="h-4 w-4" />,
             label: "Attendance",
           },
@@ -130,8 +130,9 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             label: "My Drive",
           },
           {
-            to: "/classes",
-            icon: <GraduationCap />,
+            // ✨ THE FIX IS HERE ✨
+            to: "/student/classes", // Changed from "/classes"
+            icon: <Presentation className="h-4 w-4" />, // Icon updated for consistency
             label: "My Classes",
           },
           ...commonLinks,
