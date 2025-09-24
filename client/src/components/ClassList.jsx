@@ -1,74 +1,72 @@
+// client/src/components/ClassList.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getClasses } from "../api/apiService"; 
+import { getClasses } from "../api/apiService";
+import { LoaderCircle, Book, Users, ArrowRight } from "lucide-react";
 
 const ClassList = () => {
-  const [classes, setClasses] = useState([]); 
-  const [loading, setLoading] = useState(true); 
-  const [error, setError] = useState(""); 
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchClasses = async () => {
+      setLoading(true);
       try {
-        const res = await getClasses(); 
-        setClasses(res.data); 
+        const res = await getClasses();
+        setClasses(res.data);
       } catch (err) {
-        setError("Failed to fetch classes."); 
+        console.error("Failed to fetch classes:", err);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
     fetchClasses();
-  }, []); 
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <LoaderCircle className="w-6 h-6 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full rounded-2xl bg-white p-6 shadow-lg">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">Classes Overview</h2>
-        <Link
-          to="/manage-classes"
-          className="rounded-lg bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-200"
-        >
-          Manage All
-        </Link>
-      </div>
-      {loading && <p className="text-slate-500">Loading classes...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="max-h-96 space-y-3 overflow-y-auto pr-2">
-        {!loading && classes.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center text-center">
-            <p className="text-slate-500">No classes found.</p>
-            <Link
-              to="/manage-classes"
-              className="mt-1 font-semibold text-blue-600 hover:underline"
-            >
-              Create one now!
-            </Link>
-          </div>
-        ) : (
-          classes.map((classItem) => (
-            <div
-              key={classItem._id}
-              className="rounded-lg bg-slate-50 p-4 transition-colors hover:bg-slate-100"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900">{classItem.name}</h3>
-                  <p className="text-sm text-slate-500">
-                    Teacher: {classItem.teacher.name}
-                  </p>
-                </div>
+    <div className="max-h-96 overflow-y-auto pr-2 space-y-3">
+      {classes.length === 0 ? (
+        <div className="text-center py-10">
+          <Book size={32} className="mx-auto text-slate-400" />
+          <p className="mt-2 text-sm text-slate-500">No classes found.</p>
+        </div>
+      ) : (
+        classes.map((classItem) => (
+          <Link
+            to={`/class/${classItem._id}`}
+            key={classItem._id}
+            className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 transition-all duration-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-md group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white">
+                  {classItem.name}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Teacher: {classItem.teacher?.name || "N/A"}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="font-semibold text-slate-800">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                    <Users size={14} />
                     {classItem.students.length}
                   </p>
-                  <p className="text-xs text-slate-500">Students</p>
                 </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </Link>
+        ))
+      )}
     </div>
   );
 };

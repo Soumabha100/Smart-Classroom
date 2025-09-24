@@ -137,5 +137,6 @@ export const getTeacherAttendanceAnalytics = (classId, from, to) => {
   return api.get(url);
 };
 
+export const getAdminAnalytics = () => api.get("/analytics/summary");
 
 export default api;

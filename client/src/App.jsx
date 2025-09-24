@@ -27,6 +27,7 @@ import PostDetailPage from "./pages/PostDetailPage.jsx";
 import ManageClassesPage from "./pages/ManageClassesPage.jsx";
 import StudentClassesPage from "./pages/StudentClassesPage.jsx";
 import TeacherAttendancePage from "./pages/TeacherAttendancePage.jsx";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
 
 // Import Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -146,7 +147,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* This was a duplicate route, but keeping the more specific one is fine */}
         <Route
           path="/class/:classId"
           element={
@@ -168,6 +168,14 @@ function App() {
           element={
             <ProtectedRoute role="admin">
               <InvitationManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminAnalyticsPage />
             </ProtectedRoute>
           }
         />

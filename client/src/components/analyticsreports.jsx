@@ -1,109 +1,156 @@
-// src/components/AnalyticsReports.jsx
-import React from "react";
+// client/src/components/AnalyticsReports.jsx
+import React, { useState, useEffect } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, LineChart, Line
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { motion } from "framer-motion";
+import { getAdminAnalytics } from "../api/apiService";
+import { LoaderCircle, ServerCrash } from "lucide-react";
 
-const studentEnrollment = [
-  { grade: "Grade 1", students: 50 },
-  { grade: "Grade 2", students: 45 },
-  { grade: "Grade 3", students: 60 },
-  { grade: "Grade 4", students: 40 },
-  { grade: "Grade 5", students: 55 },
-];
+const COLORS = ["#4f46e5", "#14b8a6", "#f59e0b", "#ec4899"];
 
-const teacherPerformance = [
-  { name: "Math", score: 85 },
-  { name: "Science", score: 90 },
-  { name: "English", score: 75 },
-  { name: "History", score: 80 },
-];
+const ChartCard = ({ title, children }) => (
+  <motion.div
+    className="bg-white dark:bg-slate-800/60 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0 },
+    }}
+  >
+    <h3 className="text-lg font-semibold mb-4 text-slate-800 dark:text-white">
+      {title}
+    </h3>
+    <div className="h-64">{children}</div>
+  </motion.div>
+);
 
-const classDistribution = [
-  { name: "Class A", value: 8 },
-  { name: "Class B", value: 6 },
-  { name: "Class C", value: 10 },
-  { name: "Class D", value: 5 },
-];
-
-const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444"];
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="p-2 bg-slate-800 text-white rounded-lg shadow-lg border border-slate-700">
+        <p className="label font-semibold">{`${label}`}</p>
+        <p className="intro text-sm">{`${payload[0].name}: ${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function AnalyticsReports() {
-  return (
-    <div className="p-6 rounded-2xl shadow-xl bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 animate-gradient">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">📈 Analytics & Reports</h2>
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Student Enrollment - Bar Chart */}
-        <motion.div
-          className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-transform hover:scale-105"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-        >
-          <h3 className="text-lg font-semibold mb-2 text-gray-700">Student Enrollment</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={studentEnrollment}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="grade" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="students" fill="#6366f1" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await getAdminAnalytics();
+        setData(res.data);
+      } catch (err) {
+        setError("Failed to fetch analytics data.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-        {/* Teacher Performance - Line Chart */}
-        <motion.div
-          className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-transform hover:scale-105"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-        >
-          <h3 className="text-lg font-semibold mb-2 text-gray-700">Teacher Performance</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={teacherPerformance}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={3} dot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Class Distribution - Pie Chart */}
-        <motion.div
-          className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-transform hover:scale-105"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.6 }}
-        >
-          <h3 className="text-lg font-semibold mb-2 text-gray-700">Class Distribution</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={classDistribution}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label
-              >
-                {classDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
       </div>
-    </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-96 text-center text-red-500">
+        <ServerCrash size={40} />
+        <p className="mt-2 font-semibold">{error}</p>
+      </div>
+    );
+  }
+
+  const userDistributionData = [
+    { name: "Students", value: data?.userCounts?.student || 0 },
+    { name: "Teachers", value: data?.userCounts?.teacher || 0 },
+    { name: "Parents", value: data?.userCounts?.parent || 0 },
+    { name: "Admins", value: data?.userCounts?.admin || 0 },
+  ];
+
+  const classEnrollmentData = data?.classEnrollments || [];
+
+  return (
+    <motion.div
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+    >
+      <ChartCard title="User Role Distribution">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={userDistributionData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              fill="#8884d8"
+            >
+              {userDistributionData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ChartCard title="Student Enrollment per Class">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={classEnrollmentData}
+            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: "currentColor" }}
+              className="text-xs text-slate-500 dark:text-slate-400"
+            />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fill: "currentColor" }}
+              className="text-xs"
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar
+              dataKey="studentCount"
+              name="Students"
+              fill="#4f46e5"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </motion.div>
   );
 }

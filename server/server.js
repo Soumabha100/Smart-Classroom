@@ -15,6 +15,7 @@ const parentRoutes = require("./routes/parentRoutes");
 const inviteRoutes = require("./routes/inviteRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const forumRoutes = require("./routes/forumRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 // Connect to MongoDB
 mongoose
@@ -58,6 +59,7 @@ app.use("/api/parents", parentRoutes);
 app.use("/api/invites", inviteRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/forum", forumRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 const assignmentRoutes = require("./routes/assignmentRoutes");
 app.use("/api/assignments", assignmentRoutes);
