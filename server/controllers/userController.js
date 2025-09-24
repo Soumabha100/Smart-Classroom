@@ -71,7 +71,7 @@ exports.getTeachers = async (req, res) => {
 // Get Students (General Purpose)
 exports.getStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: "student" }).select("name email");
+    const students = await User.find({ role: "student" }).select("_id name email");
     res.status(200).json(students);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });

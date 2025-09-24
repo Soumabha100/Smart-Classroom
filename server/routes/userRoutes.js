@@ -4,16 +4,13 @@ const {
   updateUserProfile,
   getUserCount,
   getTeachers,
-  getStudents,
+  getStudents, // Your original function, untouched
   getStudentDataForParent,
   getTeacherAnalytics,
-  getAllStudents,
+  getAllStudents, // The admin-specific function
 } = require("../controllers/userController");
 
-// import both middlewares from authMiddleware in one line
 const { verifyToken, protect } = require("../middlewares/authMiddleware");
-
-// import checkRole factory (you must call it with allowed roles)
 const checkRole = require("../middlewares/checkRole");
 
 // Profile routes
@@ -23,11 +20,14 @@ router.put("/profile", verifyToken, updateUserProfile);
 // Counts and lists
 router.get("/count", verifyToken, getUserCount);
 router.get("/teachers", verifyToken, getTeachers);
-router.get("/students", verifyToken, getStudents);
 router.get("/parent", verifyToken, getStudentDataForParent);
 
-router.get("/students", protect, checkRole(["admin"]), getAllStudents);
+// ✨ FIX: Renamed the admin-specific route to "/all-students" to make it unique.
+// The frontend will now call this new, unambiguous route.
+router.get("/all-students", protect, checkRole(["admin"]), getAllStudents);
 
+// Your original /students route is preserved and untouched for other parts of the app
+router.get("/students", verifyToken, getStudents);
 
 // Teacher analytics — protect + role check
 router.get(

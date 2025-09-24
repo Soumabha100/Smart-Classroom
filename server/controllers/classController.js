@@ -88,32 +88,35 @@ exports.createClass = async (req, res) => {
 // Adds Students to class
 exports.addStudentToClass = async (req, res) => {
   try {
-    const { classId } = req.params;
+    // ✨ FIX: Changed req.params.classId to req.params.id to match the route definition
+    const { id: classId } = req.params; 
     const { studentId } = req.body;
 
+    // Find both the class and the student
     const course = await Class.findById(classId);
     const student = await User.findById(studentId);
 
     if (!course || !student) {
       return res.status(404).json({ message: "Class or Student not found" });
     }
-
+    
+    // Add student to class's student list (if not already there)
     if (!course.students.includes(studentId)) {
-      course.students.push(studentId);
+        course.students.push(studentId);
     }
 
+    // Add class to student's class list (if not already there)
     if (!student.classes.includes(classId)) {
-      student.classes.push(classId);
+        student.classes.push(classId);
     }
-
+    
     await course.save();
     await student.save();
 
-    // Return the updated class with populated students
-    const updatedClass = await Class.findById(classId)
-      .populate("students", "name email")
-      .populate("teacher", "name email");
+    // Return the updated class with populated students for a seamless UI update
+    const updatedClass = await Class.findById(classId).populate('students', 'name email avatar').populate('teacher', 'name email avatar');
     res.status(200).json(updatedClass);
+
   } catch (error) {
     console.error("Error adding student to class:", error);
     res.status(500).json({ message: "Server error" });
