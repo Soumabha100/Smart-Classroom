@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+// client/src/pages/TeacherAttendancePage.jsx
+
+import React, { useState, useEffect, useCallback, useMemo } from "react"; // --- FIX: Imported useMemo ---
 import DashboardLayout from "../components/DashboardLayout";
 import {
   getTeacherClasses,
@@ -6,29 +8,58 @@ import {
 } from "../api/apiService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LineChart,
-  Line,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
+import { Link } from "react-router-dom";
+import {
+  format,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
 import {
   ChevronLeft,
   LoaderCircle,
   AlertCircle,
-  CalendarDays,
+  Calendar as CalendarIcon,
   Users,
-  CheckCircle,
+  ServerCrash,
+  Filter,
+  List,
+  BarChart2,
   Clock,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import DetailedAttendanceModal from "../components/Attendance/DetailedAttendanceModal";
 
-// You might need to install recharts: npm install recharts
+const COLORS = ["#22c55e", "#ef4444", "#f59e0b"]; // Green for Present, Red for Absent, Yellow for Late
+
+const AnalyticsCard = ({ title, icon, children, className = "" }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className={`bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm ${className}`}
+  >
+    <div className="flex justify-between items-center mb-4">
+      <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
+        {icon}
+        {title}
+      </h3>
+    </div>
+    {children}
+  </motion.div>
+);
 
 export default function TeacherAttendancePage() {
   const [classes, setClasses] = useState([]);
@@ -37,25 +68,49 @@ export default function TeacherAttendancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const [filterType, setFilterType] = useState("month");
+  const [dateRange, setDateRange] = useState({
+    from: format(startOfMonth(new Date()), "yyyy-MM-dd"),
+    to: format(endOfMonth(new Date()), "yyyy-MM-dd"),
+  });
+
+  const handleDateFilterChange = useCallback((type) => {
+    setFilterType(type);
+    const today = new Date();
+    let from, to;
+    switch (type) {
+      case "week":
+        from = startOfWeek(today, { weekStartsOn: 1 });
+        to = endOfWeek(today, { weekStartsOn: 1 });
+        break;
+      case "month":
+        from = startOfMonth(today);
+        to = endOfMonth(today);
+        break;
+      case "last7":
+        from = subDays(today, 6);
+        to = today;
+        break;
+      default:
+        from = startOfMonth(today);
+        to = endOfMonth(today);
+        break;
+    }
+    setDateRange({
+      from: format(from, "yyyy-MM-dd"),
+      to: format(to, "yyyy-MM-dd"),
+    });
+  }, []);
 
   useEffect(() => {
     const fetchClasses = async () => {
       try {
         const { data } = await getTeacherClasses();
         setClasses(data);
-        if (data.length > 0) {
-          setSelectedClassId(data[0]._id); // Select the first class by default
-          // Set default date range (e.g., last 30 days)
-          const today = new Date();
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(today.getDate() - 30);
-          setStartDate(thirtyDaysAgo.toISOString().split("T")[0]);
-          setEndDate(today.toISOString().split("T")[0]);
-        }
+        if (data.length > 0) setSelectedClassId(data[0]._id);
       } catch (err) {
-        console.error("Failed to fetch classes:", err);
         setError("Could not load your classes.");
       } finally {
         setIsLoading(false);
@@ -65,38 +120,47 @@ export default function TeacherAttendancePage() {
   }, []);
 
   useEffect(() => {
-    if (selectedClassId && startDate && endDate) {
+    if (selectedClassId && dateRange.from && dateRange.to) {
       const fetchAnalytics = async () => {
         setIsAnalyticsLoading(true);
         setError("");
         try {
           const { data } = await getTeacherAttendanceAnalytics(
             selectedClassId,
-            startDate,
-            endDate
+            dateRange.from,
+            dateRange.to
           );
           setAnalyticsData(data);
         } catch (err) {
-          console.error("Failed to fetch attendance analytics:", err);
-          setError(
-            err.response?.data?.message ||
-              "Failed to load attendance analytics."
-          );
+          setError(err.response?.data?.message || "Failed to load analytics.");
         } finally {
           setIsAnalyticsLoading(false);
         }
       };
       fetchAnalytics();
     }
-  }, [selectedClassId, startDate, endDate]);
+  }, [selectedClassId, dateRange]);
 
-  const formatDateTime = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleString(); // Adjust formatting as needed
-  };
+  const overallChartData = useMemo(() => {
+    if (!analyticsData) return [];
+    const absent = analyticsData.totalRecords - analyticsData.totalPresent;
+    return [
+      { name: "Present", value: analyticsData.totalPresent },
+      { name: "Absent", value: absent > 0 ? absent : 0 },
+    ];
+  }, [analyticsData]);
+
+  const selectedClassName =
+    classes.find((c) => c._id === selectedClassId)?.name || "";
 
   return (
     <DashboardLayout>
+      <DetailedAttendanceModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        records={analyticsData?.recentLogs}
+        className={selectedClassName}
+      />
       <div className="space-y-8 p-4 md:p-6 lg:p-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -113,254 +177,221 @@ export default function TeacherAttendancePage() {
             Attendance Analytics
           </h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">
-            Overview of attendance for your classes.
+            An enterprise-level overview of attendance for your classes.
           </p>
         </motion.div>
 
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
             <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
-            <p className="ml-3 text-slate-500">Loading classes...</p>
           </div>
         ) : classes.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-slate-800/60 rounded-lg shadow-sm">
             <AlertCircle size={48} className="mx-auto text-yellow-500" />
-            <h3 className="mt-4 text-xl font-semibold text-slate-700 dark:text-slate-200">
-              No classes found
-            </h3>
-            <p className="mt-1 text-slate-500 dark:text-slate-400">
-              Create a class to view attendance analytics.
-            </p>
+            <h3 className="mt-4 text-xl font-semibold">No classes found</h3>
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-              <label htmlFor="class-select" className="sr-only">
-                Select Class:
-              </label>
-              <select
-                id="class-select"
-                className="w-full md:w-auto p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-              >
-                {classes.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name} ({c.subject})
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex-1 min-w-0 flex flex-col md:flex-row gap-4">
-                <label htmlFor="start-date" className="sr-only">
-                  Start Date:
-                </label>
-                <input
-                  type="date"
-                  id="start-date"
-                  className="flex-1 p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-                <label htmlFor="end-date" className="sr-only">
-                  End Date:
-                </label>
-                <input
-                  type="date"
-                  id="end-date"
-                  className="flex-1 p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4"
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                <Filter size={18} />
+                <span>Filters</span>
               </div>
-            </div>
-
-            {isAnalyticsLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <LoaderCircle className="w-10 h-10 animate-spin text-indigo-500" />
-                <p className="ml-3 text-lg text-slate-500">
-                  Loading analytics...
-                </p>
-              </div>
-            ) : error ? (
-              <div className="flex items-center gap-2 p-4 text-red-700 bg-red-100 rounded-md dark:bg-red-900/50 dark:text-red-300">
-                <AlertCircle size={20} /> <p>{error}</p>
-              </div>
-            ) : (
-              analyticsData && (
-                <div className="space-y-8">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {analyticsData.className} Attendance Overview
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm flex items-center justify-between">
-                      <p className="text-slate-600 dark:text-slate-300 font-medium">
-                        Total Sessions
-                      </p>
-                      <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {analyticsData.totalRecords}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm flex items-center justify-between">
-                      <p className="text-slate-600 dark:text-slate-300 font-medium">
-                        Total Present
-                      </p>
-                      <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {analyticsData.totalPresent}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm flex items-center justify-between">
-                      <p className="text-slate-600 dark:text-slate-300 font-medium">
-                        Overall %
-                      </p>
-                      <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                        {analyticsData.attendancePercentage}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Daily Attendance Chart */}
-                  <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm">
-                    <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
-                      Daily Attendance Count
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={analyticsData.byDay}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e0e0e0"
-                          className="dark:stroke-slate-600"
-                        />
-                        <XAxis
-                          dataKey="_id"
-                          stroke="#6b7280"
-                          className="dark:text-slate-300"
-                        />
-                        <YAxis
-                          stroke="#6b7280"
-                          className="dark:text-slate-300"
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "rgb(30 41 59)",
-                            border: "none",
-                            borderRadius: "8px",
-                          }}
-                          itemStyle={{ color: "white" }}
-                          labelStyle={{ color: "rgb(148 163 184)" }}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="count"
-                          stroke="#8884d8"
-                          name="Students Present"
-                          activeDot={{ r: 8 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Attendance by Student Chart/Table */}
-                  <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm">
-                    <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
-                      Attendance by Student
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart
-                        data={analyticsData.byStudent.map((s) => ({
-                          ...s,
-                          name: s.studentName || "Unknown Student",
-                        }))}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e0e0e0"
-                          className="dark:stroke-slate-600"
-                        />
-                        <XAxis
-                          type="number"
-                          stroke="#6b7280"
-                          className="dark:text-slate-300"
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          stroke="#6b7280"
-                          className="dark:text-slate-300"
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "rgb(30 41 59)",
-                            border: "none",
-                            borderRadius: "8px",
-                          }}
-                          itemStyle={{ color: "white" }}
-                          labelStyle={{ color: "rgb(148 163 184)" }}
-                        />
-                        <Legend />
-                        <Bar
-                          dataKey="presentCount"
-                          fill="#82ca9d"
-                          name="Times Present"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Recent Attendance Logs */}
-                  <div className="bg-slate-50 dark:bg-slate-700 p-5 rounded-lg shadow-sm">
-                    <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
-                      Recent Attendance Logs
-                    </h3>
-                    {analyticsData.recentLogs.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
-                          <thead className="bg-slate-100 dark:bg-slate-800">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Student Name
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Status
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Date & Time
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-                            {analyticsData.recentLogs.map((log) => (
-                              <tr key={log._id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
-                                  {log.studentId
-                                    ? log.studentId.name
-                                    : "Unknown Student"}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-semibold">
-                                  {log.status}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                                  {formatDateTime(log.timestamp)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-slate-500 dark:text-slate-400">
-                        No attendance logs available for this period.
-                      </p>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <select
+                  id="class-select"
+                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500"
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                >
+                  {classes.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                  {["week", "last7", "month"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleDateFilterChange(type)}
+                      className={`flex-1 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                        filterType === type
+                          ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                          : "hover:bg-white/50 dark:hover:bg-slate-600/50"
+                      }`}
+                    >
+                      {type === "week"
+                        ? "This Week"
+                        : type === "last7"
+                        ? "7 Days"
+                        : "This Month"}
+                    </button>
+                  ))}
                 </div>
-              )
-            )}
-          </div>
+                <input
+                  type="date"
+                  className="p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500"
+                  value={dateRange.from}
+                  onChange={(e) =>
+                    setDateRange((p) => ({ ...p, from: e.target.value }))
+                  }
+                />
+                <input
+                  type="date"
+                  className="p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500"
+                  value={dateRange.to}
+                  onChange={(e) =>
+                    setDateRange((p) => ({ ...p, to: e.target.value }))
+                  }
+                />
+              </div>
+            </motion.div>
+
+            <AnimatePresence mode="wait">
+              {isAnalyticsLoading ? (
+                <motion.div
+                  key="loader"
+                  exit={{ opacity: 0 }}
+                  className="flex justify-center items-center h-96"
+                >
+                  <LoaderCircle className="w-10 h-10 animate-spin text-indigo-500" />
+                </motion.div>
+              ) : error ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center h-96 text-center bg-white dark:bg-slate-800/60 rounded-2xl"
+                >
+                  <ServerCrash size={48} className="text-red-500 mb-4" />
+                  <h3 className="text-xl font-bold">Server Error</h3>
+                  <p className="mt-2 text-slate-500">{error}</p>
+                </motion.div>
+              ) : (
+                analyticsData && (
+                  <motion.div
+                    key={selectedClassId + dateRange.from}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-8"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <AnalyticsCard
+                        title="Overall Attendance"
+                        icon={<BarChart2 className="text-indigo-500" />}
+                        className="lg:col-span-1 flex flex-col justify-center items-center"
+                      >
+                        <div className="w-full h-56 relative">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={overallChartData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                innerRadius={60}
+                                paddingAngle={5}
+                                labelLine={false}
+                              >
+                                {overallChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "rgb(30 41 59 / 0.9)",
+                                  borderColor: "rgb(255 255 255 / 0.1)",
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-3xl font-bold text-slate-800 dark:text-white">
+                              {analyticsData.attendancePercentage}%
+                            </span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                              Present
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-4 text-center">
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {analyticsData.totalPresent} out of{" "}
+                            {analyticsData.totalRecords} records are 'Present'
+                          </p>
+                        </div>
+                      </AnalyticsCard>
+
+                      <AnalyticsCard
+                        title="Student Leaderboard"
+                        icon={<Users className="text-indigo-500" />}
+                        className="lg:col-span-2"
+                      >
+                        <p className="text-sm text-slate-500 dark:text-slate-400 -mt-4 mb-4">
+                          Top students by days present in the selected period.
+                        </p>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <BarChart
+                            data={analyticsData.byStudent.slice(0, 5)}
+                            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              className="stroke-slate-200 dark:stroke-slate-700"
+                            />
+                            <XAxis
+                              dataKey="studentName"
+                              tick={{ fill: "currentColor" }}
+                              className="text-xs text-slate-500 dark:text-slate-400"
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              tick={{ fill: "currentColor" }}
+                              className="text-xs"
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "rgb(30 41 59 / 0.9)",
+                                borderColor: "rgb(255 255 255 / 0.1)",
+                              }}
+                            />
+                            <Bar
+                              dataKey="presentCount"
+                              name="Days Present"
+                              fill="#4f46e5"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </AnalyticsCard>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => setIsDetailModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-transform transform hover:scale-105"
+                      >
+                        <List size={16} />
+                        View Full Detailed Log
+                      </button>
+                    </div>
+                  </motion.div>
+                )
+              )}
+            </AnimatePresence>
+          </>
         )}
       </div>
     </DashboardLayout>
