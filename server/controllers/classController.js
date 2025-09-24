@@ -50,28 +50,31 @@ exports.getAllClasses = async (req, res) => {
 // @access  Private (Admin, Teacher)
 exports.createClass = async (req, res) => {
   try {
-    const { name, subject, students, teacherId } = req.body;
+    // ✨ FIX: Changed 'teacherId' to 'teacher' to match the data sent from the frontend form.
+    const { name, subject, teacher } = req.body;
 
     let assignedTeacherId;
 
-    if (req.user.role === "admin" && teacherId) {
-      assignedTeacherId = teacherId;
+    // ✨ FIX: The logic now correctly checks for the 'teacher' field.
+    if (req.user.role === "admin" && teacher) {
+      // If an admin is creating the class and specifies a teacher from the dropdown
+      assignedTeacherId = teacher;
     } else {
+      // For teachers creating their own class
       assignedTeacherId = req.user.id;
     }
 
     const newClass = new Class({
       name,
       subject,
-      students,
-      teacher: assignedTeacherId,
+      teacher: assignedTeacherId, // This now correctly assigns the selected teacher's ID
     });
 
     const savedClass = await newClass.save();
-    // Populate teacher details in the response for immediate use on the frontend
+    // Populate teacher details in the response for a seamless UI update
     const populatedClass = await Class.findById(savedClass._id).populate(
       "teacher",
-      "name email"
+      "name email avatar"
     );
     res.status(201).json(populatedClass);
   } catch (error) {
