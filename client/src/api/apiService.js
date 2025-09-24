@@ -130,4 +130,13 @@ export const getTeacherAttendanceAnalytics = (classId, from, to) => {
 
 export const getAdminAnalytics = () => api.get("/analytics/summary");
 
+export const getParents = () => api.get("/parents");
+export const createParent = (parentData) => api.post("/parents/register", parentData);
+
+export const getInviteCodes = () => api.get("/invites");
+
+export const generateInviteCode = () => api.post("/invites/generate");
+
+export const getAllClassesForAdmin = () => api.get("/classes/all");
+
 export default api;

@@ -1,21 +1,26 @@
 // client/src/components/ClassList.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getClasses } from "../api/apiService";
+// ✨ THE FIX: Import the new admin-specific function
+import { getAllClassesForAdmin } from "../api/apiService";
 import { LoaderCircle, Book, Users, ArrowRight } from "lucide-react";
 
 const ClassList = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Add error state for robustness
 
   useEffect(() => {
     const fetchClasses = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const res = await getClasses();
+        // ✨ THE FIX: Call the correct API function meant for admins
+        const res = await getAllClassesForAdmin();
         setClasses(res.data);
       } catch (err) {
-        console.error("Failed to fetch classes:", err);
+        console.error("Failed to fetch classes for admin:", err);
+        setError("Could not load class data."); // Set an error message
       } finally {
         setLoading(false);
       }
@@ -31,12 +36,23 @@ const ClassList = () => {
     );
   }
 
+  // Display an error message if the fetch fails
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-sm text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-h-96 overflow-y-auto pr-2 space-y-3">
       {classes.length === 0 ? (
         <div className="text-center py-10">
           <Book size={32} className="mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">No classes found.</p>
+          <p className="mt-2 text-sm text-slate-500">
+            No classes have been created in the system yet.
+          </p>
         </div>
       ) : (
         classes.map((classItem) => (
@@ -56,12 +72,12 @@ const ClassList = () => {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Users size={14} />
                     {classItem.students.length}
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="w-5 h-5 text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </Link>
