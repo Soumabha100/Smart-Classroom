@@ -1,122 +1,59 @@
-import React from "react";
-import { View, StyleSheet, SafeAreaView, ScrollView } from "react-native";
-import {
-  Button,
-  Text,
-  ActivityIndicator,
-  Card,
-  Avatar,
-} from "react-native-paper";
-import { useAuth } from "../../context/AuthContext";
-import { Link } from "expo-router";
-import { useTheme } from "../../context/ThemeContext";
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const StatCard = ({
-  title,
-  value,
-  icon,
-}: {
-  title: string;
-  value: string;
-  icon: string;
-}) => {
-  const { theme } = useTheme();
+// Import the new components we will create
+import DashboardHeader from '@/components/Mobile/DashboardHeader';
+import QuickActions from '@/components/Mobile/QuickActions';
+import TodaysSchedule from '@/components/Mobile/TodaysSchedule';
+import AttendanceSummary from '@/components/Mobile/AttendanceSummary';
+import { ThemedView } from '@/components/ThemedView';
 
-  return (
-    <Card style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-      <Card.Content style={styles.statCardContent}>
-        <Avatar.Icon
-          icon={icon}
-          size={40}
-          style={{ backgroundColor: theme.colors.primaryContainer }}
-          color={theme.colors.primary}
-        />
-        <View>
-          <Text
-            variant="titleMedium"
-            style={{ color: theme.colors.onSurfaceVariant }}
-          >
-            {title}
-          </Text>
-          <Text
-            variant="headlineSmall"
-            style={{ color: theme.colors.onSurface, fontWeight: "bold" }}
-          >
-            {value}
-          </Text>
-        </View>
-      </Card.Content>
-    </Card>
-  );
+// Dummy data for now - this will come from your API
+const studentData = {
+  name: "Soumabha",
+  attendance: {
+    percentage: 92,
+    streak: 14,
+  },
+  schedule: [
+    { time: '10:00 AM', subject: 'Data Structures', room: 'CS-501' },
+    { time: '11:00 AM', subject: 'Algorithms', room: 'CS-502' },
+    { time: '01:00 PM', subject: 'Database Systems Lab', room: 'Lab-3' },
+  ]
 };
 
-export default function StudentDashboard() {
-  const { user } = useAuth();
-  const { theme } = useTheme();
-
-  if (!user) {
-    return (
-      <View
-        style={[styles.centered, { backgroundColor: theme.colors.background }]}
-      >
-        <ActivityIndicator animating={true} />
-      </View>
-    );
-  }
+export default function StudentDashboardScreen() {
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.header}>
-          <Text
-            variant="headlineMedium"
-            style={{ color: theme.colors.onBackground }}
-          >
-            Hi, {user.name.split(" ")[0]}!
-          </Text>
-          <Text
-            variant="bodyLarge"
-            style={{ color: theme.colors.onSurfaceVariant }}
-          >
-            Welcome to your dashboard
-          </Text>
-        </View>
-
-        <Card
-          style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}
-        >
-          <Card.Cover
-            source={{
-              uri: "https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070",
-            }}
+    <ThemedView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <DashboardHeader studentName={studentData.name} />
+        
+        <View style={styles.content}>
+          <AttendanceSummary 
+            percentage={studentData.attendance.percentage} 
+            streak={studentData.attendance.streak} 
           />
-          <Card.Title
-            title="Ready for today?"
-            subtitle="Scan your attendance QR code to get started."
-            titleStyle={{ fontWeight: "bold" }}
-          />
-          <Card.Actions>
-            <Link href="/scanner" asChild>
-              <Button mode="contained" icon="qrcode-scan">
-                Scan Attendance
-              </Button>
-            </Link>
-          </Card.Actions>
-        </Card>
-
-        <View style={styles.statsGrid}>
-          <StatCard title="Attendance" value="95%" icon="check-decagram" />
-          <StatCard title="Avg. Grade" value="A-" icon="star-circle" />
+          <QuickActions />
+          <TodaysSchedule schedule={studentData.schedule} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  scrollView: { padding: 16 },
-  header: { marginBottom: 24, paddingHorizontal: 8 },
-  statsGrid: { flexDirection: "row", gap: 16, marginBottom: 24 },
-  statCardContent: { flexDirection: "row", alignItems: "center", gap: 12 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f2f5', // A light grey background
+  },
+  content: {
+    paddingHorizontal: 20,
+    gap: 20, // Adds space between components
+  },
 });
