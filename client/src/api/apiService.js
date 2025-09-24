@@ -91,40 +91,31 @@ export const generateQrCode = (classId) =>
 
 // Function to update a class
 export const updateClass = (classId, classData) => {
-  return axios.put(`/api/classes/${classId}`, classData, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  // Use the 'api' instance and a relative URL
+  return api.put(`/classes/${classId}`, classData);
 };
 
 // Function to get details of a single class
 export const getClassDetails = (classId) => {
-  return axios.get(`/api/classes/${classId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  // Use the 'api' instance and a relative URL
+  return api.get(`/classes/${classId}`);
 };
 
 export const getAllStudents = () => {
-  return axios.get("/api/users/students", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  // Use the 'api' instance and a relative URL
+  return api.get("/users/students");
 };
 
 // Function to add a student to a class
 export const addStudentToClass = (classId, studentId) => {
-  return axios.post(
-    `/api/classes/${classId}/students`,
-    { studentId },
-    {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    }
-  );
+  // Use the 'api' instance and a relative URL
+  return api.post(`/classes/${classId}/students`, { studentId });
 };
 
 // Function to remove a student from a class (Good to have for the future)
 export const removeStudentFromClass = (classId, studentId) => {
-  return axios.delete(`/api/classes/${classId}/students/${studentId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  // Use the 'api' instance and a relative URL
+  return api.delete(`/classes/${classId}/students/${studentId}`);
 };
 
 // The URL has been corrected to match the backend route "/api/classes/student"

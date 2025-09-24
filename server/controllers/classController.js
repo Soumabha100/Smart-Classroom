@@ -29,7 +29,6 @@ exports.getClasses = async (req, res) => {
   }
 };
 
-// ✨ NEW FUNCTION FOR ADMINS (Does not affect any other function)
 // @desc    Get ALL classes in the system
 // @route   GET /api/classes/all
 // @access  Private (Admin)
@@ -50,28 +49,23 @@ exports.getAllClasses = async (req, res) => {
 // @access  Private (Admin, Teacher)
 exports.createClass = async (req, res) => {
   try {
-    // ✨ FIX: Changed 'teacherId' to 'teacher' to match the data sent from the frontend form.
     const { name, subject, teacher } = req.body;
 
     let assignedTeacherId;
 
-    // ✨ FIX: The logic now correctly checks for the 'teacher' field.
     if (req.user.role === "admin" && teacher) {
-      // If an admin is creating the class and specifies a teacher from the dropdown
       assignedTeacherId = teacher;
     } else {
-      // For teachers creating their own class
       assignedTeacherId = req.user.id;
     }
 
     const newClass = new Class({
       name,
       subject,
-      teacher: assignedTeacherId, // This now correctly assigns the selected teacher's ID
+      teacher: assignedTeacherId,
     });
 
     const savedClass = await newClass.save();
-    // Populate teacher details in the response for a seamless UI update
     const populatedClass = await Class.findById(savedClass._id).populate(
       "teacher",
       "name email avatar"
@@ -88,38 +82,36 @@ exports.createClass = async (req, res) => {
   }
 };
 
-// Adds Students to class
+// @desc    Add a student to a class
+// @route   POST /api/classes/:id/students
+// @access  Private (Admin, Teacher)
 exports.addStudentToClass = async (req, res) => {
   try {
-    // ✨ FIX: Changed req.params.classId to req.params.id to match the route definition
-    const { id: classId } = req.params; 
+    const { id: classId } = req.params;
     const { studentId } = req.body;
 
-    // Find both the class and the student
     const course = await Class.findById(classId);
     const student = await User.findById(studentId);
 
     if (!course || !student) {
       return res.status(404).json({ message: "Class or Student not found" });
     }
-    
-    // Add student to class's student list (if not already there)
+
     if (!course.students.includes(studentId)) {
-        course.students.push(studentId);
+      course.students.push(studentId);
     }
 
-    // Add class to student's class list (if not already there)
     if (!student.classes.includes(classId)) {
-        student.classes.push(classId);
+      student.classes.push(classId);
     }
-    
+
     await course.save();
     await student.save();
 
-    // Return the updated class with populated students for a seamless UI update
-    const updatedClass = await Class.findById(classId).populate('students', 'name email avatar').populate('teacher', 'name email avatar');
+    const updatedClass = await Class.findById(classId)
+      .populate("students", "name email avatar")
+      .populate("teacher", "name email avatar");
     res.status(200).json(updatedClass);
-
   } catch (error) {
     console.error("Error adding student to class:", error);
     res.status(500).json({ message: "Server error" });
@@ -127,13 +119,14 @@ exports.addStudentToClass = async (req, res) => {
 };
 
 // @desc    Update a class
-// @route   PUT /api/classes/:classId
+// @route   PUT /api/classes/:id
 // @access  Private (Admin)
 exports.updateClass = async (req, res) => {
   try {
     const { name, teacherId } = req.body;
+    // ✨ FIX: Changed req.params.classId to req.params.id
     const updatedClass = await Class.findByIdAndUpdate(
-      req.params.classId,
+      req.params.id,
       { name, teacher: teacherId },
       { new: true }
     ).populate("teacher", "name email");
@@ -148,11 +141,11 @@ exports.updateClass = async (req, res) => {
 };
 
 // @desc    Delete a class
-// @route   DELETE /api/classes/:classId
+// @route   DELETE /api/classes/:id
 // @access  Private (Admin)
 exports.deleteClass = async (req, res) => {
   try {
-    // FIX: Changed req.params.classId to req.params.id to match the route
+    // ✨ FIX: This was already correct, but confirming it's req.params.id
     const deletedClass = await Class.findByIdAndDelete(req.params.id);
     if (!deletedClass) {
       return res.status(404).json({ message: "Class not found" });
@@ -163,16 +156,22 @@ exports.deleteClass = async (req, res) => {
   }
 };
 
+// @desc    Get a single class by ID
+// @route   GET /api/classes/:id
+// @access  Private (Admin, Teacher)
 exports.getClassById = async (req, res) => {
   try {
-    const classItem = await Class.findById(req.params.classId)
-      .populate("teacher", "name")
-      .populate("students", "name");
+    // ✨ THE MAIN FIX IS HERE: Changed req.params.classId to req.params.id
+    const classItem = await Class.findById(req.params.id)
+      .populate("teacher", "name email avatar")
+      .populate("students", "name email avatar");
+
     if (!classItem) {
       return res.status(404).json({ message: "Class not found" });
     }
     res.status(200).json(classItem);
   } catch (err) {
+    console.error("Error in getClassById:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -197,7 +196,9 @@ exports.getTeacherClasses = async (req, res) => {
   }
 };
 
-// Get all classes for a specific student
+// @desc    Get all classes for a specific student
+// @route   GET /api/classes/student
+// @access  Private (Student)
 exports.getStudentClasses = async (req, res) => {
   try {
     const student = await User.findById(req.user.id).populate({
@@ -219,6 +220,9 @@ exports.getStudentClasses = async (req, res) => {
   }
 };
 
+// @desc    Remove a student from a class
+// @route   DELETE /api/classes/:id/students/:studentId
+// @access  Private (Admin, Teacher)
 exports.removeStudentFromClass = async (req, res) => {
   try {
     const { id: classId, studentId } = req.params;
@@ -230,12 +234,10 @@ exports.removeStudentFromClass = async (req, res) => {
       return res.status(404).json({ message: "Class or Student not found" });
     }
 
-    // Remove student from class.students
     course.students = course.students.filter(
       (s) => s.toString() !== studentId.toString()
     );
 
-    // Remove class from student.classes
     student.classes = student.classes.filter(
       (c) => c.toString() !== classId.toString()
     );
@@ -254,8 +256,9 @@ exports.removeStudentFromClass = async (req, res) => {
   }
 };
 
-// Assign or change a teacher for a class (admin only)
-// PUT /api/classes/:id/teacher
+// @desc    Assign or change a teacher for a class
+// @route   PUT /api/classes/:id/teacher
+// @access  Private (Admin)
 exports.assignTeacherToClass = async (req, res) => {
   try {
     const { id: classId } = req.params;
@@ -268,7 +271,6 @@ exports.assignTeacherToClass = async (req, res) => {
       return res.status(404).json({ message: "Class or Teacher not found" });
     }
 
-    // Optional: validate that the user you pass is actually a teacher
     if (teacher.role && teacher.role !== "teacher") {
       return res
         .status(400)
