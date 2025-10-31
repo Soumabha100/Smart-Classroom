@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
-import AnalyticsReports from "../components/AnalyticsReports";
+import AnalyticsReports from "../components/analyticsreports";
 
 const AdminAnalyticsPage = () => {
   return (
