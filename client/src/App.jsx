@@ -50,19 +50,35 @@ function App() {
 
   return (
     <div
-      className={
-        theme === "dark"
-          ? "dark bg-slate-900 text-white min-h-screen"
-          : "bg-white text-slate-900 min-h-screen"
-      }
+      className={`${
+        theme === "dark" ? "dark" : ""
+      } bg-white dark:bg-slate-900 text-slate-900 dark:text-white min-h-screen transition-colors duration-300`}
     >
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
+          className:
+            "!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-white",
           style: {
-            background: theme === "dark" ? "#1e293b" : "#ffffff",
-            color: theme === "dark" ? "#ffffff" : "#0f172a",
+            border:
+              theme === "dark"
+                ? "1px solid rgb(51, 65, 85)"
+                : "1px solid rgb(226, 232, 240)",
+            padding: "16px",
+            color: theme === "dark" ? "#f8fafc" : "#0f172a",
+          },
+          success: {
+            iconTheme: {
+              primary: theme === "dark" ? "#22c55e" : "#16a34a",
+              secondary: "white",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: theme === "dark" ? "#ef4444" : "#dc2626",
+              secondary: "white",
+            },
           },
         }}
       />
