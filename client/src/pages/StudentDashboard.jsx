@@ -34,7 +34,6 @@ import QuickWins from "../components/learning/QuickWins.jsx";
 import OnlineResources from "../components/learning/onlineResource.jsx";
 import PeriodManagement from "../components/learning/periodManagement.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-// ✨ MERGE: Keep the import for getStudentClasses
 import { getStudentAttendance, getStudentClasses } from "../api/apiService.js";
 import StudentAssignments from "../components/StudentAssignments.jsx";
 import AnnouncementsList from "../components/AnnouncementsList";

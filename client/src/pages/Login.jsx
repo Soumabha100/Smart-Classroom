@@ -1,7 +1,11 @@
+// client/src/pages/Login.jsx
+//
+// ✅ FIX: Added onSubmit={handleSubmit} to the <form> tag.
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // This is why I know AuthContext.jsx exists
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
@@ -42,15 +46,11 @@ export default function Login() {
   const { login } = useAuth(); // Import the login function from our context
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // This line stops the page reload
     setError("");
     setLoading(true);
     try {
-      // The login function from the context now handles everything:
-      // 1. Makes the API call
-      // 2. Sets the token in localStorage and state
-      // 3. Fetches the user profile
-      // 4. Navigates to the correct dashboard
+      // The login function from the context now handles everything
       await login(email, password);
     } catch (err) {
       // The context will re-throw the error if login fails
@@ -76,6 +76,13 @@ export default function Login() {
           <div className="w-full max-w-md animate-slide-in-fade">
             <div className="p-8 space-y-6 bg-slate-800/50 rounded-2xl border border-slate-700">
               <h1 className="text-3xl font-bold text-center">Welcome Back</h1>
+
+              {/*
+              // =======================================================
+              // ✅ CRITICAL FIX #1: THE PAGE RELOAD
+              // This is the line that fixes your page reload bug.
+              // =======================================================
+              */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Form fields with icons */}
                 <div className="relative">

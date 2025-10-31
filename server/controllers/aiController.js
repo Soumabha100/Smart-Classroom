@@ -137,7 +137,7 @@ exports.generateDashboard = async (req, res) => {
         );
 
         const model = genAI.getGenerativeModel({
-          model: "models/gemini-1.5-flash-latest",
+          model: "gemini-flash-latest",
         });
         const result = await model.generateContent(prompt);
         const response = result.response;
@@ -218,7 +218,7 @@ exports.chatWithAI = async (req, res) => {
     }));
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-flash-latest",
     });
 
     const chat = model.startChat({
@@ -283,7 +283,7 @@ exports.ask = async (req, res) => {
     }
 
     // ... the rest of your 'ask' function remains the same
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
     const chat = model.startChat({
       history: chatHistory.history.map(item => ({
         role: item.role,
