@@ -39,6 +39,21 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 5001;
 
+
+// Define the list of allowed origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://localhost:5173", 
+];
+
+// Add the production URL from environment variables if it exists
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
+
+
 // Middleware
 app.use(
   cors({
