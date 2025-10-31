@@ -22,7 +22,7 @@ import UserCard from "../components/UserCard";
 import TeacherList from "../components/TeacherList";
 import ClassList from "../components/ClassList";
 import UpcomingEvents from "../components/upcomingevent";
-import RecentActivity from "../components/RecentActivity";
+import RecentActivity from "../components/recentactivity";
 import AccessControl from "../components/AccessControl";
 import AuditLogs from "../components/AuditLogs";
 import AnnouncementsList from "../components/AnnouncementsList";
