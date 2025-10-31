@@ -24,7 +24,7 @@ import ClassList from "../components/ClassList";
 import UpcomingEvents from "../components/upcomingevent";
 import RecentActivity from "../components/recentactivity";
 import AccessControl from "../components/accesscontrol";
-import AuditLogs from "../components/AuditLogs";
+import AuditLogs from "../components/auditlogs";
 import AnnouncementsList from "../components/AnnouncementsList";
 
 // --- Reusable Section Wrapper ---
