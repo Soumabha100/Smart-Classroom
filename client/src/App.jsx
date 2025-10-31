@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { useTheme } from "./context/ThemeContext.jsx";
+import { Toaster } from "react-hot-toast";
 
 // --- Page Imports ---
 // Public Pages
@@ -55,6 +56,16 @@ function App() {
           : "bg-white text-slate-900 min-h-screen"
       }
     >
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: theme === "dark" ? "#1e293b" : "#ffffff",
+            color: theme === "dark" ? "#ffffff" : "#0f172a",
+          },
+        }}
+      />
       <Routes>
         {/* ================================================================== */}
         {/* PUBLIC ROUTES                              */}

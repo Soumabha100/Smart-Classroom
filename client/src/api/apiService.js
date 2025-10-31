@@ -2,55 +2,96 @@
 
 import axios from "axios";
 
+// --- ✅ LOGIC UPDATE 1: Use Environment Variable for Base URL ---
+// This makes it easy to switch between dev (http://localhost:5000/api)
+// and production (/api) without changing code.
+// Your vite.config.mjs proxy will still handle /api in development.
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+
 // Create a single, configured instance of Axios.
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// JWT Token Interceptor
+// --- ✅ LOGIC UPDATE 2: Enhanced Interceptor Comments ---
+
+// --- Request Interceptor ---
+// This function runs *before* any request is sent from your app.
 api.interceptors.request.use(
   (config) => {
+    // Get the token from localStorage
     const token = localStorage.getItem("token");
     if (token) {
+      // If a token exists, add it to the Authorization header
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Continue with the modified request
     return config;
   },
-  (error) => Promise.reject(error)
-);
-
-// Response Interceptor
-api.interceptors.response.use(
-  (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      console.error(
-        "Authentication Error: Token is invalid or expired. Logging out."
-      );
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
+    // Handle any error that happens during the request setup
+    console.error("API Request Interceptor Error:", error);
     return Promise.reject(error);
   }
 );
+
+// --- Response Interceptor ---
+// This function runs *after* your app receives a response (good or bad).
+api.interceptors.response.use(
+  (response) => {
+    // If the response status is 2xx (successful), just return it
+    return response;
+  },
+  (error) => {
+    // If the response status is 4xx or 5xx, this block runs
+    if (error.response && error.response.status === 401) {
+      // This is the most important part:
+      // If we get a 401 (Unauthorized), it means the token is
+      // invalid, expired, or missing.
+      console.error(
+        "Authentication Error (401): Token is invalid or expired. Logging out."
+      );
+
+      // ✅ LOGIC UPDATE 3: Ensure all auth keys are cleared
+      localStorage.removeItem("token");
+      localStorage.removeItem("role"); // Make sure 'role' is also removed
+      localStorage.removeItem("name"); // And 'name'
+
+      // Force a page reload to the login screen.
+      // This is the correct way to do it outside of React's navigation.
+      window.location.href = "/login";
+    }
+
+    // For all other errors, just "reject" the promise so that the
+    // function that called the API (e.g., in AuthContext)
+    // can handle it in its own .catch() block.
+    return Promise.reject(error);
+  }
+);
+
+// ==========================================================
+//  API Function Definitions
+//  All functions should be "clean" and just return the
+//  api promise. This lets the component/context handle errors.
+// ==========================================================
 
 // --- User & Dashboard APIs ---
 export const getUserCount = (role) => api.get(`/users/count?role=${role}`);
 export const getTeachers = () => api.get("/users/teachers");
 export const getUserProfile = () => api.get("/users/profile");
 export const getTeacherAnalytics = () => api.get("/users/teacher/analytics");
-export const updateUserProfile = async (profileData) => {
-  try {
-    const response = await api.put("/users/profile", profileData);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Error updating user profile:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
+
+// --- ✅ LOGIC UPDATE 4: Standardized Function ---
+// Removed the redundant try/catch block to match all other functions.
+// This now correctly passes the promise (and any errors)
+// back to the component that calls it.
+export const updateUserProfile = (profileData) => {
+  return api.put("/users/profile", profileData);
 };
+
 export const getStudentAttendance = () => api.get("/attendance/student");
 
 // --- AI Chat APIs ---
@@ -91,34 +132,28 @@ export const generateQrCode = (classId) =>
 
 // Function to update a class
 export const updateClass = (classId, classData) => {
-  // Use the 'api' instance and a relative URL
   return api.put(`/classes/${classId}`, classData);
 };
 
 // Function to get details of a single class
 export const getClassDetails = (classId) => {
-  // Use the 'api' instance and a relative URL
   return api.get(`/classes/${classId}`);
 };
 
 export const getAllStudents = () => {
-  // Use the 'api' instance and a relative URL
   return api.get("/users/students");
 };
 
 // Function to add a student to a class
 export const addStudentToClass = (classId, studentId) => {
-  // Use the 'api' instance and a relative URL
   return api.post(`/classes/${classId}/students`, { studentId });
 };
 
-// Function to remove a student from a class (Good to have for the future)
+// Function to remove a student from a class
 export const removeStudentFromClass = (classId, studentId) => {
-  // Use the 'api' instance and a relative URL
   return api.delete(`/classes/${classId}/students/${studentId}`);
 };
 
-// The URL has been corrected to match the backend route "/api/classes/student"
 export const getStudentClasses = () => api.get("/classes/student");
 
 export const getTeacherAttendanceAnalytics = (classId, from, to) => {
@@ -131,7 +166,8 @@ export const getTeacherAttendanceAnalytics = (classId, from, to) => {
 export const getAdminAnalytics = () => api.get("/analytics/summary");
 
 export const getParents = () => api.get("/parents");
-export const createParent = (parentData) => api.post("/parents/register", parentData);
+export const createParent = (parentData) =>
+  api.post("/parents/register", parentData);
 
 export const getInviteCodes = () => api.get("/invites");
 

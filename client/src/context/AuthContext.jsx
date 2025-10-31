@@ -62,6 +62,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("role");
     setToken(null);
     setUser(null);
+    // Remove the auth header from the api instance
+    delete api.defaults.headers.common["Authorization"];
     navigate("/login");
   }, [navigate]);
 
@@ -69,7 +71,10 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUserData);
   };
 
-  const fetchAndSetUser = useCallback(async () => {
+  // --- ✅ LOGIC UPDATE 1: Renamed to be more specific ---
+  // This function checks auth status on page load.
+  // If it fails, it logs the user out.
+  const checkAuthStatus = useCallback(async () => {
     try {
       const res = await getUserProfile();
       setUser(res.data);
@@ -78,31 +83,52 @@ export const AuthProvider = ({ children }) => {
       console.error("Failed to fetch user profile, logging out.", error);
       logout();
     } finally {
-      // Don't set loading to false here; the login function will handle it.
+      setLoading(false); // We are done loading after the initial check
     }
   }, [logout]);
+
+  // --- ✅ LOGIC UPDATE 2: New function for use *after* login ---
+  // This function fetches the profile but *throws* an error on failure,
+  // allowing the login function's catch block to handle it.
+  const fetchUserProfile = async () => {
+    const res = await getUserProfile(); // No try/catch, let it throw
+    setUser(res.data);
+    applyTheme(res.data.profile.theme || "light");
+  };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       setToken(storedToken);
-      fetchAndSetUser().finally(() => setLoading(false)); // Set loading false after fetch
+      // Set the token on the api instance for the initial checkAuthStatus call
+      api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      checkAuthStatus();
     } else {
-      setLoading(false);
+      setLoading(false); // No token, stop loading
     }
-  }, [fetchAndSetUser]);
+  }, [checkAuthStatus]); // We only want this running once on load
 
   const login = async (email, password) => {
+    let loginResponse = null;
     setLoading(true);
     try {
+      // 1. Attempt to log in
       const res = await api.post("/auth/login", { email, password });
+      loginResponse = res; // Store the response
       const { token, role } = res.data;
+
+      // 2. Set token everywhere *before* next API call
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       setToken(token);
 
-      await fetchAndSetUser();
+      // 3. Fetch user profile.
+      // --- ✅ LOGIC UPDATE 3: Use the new function ---
+      // 3. Fetch user profile
+      await fetchUserProfile();
 
+      // 4. Navigate on success
       switch (role) {
         case "admin":
           navigate("/admin-dashboard");
@@ -118,7 +144,20 @@ export const AuthProvider = ({ children }) => {
           break;
       }
     } catch (err) {
-      throw err;
+      // Only clean up login state if we had a successful login but failed to fetch profile
+      if (loginResponse) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        setToken(null);
+        delete api.defaults.headers.common["Authorization"];
+      }
+
+      // Ensure we're throwing an error with response data
+      if (err.response) {
+        throw err;
+      } else {
+        throw new Error("Network error. Please check your connection.");
+      }
     } finally {
       setLoading(false); // Stop loading after login attempt is complete
     }
@@ -154,9 +193,7 @@ export const AuthProvider = ({ children }) => {
     theme: user?.profile?.theme || "light",
   };
 
-  // --- ✨ RENDER LOGIC UPDATE ---
-  // Render a full-page loader during the initial auth check,
-  // then render the actual application.
+  // Render a full-page loader during the initial auth check
   return (
     <AuthContext.Provider value={value}>
       {loading ? <FullPageLoader /> : children}
