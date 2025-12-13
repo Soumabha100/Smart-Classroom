@@ -11,7 +11,7 @@ const tabData = [
     title: "About Us",
     icon: "🏢",
     heading: "Who We Are",
-    imageSrc: "https://i.ibb.co/ZRrxXZJ2/classroom.jpg",
+    imageSrc: "https://i.ibb.co/sJCDkMS7/data-driven2.gif",
     imageAlt: "A modern, well-lit classroom with technology",
     color: "indigo",
     content: (
@@ -29,7 +29,7 @@ const tabData = [
     title: "Students",
     icon: "🎓",
     heading: "Student Impact",
-    imageSrc: "https://i.ibb.co/ccZgQZ2X/class2.jpg",
+    imageSrc: "https://i.ibb.co/j9n5fNVr/automate.jpg",
     imageAlt: "Students collaborating on a project in a classroom",
     color: "blue",
     content: (
@@ -46,7 +46,7 @@ const tabData = [
     title: "Teachers",
     icon: "👩‍🏫",
     heading: "Teacher Empowerment",
-    imageSrc: "https://i.ibb.co/twTnjJvb/class1.jpg",
+    imageSrc: "https://i.ibb.co/Pb4mgqb/real-time-colabo.gif",
     imageAlt: "A teacher enthusiastically instructing a class",
     color: "orange",
     content: (
@@ -147,7 +147,7 @@ export default function AboutPage() {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 py-20 px-6 text-white text-center rounded-b-3xl shadow-lg"
+          className="bg-gradient-to-r from-indigo-500 via-purple-500 to-lightblue-500 py-20 px-6 text-white text-center rounded-b-3xl shadow-lg"
         >
           <h1 className="text-5xl md:text-6xl font-extrabold mb-4 tracking-tight">
             Our Mission

@@ -4,7 +4,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function GetInTouch() {
   return (
-    <section className="relative py-20 px-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white overflow-hidden">
+    <section className="relative py-20 px-6 bg-gradient-to-r from-black-600 via-darkblue-600 to-black-600 text-white overflow-hidden">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         {/* Left Side - Contact Info */}
         <motion.div
