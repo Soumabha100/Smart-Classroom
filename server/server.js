@@ -3,62 +3,70 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const os = require("os");
 require("dotenv").config();
 
-// Define Routes
-const authRoutes = require("./routes/auth");
-const userRoutes = require("./routes/userRoutes");
-const attendanceRoutes = require("./routes/attendanceRoutes");
-const activityRoutes = require("./routes/activityRoutes");
-const classRoutes = require("./routes/classRoutes");
-const parentRoutes = require("./routes/parentRoutes");
-const inviteRoutes = require("./routes/inviteRoutes");
-const aiRoutes = require("./routes/aiRoutes");
-const forumRoutes = require("./routes/forumRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
+// --- 1. Dynamic Local IP Logic ---
+function getLocalIpAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      // Find IPv4 address that is not internal (like 127.0.0.1)
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "localhost";
+}
 
-// Connect to MongoDB
+const localIp = getLocalIpAddress();
+const clientPort = 5173; // Standard frontend port
+
+// --- 2. Centralized Allowed Origins ---
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://localhost:5173",
+  // Dynamic local network origins
+  `http://${localIp}:${clientPort}`,
+  `https://${localIp}:${clientPort}`,
+];
+
+// Add production URL from environment variables if it exists
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
+console.log(`📡 Local Network IP detected: ${localIp}`);
+console.log(`🔓 Allowed Origins:`, allowedOrigins);
+
+// --- 3. Database Connection ---
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("DB Connection Error:", err));
 
 const app = express();
-
-// Create an HTTP server from the Express app
 const server = http.createServer(app);
 
-// Initialize Socket.IO and attach it to the server
+// --- 4. Socket.IO Configuration ---
+// Now uses the same allowedOrigins list as Express
 const io = new Server(server, {
   cors: {
-    // Allow connections from your frontend development server
-    origin: ["https://localhost:5173", `https://192.168.1.5:5173`],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
 const PORT = process.env.PORT || 5001;
 
-
-// Define the list of allowed origins
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "https://localhost:5173", 
-];
-
-// Add the production URL from environment variables if it exists
-if (process.env.CORS_ORIGIN) {
-  allowedOrigins.push(process.env.CORS_ORIGIN);
-}
-
-
-
-// Middleware
+// --- 5. Middleware ---
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) === -1) {
         const msg =
@@ -72,13 +80,26 @@ app.use(
 );
 app.use(express.json());
 
-// Make `io` accessible to your routes by attaching it to the request object
+// Make `io` accessible to your routes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// API Routes
+// --- 6. Routes ---
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/userRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
+const activityRoutes = require("./routes/activityRoutes");
+const classRoutes = require("./routes/classRoutes");
+const parentRoutes = require("./routes/parentRoutes");
+const inviteRoutes = require("./routes/inviteRoutes");
+const aiRoutes = require("./routes/aiRoutes");
+const forumRoutes = require("./routes/forumRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const hodFeedRoutes = require("./routes/hodFeedRoutes");
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/attendance", attendanceRoutes);
@@ -89,16 +110,10 @@ app.use("/api/invites", inviteRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/analytics", analyticsRoutes);
-
-const assignmentRoutes = require("./routes/assignmentRoutes");
 app.use("/api/assignments", assignmentRoutes);
-
-app.use("/api/classes", classRoutes);
-
-const hodFeedRoutes = require("./routes/hodFeedRoutes");
 app.use("/api/hodfeed", hodFeedRoutes);
 
-// Socket.IO connection logic
+// --- 7. Socket Logic ---
 io.on("connection", (socket) => {
   console.log("🔌 A user connected to WebSocket");
 
@@ -113,12 +128,12 @@ io.on("connection", (socket) => {
   });
 });
 
-// A simple test route
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
 
-// Start the server using the http server instance
+// Start Server
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
