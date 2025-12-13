@@ -1,23 +1,28 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-// ✅ IMPORT useAuth to access the database updater
+// ✅ IMPORT useAuth
 import { useAuth } from '../context/AuthContext';
 import { Sun, Moon } from 'lucide-react';
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
-  // ✅ GET the updateTheme function
+  // ✅ GET updateTheme
   const { updateTheme } = useAuth(); 
 
   const handleThemeChange = (newTheme) => {
-    // 1. Update UI instantly (Local State)
-    setTheme(newTheme);
-    
-    // 2. Update Database (Persistent State)
-    // We check if updateTheme exists because user might not be logged in
+    // [LOG] 1. Verify the function actually ran
+    console.log(`🔘 ThemeToggle: CLICKED ${newTheme}`); 
+
+    // [LOG] 2. Check if updateTheme exists
     if (updateTheme) {
+      console.log(`🚀 ThemeToggle: Calling updateTheme('${newTheme}')`);
       updateTheme(newTheme);
+    } else {
+      console.error("❌ ThemeToggle: updateTheme is MISSING/UNDEFINED");
     }
+    
+    // 3. Update local state
+    setTheme(newTheme);
   };
 
   const toggle = () => {
@@ -26,31 +31,22 @@ const ThemeToggle = () => {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    // 🟥 RED BORDER: If you don't see this, you are editing the wrong file!
+    <div className="flex items-center gap-2 p-2 border-4 border-red-500 rounded-lg bg-yellow-100 dark:bg-yellow-900">
+      <span className="text-xs text-red-500 font-bold">DEBUG MODE</span>
+      
       <button
         onClick={() => handleThemeChange('light')}
-        aria-pressed={theme === 'light'}
-        className={`px-3 py-1 rounded-md text-sm ${theme === 'light' ? 'bg-slate-200/80 dark:bg-slate-700/60' : 'bg-transparent'}`}
-        title="Light mode"
+        className={`px-3 py-1 rounded-md text-sm ${theme === 'light' ? 'bg-blue-200' : 'bg-transparent'}`}
       >
-        <Sun size={16} className="inline-block mr-1" /> Light
+        Light
       </button>
 
       <button
         onClick={() => handleThemeChange('dark')}
-        aria-pressed={theme === 'dark'}
-        className={`px-3 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-slate-700/60 text-white' : 'bg-transparent'}`}
-        title="Dark mode"
+        className={`px-3 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-transparent'}`}
       >
-        <Moon size={16} className="inline-block mr-1" /> Dark
-      </button>
-
-      <button
-        onClick={toggle}
-        className="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
-        title="Toggle theme"
-      >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        Dark
       </button>
     </div>
   );

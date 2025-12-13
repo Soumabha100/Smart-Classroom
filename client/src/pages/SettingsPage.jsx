@@ -15,14 +15,16 @@ import {
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx"; // ✅ IMPORT ADDED
 import { toast } from "react-hot-toast";
-import { changePassword } from "../api/apiService"; // Import the API function
+import { changePassword } from "../api/apiService"; 
 
 const SettingsPage = () => {
-  const { theme, themeSource, toggleTheme, setSystemTheme, setTheme } =
-    useTheme();
+  // ✅ GET updateTheme from AuthContext
+  const { updateTheme } = useAuth(); 
+  const { theme, themeSource, toggleTheme, setSystemTheme, setTheme } = useTheme();
+  
   const isDarkMode = theme === "dark";
-
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -34,15 +36,37 @@ const SettingsPage = () => {
     );
   };
 
+  // ✅ FIXED: Handle explicit theme selection (Light/Dark cards)
   const handleThemeChange = (newSource) => {
     if (newSource === "system") {
       setSystemTheme();
       toast.success("Using system theme preferences");
+      // Note: We don't save 'system' to DB as schema only supports 'light'/'dark'
     } else {
-      setTheme(newSource);
+      setTheme(newSource); // Update Local
+      
+      // Update Database
+      if (updateTheme) {
+        console.log(`⚙️ Settings: Saving ${newSource} mode to DB...`);
+        updateTheme(newSource);
+      }
+      
       toast.success(
         `${newSource === "dark" ? "Dark" : "Light"} mode activated`
       );
+    }
+  };
+
+  // ✅ FIXED: Handle the Toggle Switch
+  const handleQuickToggle = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    
+    toggleTheme(); // Update Local via Context
+    
+    // Update Database
+    if (updateTheme) {
+      console.log(`⚙️ Settings: Toggling to ${newTheme} mode in DB...`);
+      updateTheme(newTheme);
     }
   };
 
@@ -135,7 +159,7 @@ const SettingsPage = () => {
                 </div>
               </div>
               <button
-                onClick={toggleTheme}
+                onClick={handleQuickToggle} // ✅ CHANGED from toggleTheme to handleQuickToggle
                 className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"
                 aria-label="Toggle theme"
               >
