@@ -95,8 +95,17 @@ export const updateUserProfile = (profileData) => {
 export const getStudentAttendance = () => api.get("/attendance/student");
 
 // --- AI Chat APIs ---
-export const askAI = (prompt, chatId) =>
-  api.post("/ai/ask", { prompt, chatId });
+export const askAI = (data, chatId) => {
+  // Check if 'data' is FormData (contains files)
+  if (data instanceof FormData) {
+    return api.post("/ai/ask", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  }
+
+  // Default behavior for text-only (backward compatibility)
+  return api.post("/ai/ask", { prompt: data, chatId });
+};
 export const getChatHistories = () => api.get("/ai/history");
 export const getChatHistory = (chatId) => api.get(`/ai/history/${chatId}`);
 export const deleteChatHistory = (chatId) =>
