@@ -15,27 +15,27 @@ const dynamicTexts = [
 ];
 
 const dynamicBackgrounds = [
-  "https://i.ibb.co/4Z1YJYdt/Dark-Abstract.jpg",
-  "https://i.ibb.co/Myn3d0bm/Student-Collaborating.jpg",
-  "https://i.ibb.co/KYcLfVX/Software-2.jpg",
-  "https://i.ibb.co/ks6R2XGP/Abstract-Background.jpg",
+  "https://miro.medium.com/v2/resize:fit:1100/format:webp/1*1oTDnw0B32cdT0J1fBmKWg.gif",
+  "https://cdn.dribbble.com/userupload/25126157/file/original-b4e375e11656bdb2c9aec5333f82acaa.gif",
+  "https://substackcdn.com/image/fetch/$s_!7uMg!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff1e127d9-b953-4755-9f71-67a4562bef6a_1456x1048.gif",
+  "https://i.makeagif.com/media/10-08-2015/14-eDw.gif",
 ];
 
 const facilities = [
-  { img: "https://i.ibb.co/qFY22Nbh/facility1.jpg", title: "State-of-the-Art Library" },
-  { img: "https://i.ibb.co/SD3R5LCb/facility2.jpg", title: "Advanced Computer Labs" },
-  { img: "https://i.ibb.co/99G0p4WH/facility3.jpg", title: "Creative & AV Rooms" },
-  { img: "https://i.ibb.co/P70vgsN/facility4.jpg", title: "Collaborative Study Zones" },
+  { img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp", title: "State-of-the-Art Library" },
+  { img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif", title: "Advanced Computer Labs" },
+  { img: "https://i.ibb.co/VYZ316xG/AV-room.webp", title: "Creative & AV Rooms" },
+  { img: "https://i.ibb.co/j9n5fNVr/automate.jpg", title: "Collaborative Study Zones" },
   { img: "https://i.ibb.co/Mkp1wBpL/facility5.jpg", title: "Robotics & Tech Hub" },
   { img: "https://i.ibb.co/7JcB1jgM/facility6.jpg", title: "Outdoor Learning Spaces" },
-  { img: "https://i.ibb.co/qFY22Nbh/facility1.jpg", title: "State-of-the-Art Library" },
-  { img: "https://i.ibb.co/SD3R5LCb/facility2.jpg", title: "Advanced Computer Labs" },
+  { img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp", title: "State-of-the-Art Library" },
+  { img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif", title: "Advanced Computer Labs" },
 ];
 
 const classrooms = [
-  { img: "https://i.ibb.co/1YtBymP9/class1.jpg", title: "Interactive Learning" },
-  { img: "https://i.ibb.co/ccZgQZ2X/class2.jpg", title: "Real-time Collaboration" },
-  { img: "https://i.ibb.co/DPxPHdsx/class3.jpg", title: "Data-Driven Insights" },
+  { img: "https://images.squarespace-cdn.com/content/v1/643215ef28a64f0e27d147d8/494c17cf-8be4-4a11-b343-40040f2dc77c/2023-05-21+22.49.24.gif?format=750w", title: "Interactive Learning" },
+  { img: "https://i.ibb.co/Pb4mgqb/real-time-colabo.gif", title: "Real-time Collaboration" },
+  { img: "https://i.ibb.co/sJCDkMS7/data-driven2.gif", title: "Data-Driven Insights" },
 ];
 
 export default function HomePage() {
