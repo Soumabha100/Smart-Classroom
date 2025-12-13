@@ -46,14 +46,12 @@ import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
+  // Use the hook to get the current theme for the Toaster
   const { theme } = useTheme();
 
   return (
-    <div
-      className={`${
-        theme === "dark" ? "dark" : ""
-      } bg-white dark:bg-slate-900 text-slate-900 dark:text-white min-h-screen transition-colors duration-300`}
-    >
+    // Clean wrapper: Rely on Tailwind 'dark:' classes which listen to <html class="dark">
+    <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
       <Toaster
         position="top-right"
         toastOptions={{

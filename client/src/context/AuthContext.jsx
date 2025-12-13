@@ -12,15 +12,10 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// This function will apply the theme class to the document
-const applyTheme = (theme) => {
-  const root = window.document.documentElement;
-  root.classList.remove("light", "dark");
-  root.classList.add(theme);
-};
+// ❌ DELETED: applyTheme helper function entirely.
+// const applyTheme = (theme) => { ... }
 
-// --- ✨ NEW LOADING COMPONENT ---
-// This component will be shown during the initial auth check.
+// ... FullPageLoader component stays the same ...
 const FullPageLoader = () => (
   <div className="flex items-center justify-center h-screen w-full bg-slate-900 text-white">
     <div className="flex flex-col items-center gap-4">
@@ -62,7 +57,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("role");
     setToken(null);
     setUser(null);
-    // Remove the auth header from the api instance
     delete api.defaults.headers.common["Authorization"];
     navigate("/login");
   }, [navigate]);
@@ -71,64 +65,51 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUserData);
   };
 
-  // --- ✅ LOGIC UPDATE 1: Renamed to be more specific ---
-  // This function checks auth status on page load.
-  // If it fails, it logs the user out.
   const checkAuthStatus = useCallback(async () => {
     try {
       const res = await getUserProfile();
       setUser(res.data);
-      applyTheme(res.data.profile.theme || "light");
+      // ❌ DELETED: applyTheme(res.data.profile.theme || "light");
     } catch (error) {
       console.error("Failed to fetch user profile, logging out.", error);
       logout();
     } finally {
-      setLoading(false); // We are done loading after the initial check
+      setLoading(false);
     }
   }, [logout]);
 
-  // --- ✅ LOGIC UPDATE 2: New function for use *after* login ---
-  // This function fetches the profile but *throws* an error on failure,
-  // allowing the login function's catch block to handle it.
   const fetchUserProfile = async () => {
-    const res = await getUserProfile(); // No try/catch, let it throw
+    const res = await getUserProfile();
     setUser(res.data);
-    applyTheme(res.data.profile.theme || "light");
+    // ❌ DELETED: applyTheme(res.data.profile.theme || "light");
   };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       setToken(storedToken);
-      // Set the token on the api instance for the initial checkAuthStatus call
       api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
       checkAuthStatus();
     } else {
-      setLoading(false); // No token, stop loading
+      setLoading(false);
     }
-  }, [checkAuthStatus]); // We only want this running once on load
+  }, [checkAuthStatus]);
 
   const login = async (email, password) => {
     let loginResponse = null;
     setLoading(true);
     try {
-      // 1. Attempt to log in
       const res = await api.post("/auth/login", { email, password });
-      loginResponse = res; // Store the response
+      loginResponse = res;
       const { token, role } = res.data;
 
-      // 2. Set token everywhere *before* next API call
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       setToken(token);
 
-      // 3. Fetch user profile.
-      // --- ✅ LOGIC UPDATE 3: Use the new function ---
-      // 3. Fetch user profile
       await fetchUserProfile();
 
-      // 4. Navigate on success
       switch (role) {
         case "admin":
           navigate("/admin-dashboard");
@@ -144,40 +125,40 @@ export const AuthProvider = ({ children }) => {
           break;
       }
     } catch (err) {
-      // Only clean up login state if we had a successful login but failed to fetch profile
       if (loginResponse) {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         setToken(null);
         delete api.defaults.headers.common["Authorization"];
       }
-
-      // Ensure we're throwing an error with response data
-      if (err.response) {
-        throw err;
-      } else {
-        throw new Error("Network error. Please check your connection.");
-      }
+      if (err.response) throw err;
+      else throw new Error("Network error. Please check your connection.");
     } finally {
-      setLoading(false); // Stop loading after login attempt is complete
+      setLoading(false);
     }
   };
 
   const updateTheme = async (newTheme) => {
     if (user) {
+      // 1. Optimistic UI Update (Instant feedback)
       const oldUser = user;
       const newUser = {
         ...user,
-        profile: { ...user.profile, theme: newTheme },
+        profile: { ...(user.profile || {}), theme: newTheme }, // Handle missing profile safely
       };
       setUser(newUser);
-      applyTheme(newTheme);
+
       try {
-        await api.post("/users/profile", { theme: newTheme });
+        // 2. Send to Backend
+        // The backend now looks for { theme: "dark" } in the body
+        const response = await api.put("/users/profile", { theme: newTheme });
+
+        // 3. Sync state with actual backend response to be sure
+        setUser(response.data.user);
       } catch (error) {
-        console.error("Failed to update theme:", error);
+        console.error("Failed to update theme in DB:", error);
+        // Revert on failure
         setUser(oldUser);
-        applyTheme(oldUser.profile.theme);
       }
     }
   };
@@ -190,10 +171,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     updateTheme,
-    theme: user?.profile?.theme || "light",
   };
 
-  // Render a full-page loader during the initial auth check
   return (
     <AuthContext.Provider value={value}>
       {loading ? <FullPageLoader /> : children}
