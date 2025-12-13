@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   History,
   X,
+  FileText,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 import { askAI } from "../api/apiService";
@@ -129,8 +130,16 @@ const FeatureDisplay = ({ feature }) => (
   </motion.div>
 );
 
-const ActionButton = ({ icon, label }) => (
-  <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+const ActionButton = ({ icon, label, onClick, isActive }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors font-medium ${
+      isActive
+        ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700"
+        : "bg-slate-200 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600"
+    }`}
+  >
     {icon} <span>{label}</span>
   </button>
 );
@@ -174,11 +183,19 @@ export default function AiDashboardPage() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [lastQuery, setLastQuery] = useState("");
 
+  // File/Voice States
+  const [attachment, setAttachment] = useState(null); // { file, type, name }
+  const [isListening, setIsListening] = useState(false);
+
   const [showContent, setShowContent] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [shuffledPrompts, setShuffledPrompts] = useState([]);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+
+  // Refs for hidden inputs
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
 
   const prompts = [
     "Generate me this week's table",
@@ -267,7 +284,7 @@ export default function AiDashboardPage() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!query.trim() || isResponding) return;
+    if ((!query.trim() && !attachment) || isResponding) return;
 
     const currentQuery = query;
     const chatIdToUse = uuidv4();
@@ -278,17 +295,93 @@ export default function AiDashboardPage() {
     setIsResponding(true);
     setCurrentResponse(null);
 
-    
-
     try {
-      const { data } = await askAI(currentQuery, chatIdToUse);
-      setCurrentResponse(data.response);
+      // If attachment exists, use FormData
+      if (attachment) {
+        const formData = new FormData();
+        formData.append("prompt", currentQuery);
+        formData.append("chatId", chatIdToUse);
+        formData.append("file", attachment.file);
+
+        const { data } = await askAI(formData);
+        setCurrentResponse(data.response);
+      } else {
+        // Regular text-only message
+        const { data } = await askAI(currentQuery, chatIdToUse);
+        setCurrentResponse(data.response);
+      }
+
+      clearAttachment();
     } catch (error) {
       console.error("Failed to send message", error);
       setCurrentResponse("Sorry, I encountered an error. Please try again.");
     } finally {
       setIsResponding(false);
     }
+  };
+
+  // --- Voice Input Handler ---
+  const handleVoiceInput = () => {
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
+      alert(
+        "Voice input is not supported in your browser. Try Chrome or Edge."
+      );
+      return;
+    }
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setQuery((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Voice recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  // --- File Upload Handlers ---
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment({
+        file,
+        type: "file",
+        name: file.name,
+      });
+    }
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment({
+        file,
+        type: "image",
+        name: file.name,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
+  };
+
+  const clearAttachment = () => {
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleNext = () =>
@@ -305,6 +398,22 @@ export default function AiDashboardPage() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
+        {/* === Hidden File Inputs === */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileSelect}
+          accept=".pdf,.doc,.docx,.txt,.md,.java,.py,.js,.jsx,.ts,.tsx,.c,.cpp,.h,.cs,.json,.xml,.sql,.env"
+        />
+        <input
+          type="file"
+          ref={imageInputRef}
+          className="hidden"
+          onChange={handleImageSelect}
+          accept="image/*"
+        />
+
         {/* === HERO SECTION (Unchanged) === */}
         <div className="text-center mb-12">
           <motion.h1
@@ -319,12 +428,12 @@ export default function AiDashboardPage() {
             animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
             className="mt-4 max-w-xl mx-auto text-slate-500 dark:text-slate-400"
           >
-            Ask complex questions, get help with assignments, or explore one of
-            your powerful AI tools below.
+            Ask complex questions, upload files/images, use voice, or explore
+            one of your powerful AI tools below.
           </motion.p>
         </div>
 
-        {/* === MAIN CHAT INPUT FORM (Unchanged) === */}
+        {/* === MAIN CHAT INPUT FORM === */}
         <div className="relative mb-6">
           <form onSubmit={handleSendMessage} className="relative">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 z-10" />
@@ -334,11 +443,15 @@ export default function AiDashboardPage() {
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder=""
-              className="w-full bg-white dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg"
+              placeholder={isListening ? "Listening..." : ""}
+              className={`w-full bg-white dark:bg-slate-900/50 border-2 ${
+                isListening
+                  ? "border-red-400 animate-pulse"
+                  : "border-slate-200 dark:border-slate-700"
+              } rounded-full py-4 pl-14 pr-16 h-16 text-lg placeholder:text-transparent focus:placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all duration-300 shadow-lg`}
               disabled={isResponding}
             />
-            {!isFocused && query === "" && (
+            {!isFocused && query === "" && !isListening && (
               <div className="absolute left-14 top-1/2 -translate-y-1/2 w-3/4 h-full pointer-events-none">
                 <AnimatePresence>
                   <motion.span
@@ -360,21 +473,64 @@ export default function AiDashboardPage() {
             <button
               type="submit"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors transform hover:scale-110 disabled:bg-indigo-300 disabled:scale-100"
-              disabled={isResponding || !query.trim()}
+              disabled={isResponding || (!query.trim() && !attachment)}
             >
               <ArrowUp className="w-5 h-5" />
             </button>
           </form>
+
+          {/* Attachment Preview Pill */}
+          {attachment && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-full left-4 mt-2 flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full text-xs font-medium"
+            >
+              {attachment.type === "image" ? (
+                <ImageIcon size={14} />
+              ) : (
+                <FileText size={14} />
+              )}
+              <span className="max-w-[150px] truncate">{attachment.name}</span>
+              <button
+                type="button"
+                onClick={clearAttachment}
+                className="ml-1 hover:text-indigo-900 dark:hover:text-indigo-100"
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          )}
         </div>
 
-        {/* === ACTION BUTTONS AREA (Unchanged) === */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <ActionButton icon={<Paperclip size={14} />} label="Attach File" />
-          <ActionButton icon={<ImageIcon size={14} />} label="Upload Image" />
-          <ActionButton icon={<Mic size={14} />} label="Use Voice" />
+        {/* === ACTION BUTTONS AREA === */}
+        <div className="flex items-center justify-center gap-3 mb-12 flex-wrap">
+          <ActionButton
+            icon={<Paperclip size={14} />}
+            label="Attach File"
+            onClick={() => fileInputRef.current?.click()}
+            isActive={attachment?.type === "file"}
+          />
+          <ActionButton
+            icon={<ImageIcon size={14} />}
+            label="Upload Image"
+            onClick={() => imageInputRef.current?.click()}
+            isActive={attachment?.type === "image"}
+          />
+          <ActionButton
+            icon={
+              <Mic
+                size={14}
+                className={isListening ? "text-red-500 animate-pulse" : ""}
+              />
+            }
+            label={isListening ? "Listening..." : "Use Voice"}
+            onClick={handleVoiceInput}
+            isActive={isListening}
+          />
           <Link
             to="/chat-history"
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium"
           >
             <History size={14} />
             <span>Chat History</span>

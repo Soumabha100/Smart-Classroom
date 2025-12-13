@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const {
   generateDashboard,
   ask,
@@ -9,6 +10,8 @@ const {
 } = require("../controllers/aiController");
 const { protect } = require("../middlewares/authMiddleware");
 const  checkRole  = require("../middlewares/checkRole");
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Route for your AI dashboard (unchanged)
 router.post(
@@ -21,7 +24,7 @@ router.post(
 // --- NEW, CORRECT ROUTES FOR MULTI-CHAT SYSTEM ---
 
 // Handles a message for a specific chat session
-router.post("/ask", protect, ask);
+router.post("/ask", protect, upload.single("file"), ask);
 
 // Gets all chat history summaries for the user
 router.get("/history", protect, getChatHistories);

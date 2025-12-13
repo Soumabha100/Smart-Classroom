@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const NodeCache = require("node-cache");
+const path = require("path");
 const User = require("../models/User");
 const Attendance = require("../models/Attendance");
 const Class = require("../models/Class");
@@ -257,60 +258,122 @@ exports.chatWithAI = async (req, res) => {
  * Handles a new message in a chat session. Finds the chat by chatId or creates a new one.
  */
 exports.ask = async (req, res) => {
-  // --- NEW SAFETY NET ---
-  // This is the permanent fix. It checks for a valid user ID before doing anything else.
+  // 1. Safety Checks
   if (!req.user || !req.user.id) {
-    console.error("CRITICAL: /ai/ask route hit without a valid user ID.");
-    return res.status(401).json({ message: "Not authorized. Please log in again." });
+    return res
+      .status(401)
+      .json({ message: "Not authorized. Please log in again." });
   }
 
-  const { prompt, chatId } = req.body;
-  const userId = req.user.id; // Now we know this is safe to use
+  const { chatId } = req.body;
+  let { prompt } = req.body; // Allow prompt to be modified
+  const file = req.file;
+  const userId = req.user.id;
 
-  if (!prompt || !chatId) {
-    return res.status(400).json({ message: "Prompt and chatId are required." });
+  if (!prompt && !file) {
+    return res.status(400).json({ message: "Prompt or file is required." });
   }
 
   try {
+    // 2. Get or Create Chat History
     let chatHistory = await ChatHistory.findOne({ chatId, user: userId });
-
     if (!chatHistory) {
       chatHistory = new ChatHistory({
-        user: userId, // This is now guaranteed to be a valid ID
+        user: userId,
         chatId,
         history: [],
       });
     }
 
-    // ... the rest of your 'ask' function remains the same
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-    const chat = model.startChat({
-      history: chatHistory.history.map(item => ({
-        role: item.role,
-        parts: item.parts.map(part => ({ text: part.text })),
-      })),
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-    const result = await chat.sendMessage(prompt);
+    const inputParts = [];
+    let fileLog = ""; // For storing in DB history
+
+    if (file) {
+      const mimeType = file.mimetype;
+      const ext = path.extname(file.originalname).toLowerCase();
+
+      // List of extensions we treat as TEXT/CODE
+      const codeExtensions = [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".py",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".cs",
+        ".html",
+        ".css",
+        ".json",
+        ".txt",
+        ".md",
+        ".sql",
+        ".xml",
+        ".env",
+      ];
+
+      if (codeExtensions.includes(ext) || mimeType.startsWith("text/")) {
+        // --- HANDLE TEXT/CODE FILES ---
+        // Convert buffer to string and append to prompt
+        const fileContent = file.buffer.toString("utf-8");
+        prompt = `${prompt || "Here is the file:"}\n\nFile Name: ${
+          file.originalname
+        }\n\`\`\`${ext.substring(1)}\n${fileContent}\n\`\`\``;
+        fileLog = `[Uploaded Code: ${file.originalname}]`;
+      } else {
+        // --- HANDLE IMAGES / PDF (Binary) ---
+        // Gemini supports images (jpeg, png, webp) and PDF natively as inlineData
+        inputParts.push({
+          inlineData: {
+            data: file.buffer.toString("base64"),
+            mimeType: mimeType,
+          },
+        });
+        fileLog = `[Uploaded File: ${file.originalname}]`;
+      }
+    }
+
+    // Add the text prompt (which might now include the code content)
+    if (prompt) {
+      inputParts.push(prompt);
+    }
+
+    // 4. Generate Content
+    const result = await model.generateContent(inputParts);
     const response = await result.response;
     const text = response.text();
 
-    chatHistory.history.push({ role: 'user', parts: [{ text: prompt }] });
-    chatHistory.history.push({ role: 'model', parts: [{ text }] });
+    // 5. Save History
+    // Note: We don't save the full binary file content to Mongo to save space.
+    // We save the text prompt.
+    const userMessageContent = file ? `${prompt} ${fileLog}` : prompt;
 
-    if (chatHistory.history.length === 2) {
-      const titlePrompt = `Generate a short, descriptive title (3-5 words) for a conversation that starts with: "${prompt}"`;
+    chatHistory.history.push({
+      role: "user",
+      parts: [{ text: userMessageContent }],
+    });
+    chatHistory.history.push({ role: "model", parts: [{ text }] });
+
+    // Generate title if it's the first exchange
+    if (chatHistory.history.length <= 2) {
+      const titlePrompt = `Generate a short title (3-5 words) for this chat: "${prompt.substring(
+        0,
+        50
+      )}..."`;
       const titleResult = await model.generateContent(titlePrompt);
       const titleResponse = await titleResult.response;
-      chatHistory.title = titleResponse.text().replace(/"/g, '').trim();
+      chatHistory.title = titleResponse.text().replace(/"/g, "").trim();
     }
 
     await chatHistory.save();
     res.status(200).json({ response: text });
-
   } catch (error) {
     console.error("Error in /ai/ask:", error);
-    res.status(500).json({ message: "An error occurred with the AI service." });
+    res.status(500).json({ message: "AI Error: " + error.message });
   }
 };
 
