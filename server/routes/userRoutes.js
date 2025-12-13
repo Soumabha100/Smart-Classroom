@@ -8,6 +8,7 @@ const {
   getStudentDataForParent,
   getTeacherAnalytics,
   getAllStudents, // The admin-specific function
+  changePassword, // Add this import
 } = require("../controllers/userController");
 
 const { verifyToken, protect } = require("../middlewares/authMiddleware");
@@ -16,6 +17,7 @@ const checkRole = require("../middlewares/checkRole");
 // Profile routes
 router.get("/profile", verifyToken, getUserProfile);
 router.put("/profile", verifyToken, updateUserProfile);
+router.put("/change-password", protect, changePassword); // Add this route
 
 // Counts and lists
 router.get("/count", verifyToken, getUserCount);

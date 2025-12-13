@@ -20,26 +20,44 @@ exports.getUserProfile = async (req, res) => {
 // Update user profile
 exports.updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const { name, phone, bio, theme } = req.body;
+    const userId = req.user.id;
 
-    if (!user) {
+    // 1. Build the update object dynamically
+    // We use dot notation for nested fields ("profile.theme") so we don't overwrite the whole profile
+    const updateFields = {};
+
+    if (name) updateFields.name = name;
+    if (phone !== undefined) updateFields.phone = phone;
+    if (bio !== undefined) updateFields.bio = bio;
+
+    // ✨ FIX: Handle theme update explicitly using MongoDB dot notation
+    // This works even if 'profile' doesn't exist yet!
+    if (theme) {
+      updateFields["profile.theme"] = theme;
+    }
+
+    // 2. Use findByIdAndUpdate for an atomic, safe update
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, runValidators: true } // Return the new user & validate
+    ).select("-password");
+
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.name = req.body.name || user.name;
-    user.phone = req.body.phone;
-    user.bio = req.body.bio;
-
-    const updatedUser = await user.save();
-
-    const userResponse = updatedUser.toObject();
-    delete userResponse.password;
+    console.log(
+      `✅ User ${updatedUser.email} updated. Theme is now: ${updatedUser.profile?.theme}`
+    );
 
     res.status(200).json({
       message: "Profile updated successfully",
-      user: userResponse,
+      user: updatedUser,
     });
   } catch (err) {
+    console.error("❌ Update profile error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -71,7 +89,9 @@ exports.getTeachers = async (req, res) => {
 // Get Students (General Purpose)
 exports.getStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: "student" }).select("_id name email");
+    const students = await User.find({ role: "student" }).select(
+      "_id name email"
+    );
     res.status(200).json(students);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
@@ -165,5 +185,47 @@ exports.getTeacherAnalytics = async (req, res) => {
   } catch (error) {
     console.error("Error fetching teacher analytics:", error);
     res.status(500).json({ message: "Server error while fetching analytics" });
+  }
+};
+
+// --- Change Password Controller ---
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+  const userRole = req.user.role; // Assuming authMiddleware attaches this
+
+  try {
+    // 1. Determine which collection to search based on role
+    let user;
+    const Parent = require("../models/Parent");
+    const bcrypt = require("bcryptjs");
+
+    if (userRole === "parent") {
+      user = await Parent.findById(userId);
+    } else {
+      user = await User.findById(userId);
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // 2. Verify Current Password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect current password." });
+    }
+
+    // 3. Hash New Password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // 4. Save
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully." });
+  } catch (err) {
+    console.error("Change Password Error:", err);
+    res.status(500).json({ message: "Server error while updating password." });
   }
 };

@@ -1,90 +1,107 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef } from "react";
+// ✅ IMPORT useAuth to listen for login/user changes
+import { useAuth } from "./AuthContext";
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  // First, initialize themeSource
+  // ✅ GET the user object
+  const { user } = useAuth();
+
   const [themeSource, setThemeSource] = useState(() => {
     const savedSource = localStorage.getItem("themeSource");
     return savedSource || "system";
   });
 
-  // Then, initialize theme based on themeSource
   const [theme, setTheme] = useState(() => {
     const savedSource = localStorage.getItem("themeSource");
     const savedTheme = localStorage.getItem("theme");
 
-    // If user has explicitly set a theme before (manual mode)
+    // If we have a manual override, strictly use it
     if (savedSource === "manual" && savedTheme) {
       return savedTheme;
     }
-
-    // If system preference or no preference set
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    // Otherwise fallback to system
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+    return "light";
   });
 
+  // ✅ SYNC EFFECT: When user loads/updates, sync theme from DB
   useEffect(() => {
-    // Listen for system theme changes
+    // Check if user exists and has a theme preference
+    if (user?.profile?.theme) {
+      const dbTheme = user.profile.theme;
+      
+      // Only update if the DB value is different from current
+      // This prevents infinite loops if they match
+      if (dbTheme !== theme) {
+        console.log("Syncing theme from DB:", dbTheme);
+        setTheme(dbTheme);
+        setThemeSource("manual");
+        localStorage.setItem("themeSource", "manual");
+        localStorage.setItem("theme", dbTheme);
+      }
+    }
+  }, [user]); // dependency on 'user' ensures this runs on login/refresh
+
+  // System Theme Listener
+  useEffect(() => {
+    if (themeSource !== "system") return;
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e) => {
-      if (themeSource === "system") {
-        setTheme(e.matches ? "dark" : "light");
-      }
+      setTheme(e.matches ? "dark" : "light");
     };
 
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [themeSource]);
 
-  useEffect(() => {
+  // Apply to DOM
+  useLayoutEffect(() => {
     const root = document.documentElement;
+    
+    // 1. Update DOM classes
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.add("light");
+      root.classList.remove("dark");
+    }
 
-    // Add preload class to prevent transitions on page load
-    root.classList.add("preload");
-
-    // Remove both theme classes first
-    root.classList.remove("light", "dark");
-
-    // Add the current theme class
-    root.classList.add(theme);
-
-    // Add transition class for smooth theme switching
-    root.classList.add("theme-transition");
-
-    // Store theme in localStorage
+    // 2. Persist to LocalStorage
     localStorage.setItem("theme", theme);
     localStorage.setItem("themeSource", themeSource);
 
-    // Remove preload class after a brief delay to enable transitions
-    setTimeout(() => {
-      root.classList.remove("preload");
-    }, 100);
-
-    // Remove transition class after animation completes
-    const transitionTimeout = setTimeout(() => {
+    // 3. Handle Transitions (Prevent flashing)
+    root.classList.add("theme-transition");
+    const timer = setTimeout(() => {
       root.classList.remove("theme-transition");
-      root.classList.add("theme-transition-complete");
-    }, 1000);
-
-    return () => clearTimeout(transitionTimeout);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [theme, themeSource]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setThemeSource("manual");
     setTheme(newTheme);
-    localStorage.setItem("themeSource", "manual");
-    localStorage.setItem("theme", newTheme);
   };
 
   const setSystemTheme = () => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setThemeSource("system");
     setTheme(isDark ? "dark" : "light");
-    localStorage.setItem("themeSource", "system");
-    localStorage.removeItem("theme"); // Clear the manual theme preference
+  };
+
+  const setManualTheme = (newTheme) => {
+    setThemeSource("manual");
+    setTheme(newTheme);
   };
 
   const value = {
@@ -92,16 +109,7 @@ export function ThemeProvider({ children }) {
     themeSource,
     toggleTheme,
     setSystemTheme,
-    setTheme: (newTheme) => {
-      if (newTheme === "system") {
-        setSystemTheme();
-      } else {
-        setThemeSource("manual");
-        setTheme(newTheme);
-        localStorage.setItem("themeSource", "manual");
-        localStorage.setItem("theme", newTheme);
-      }
-    },
+    setTheme: setManualTheme,
   };
 
   return (

@@ -92,6 +92,11 @@ export const updateUserProfile = (profileData) => {
   return api.put("/users/profile", profileData);
 };
 
+// Change Password Function
+export const changePassword = (passwordData) => {
+  return api.put("/users/change-password", passwordData);
+};
+
 export const getStudentAttendance = () => api.get("/attendance/student");
 
 // --- AI Chat APIs ---
