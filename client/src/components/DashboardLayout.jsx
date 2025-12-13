@@ -4,9 +4,14 @@ import { Link } from "react-router-dom";
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleCollapsed = () => {
+    setSidebarCollapsed(!isSidebarCollapsed);
   };
 
   useEffect(() => {
@@ -21,12 +26,19 @@ export default function DashboardLayout({ children }) {
   }, [isSidebarOpen]);
 
   return (
-    // ✅ Dark mode enabled for the whole layout
     <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300">
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        collapsed={isSidebarCollapsed}
+        toggleCollapsed={toggleCollapsed}
+      />
 
-      <div className="transition-all duration-300 ease-in-out lg:ml-64">
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
+        }`}
+      >
         {/* Mobile Header with Hamburger Menu */}
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg shadow-sm lg:hidden dark:bg-slate-800/80 dark:border-b dark:border-slate-700">
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,7 +51,7 @@ export default function DashboardLayout({ children }) {
               </Link>
               <button
                 onClick={toggleSidebar}
-                className="rounded-md p-2 text-slate-500 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="rounded-md p-2 text-slate-500 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
                 aria-controls="sidebar"
                 aria-expanded={isSidebarOpen}
               >
@@ -59,14 +71,12 @@ export default function DashboardLayout({ children }) {
                 </svg>
               </button>
             </div>
-            
           </div>
         </header>
 
         {/* Main Content Area */}
         <main className="p-4 sm:p-6 lg:p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm transition-colors duration-300">
           {children}
-         
         </main>
       </div>
     </div>
