@@ -10,6 +10,8 @@ import AboutPage from "./pages/AboutPage.jsx";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import CompleteProfile from "./pages/CompleteProfile.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 
 // Student Pages
 import StudentDashboard from "./pages/StudentDashboard.jsx";
@@ -90,6 +92,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
 
         {/* ================================================================== */}
         {/* STUDENT ROUTES                             */}
