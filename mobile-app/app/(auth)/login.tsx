@@ -2,20 +2,25 @@ import React from "react";
 import { StyleSheet, View, Alert, SafeAreaView, Image } from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext"; // The one true hook
+import { useTheme } from "../../context/ThemeContext";
+
+// 1. Import the local asset for the logo
+const LogoImage = require("../../assets/images/logo1.jpg");
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const { login } = useAuth();
-  const { theme } = useTheme(); // Get our powerful theme object
+  const { theme } = useTheme();
 
   const handleLogin = async () => {
     setLoading(true);
     try {
       await login(email, password);
     } catch (err: any) {
+      // NOTE: Using 'err: any' is common, but you could be more specific
+      // about the error type for better type safety if desired (e.g., AxiosError).
       Alert.alert(
         "Login Failed",
         err.response?.data?.message || "An error occurred."
@@ -28,8 +33,9 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.content}>
+        {/* 2. CORRECTED: Use the local image asset (more reliable) */}
         <Image
-          source={{ uri: "https://i.ibb.co/1J2rJx31/logo1.jpg" }}
+          source={LogoImage}
           style={styles.logo}
         />
         <Text
