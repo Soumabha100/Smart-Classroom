@@ -1,5 +1,4 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const NodeCache = require("node-cache");
 const path = require("path");
 const User = require("../models/User");
 const Attendance = require("../models/Attendance");
@@ -9,33 +8,49 @@ const Submission = require("../models/Submission");
 const ChatHistory = require("../models/ChatHistory");
 
 // --- CONFIGURATION ---
-const aiCache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
-aiCache.flushAll();
-console.log("✅ [INIT] AI Dashboard cache cleared.");
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- HELPER FUNCTIONS ---
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ===================================================================================
-// AI DASHBOARD CONTROLLER (EXISTING CODE - UNCHANGED)
+// AI DASHBOARD CONTROLLER (OPTIMIZED WITH DB CACHING)
 // ===================================================================================
 exports.generateDashboard = async (req, res) => {
-  const { mode } = req.body;
+  const { mode } = req.body; // e.g., "learning", "planning"
   const userId = req.user.id;
-  const cacheKey = `dashboard-${userId}-${mode}`;
-
-  if (aiCache.has(cacheKey)) {
-    console.log(`✅ Serving dashboard for user ${userId} from cache.`);
-    return res.status(200).json(aiCache.get(cacheKey));
-  }
+  const CACHE_DURATION_HOURS = 24;
 
   try {
+    // 1. Fetch User to check Cache
     const student = await User.findById(userId).select("-password");
     if (!student) {
       return res.status(404).json({ message: "Student not found." });
     }
+
+    // 2. Check Database Cache
+    // We check if cache exists for this specific 'mode' and if it is fresh
+    if (student.dashboardCache && student.dashboardCache.has(mode)) {
+      const cachedEntry = student.dashboardCache.get(mode);
+      const now = new Date();
+      const lastUpdated = new Date(cachedEntry.lastUpdated);
+      const diffInHours = (now - lastUpdated) / (1000 * 60 * 60);
+
+      if (diffInHours < CACHE_DURATION_HOURS) {
+        console.log(
+          `✅ [CACHE HIT] Serving existing ${mode} dashboard for ${
+            student.name
+          }. (Age: ${diffInHours.toFixed(2)}h)`
+        );
+        console.log("ℹ️ API Call Skipped: Data is fresh.");
+        return res.status(200).json(cachedEntry.data);
+      }
+    }
+
+    // 3. Data is missing or stale -> Prepare to Generate
+    console.log(
+      `⚡️ [API CALL] Generating new ${mode} dashboard for ${student.name}.`
+    );
 
     const attendanceRecords = await Attendance.find({ studentId: userId })
       .sort({ timestamp: -1 })
@@ -66,10 +81,11 @@ exports.generateDashboard = async (req, res) => {
           submissions.length
         : 0;
 
+    // 4. Construct Prompt
     const prompt = `
       You are an expert AI academic advisor for a platform called IntelliClass.
       Your task is to generate a personalized dashboard layout in a specific JSON format for a student.
-      IMPORTANT: Your entire response must be ONLY the raw JSON object, without any markdown formatting like \`\`\`json, commentary, or extra text.
+      IMPORTANT: Your entire response must be ONLY the raw JSON object.
 
       Student Data:
       - Name: ${student.name}
@@ -102,69 +118,74 @@ exports.generateDashboard = async (req, res) => {
       }
 
       Selected Mode: "${mode}"
-
       Available Widget Types: "header", "quickStats", "todoList", "careerSuggestion", "learningSuggestion", "motivationalQuote".
 
       Generate 3 to 4 relevant widgets based on the student's data and the selected mode. 
       For "quickStats", use the aggregated data provided above.
       For "motivationalQuote", find a suitable quote.
-      For other widgets, create relevant, encouraging, and actionable content.
 
-      Here is a PERFECT example of the required output format:
+      Output strictly valid JSON:
       {
         "widgets": [
           { "id": "header-1", "type": "header", "data": { "title": "Welcome, ${
             student.name
           }!", "subtitle": "Let's focus on your learning journey." } },
-          { "id": "stats-1", "type": "quickStats", "data": { "title": "Academic Snapshot", "stats": [ { "label": "Attendance", "value": "${attendancePercentage.toFixed(
-            1
-          )}%" }, { "label": "Average Grade", "value": "${averageGrade.toFixed(
-      1
-    )}%" } ] } },
-          { "id": "quote-1", "type": "motivationalQuote", "data": { "title": "Food for Thought", "quote": "The only way to do great work is to love what you do.", "author": "Steve Jobs" } }
+           ... other widgets
         ]
       }
-
-      Now, generate the JSON for this student.
     `;
 
+    // 5. Call Gemini API with Retry Logic
     let retries = 3;
+    let dashboardJson = null;
+
     while (retries > 0) {
       try {
-        console.log(
-          `⚡️ [Attempt ${
-            4 - retries
-          }] Calling AI to generate new dashboard for user ${userId}.`
-        );
-
         const model = genAI.getGenerativeModel({
           model: "gemini-flash-latest",
         });
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-
         const cleanedText = text
           .replace(/```json/g, "")
           .replace(/```/g, "")
           .trim();
-        const dashboardJson = JSON.parse(cleanedText);
 
-        aiCache.set(cacheKey, dashboardJson);
-        console.log(`📦 Stored new dashboard for user ${userId} in cache.`);
-
-        return res.status(200).json(dashboardJson);
+        dashboardJson = JSON.parse(cleanedText);
+        break; // Success, exit loop
       } catch (error) {
-        console.error("Error during AI generation attempt:", error.message);
+        console.error(`⚠️ Attempt ${4 - retries} failed: ${error.message}`);
         retries--;
-        if (retries <= 0) {
-          return res.status(500).json({
-            message: "Failed to generate AI dashboard after multiple attempts.",
-          });
-        }
+        if (retries === 0)
+          throw new Error("AI generation failed after multiple attempts.");
         await sleep(1000);
       }
     }
+
+    // 6. Save to Database (The Core Efficiency Change)
+    if (dashboardJson) {
+      // Ensure dashboardCache map exists (if migrating old users)
+      if (!student.dashboardCache) {
+        student.dashboardCache = new Map();
+      }
+
+      // Update the specific mode
+      student.dashboardCache.set(mode, {
+        data: dashboardJson,
+        lastUpdated: new Date(),
+      });
+
+      // Mark the field as modified so Mongoose saves the Map changes
+      student.markModified("dashboardCache");
+      await student.save();
+
+      console.log(
+        `💾 [DB SAVE] Dashboard for mode '${mode}' saved to database.`
+      );
+    }
+
+    return res.status(200).json(dashboardJson);
   } catch (err) {
     console.error("Error in generateDashboard controller:", err);
     res.status(500).json({ message: "An unexpected server error occurred." });

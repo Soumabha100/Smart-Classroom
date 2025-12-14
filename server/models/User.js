@@ -20,10 +20,12 @@ const UserSchema = new mongoose.Schema(
       enum: ["student", "teacher", "admin"], // Role must be one of these values
       default: "student", // If no role is provided, it defaults to 'student'
     },
-    classes: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Class' 
-    }],
+    classes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Class",
+      },
+    ],
     phone: {
       type: String,
       default: "", // Default to an empty string
@@ -52,7 +54,19 @@ const UserSchema = new mongoose.Schema(
       // To be implemented later
       type: Object,
     },
-    // In server/models/User.js, inside the UserSchema
+    // --- 🆕 NEW CODE START: Database-level AI Dashboard Caching ---
+    dashboardCache: {
+      type: Map,
+      of: new mongoose.Schema(
+        {
+          data: Object, // Stores the JSON widgets
+          lastUpdated: Date, // Stores when it was generated
+        },
+        { _id: false }
+      ),
+      default: {},
+    },
+    // --- 🆕 NEW CODE END ---
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Parent",
