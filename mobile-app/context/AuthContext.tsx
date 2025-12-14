@@ -126,6 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (e) {
         console.log("Error clearing storage on logout", e);
     }
+  };
 
   return (
     <AuthContext.Provider value={{ token, user, isLoading, login, logout }}>
