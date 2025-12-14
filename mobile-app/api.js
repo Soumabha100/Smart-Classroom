@@ -1,48 +1,47 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// --- CRITICAL STEP: CHANGE THIS IP ADDRESS ---
-// 
-// 🚨 Replace 'YOUR_COMPUTER_LOCAL_IP' with the actual, current 
-//    IPv4 address of the computer running your backend server (e.g., 192.168.1.100).
-//    The port (5001) must match the port your Node.js server is running on.
-const YOUR_COMPUTER_IP = '192.168.1.4'; // <-- CHANGE THIS TO YOUR ACTUAL IP
-const API_PORT = '5001';
-const API_URL = `http://${YOUR_COMPUTER_IP}:${API_PORT}/api`; 
+// --- 1. PERMANENT PUBLIC URL (DEFAULT) ---
+// Your friends can use the app immediately with this URL.
+// Note: We append '/api' because your server routes are likely prefixed with it.
+const DEFAULT_URL = "https://intelli-class-project.onrender.com/api";
 
 const api = axios.create({
-  baseURL: API_URL,
-  timeout: 10000, // Optional: Add a 10-second timeout
+  baseURL: DEFAULT_URL,
+  timeout: 15000, // Increased timeout for Render (free tier can be slow to wake up)
 });
 
-// Interceptor to add the token to every request
+// --- 2. DYNAMIC CONFIGURATION (INTERCEPTOR) ---
+// This allows you to override the default URL from the Login screen
+// (e.g., if you want to switch back to 192.168.x.x for local development).
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      // Check if the user has saved a custom server URL
+      const dynamicUrl = await AsyncStorage.getItem("server_url");
+
+      if (dynamicUrl) {
+        // Normalize the URL: remove trailing slash
+        const cleanUrl = dynamicUrl.replace(/\/$/, "");
+        // Ensure it ends with /api
+        config.baseURL = cleanUrl.endsWith("/api")
+          ? cleanUrl
+          : `${cleanUrl}/api`;
+      }
+
+      // Add Auth Token
+      const token = await AsyncStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.log("Error reading config", error);
     }
     return config;
   },
   (error) => {
-    // This handles errors before the request is sent (like bad configuration)
     return Promise.reject(error);
   }
 );
-
-// Optional: Interceptor to handle global errors (like 401 Unauthorized)
-/*
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Handle unauthorized errors (e.g., automatically log out the user)
-      // This requires importing the logout function or navigation logic.
-      // For now, we will leave this commented out.
-    }
-    return Promise.reject(error);
-  }
-);
-*/
 
 export default api;

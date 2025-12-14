@@ -1,16 +1,26 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
-import { Text, List, Switch, Divider, Avatar } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext'; // <-- The one true hook
+import { View, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { Text, List, Switch, Divider, Avatar, Button } from 'react-native-paper';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
-  // Get everything from our single, reliable hook
   const { colorScheme, toggleColorScheme, theme } = useTheme();
   const { user, logout } = useAuth();
 
+  // --- SAFETY NET: If user data is missing, allow Logout ---
   if (!user) {
-    return <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginBottom: 20 }} />
+        <Text style={{ color: theme.colors.onSurface, marginBottom: 20 }}>
+          User data not found.
+        </Text>
+        <Button mode="contained" onPress={logout} buttonColor={theme.colors.error}>
+          Force Sign Out
+        </Button>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -20,7 +30,7 @@ export default function ProfileScreen() {
           <Avatar.Image 
             size={80} 
             source={{ uri: `https://api.multiavatar.com/${user.email}.png` }}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, backgroundColor: theme.colors.surfaceVariant }}
           />
           <Text variant="headlineLarge" style={{ color: theme.colors.onBackground, fontWeight: 'bold' }}>
             {user.name}
@@ -28,13 +38,17 @@ export default function ProfileScreen() {
           <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
             {user.email}
           </Text>
+          <Text variant="labelMedium" style={{ color: theme.colors.primary, marginTop: 4, textTransform: 'capitalize' }}>
+            {user.role}
+          </Text>
         </View>
 
         <List.Section>
-          <List.Subheader>Appearance</List.Subheader>
+          <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Appearance</List.Subheader>
           <List.Item
             title="Dark Mode"
-            left={() => <List.Icon icon="theme-light-dark" />}
+            titleStyle={{ color: theme.colors.onSurface }}
+            left={() => <List.Icon icon="theme-light-dark" color={theme.colors.onSurface} />}
             right={() => (
               <Switch
                 value={colorScheme === 'dark'}
@@ -44,10 +58,10 @@ export default function ProfileScreen() {
           />
         </List.Section>
         
-        <Divider style={{ backgroundColor: theme.colors.border }} />
+        <Divider style={{ backgroundColor: theme.colors.outlineVariant }} />
 
         <List.Section>
-          <List.Subheader>Account</List.Subheader>
+          <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Account</List.Subheader>
           <List.Item
             title="Sign Out"
             left={() => <List.Icon icon="logout" color={theme.colors.error} />}

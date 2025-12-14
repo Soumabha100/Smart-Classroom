@@ -11,18 +11,16 @@ interface User {
   // Add any other essential user properties here
 }
 
-// Define the shape of the login response based on common backend standards
+// Define the shape of the login response
 interface LoginResponse {
     token: string;
-    user: User; // Assuming your server returns the full user object on successful login
+    user: User; 
 }
 
-// Update the context type to include the user
 interface AuthContextType {
   token: string | null;
   user: User | null;
   isLoading: boolean;
-  // NOTE: login now returns a Promise<void> as it handles state updates internally
   login: (email: string, password: string) => Promise<void>; 
   logout: () => void;
 }
@@ -39,27 +37,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const loadState = async () => {
       try {
         const storedToken = await AsyncStorage.getItem("token");
-        const storedUserJson = await AsyncStorage.getItem("user"); // Try to load stored user data
+        const storedUserJson = await AsyncStorage.getItem("user");
 
         if (storedToken) {
           setToken(storedToken);
 
           if (storedUserJson) {
-            // If user data is cached, use it immediately
             setUser(JSON.parse(storedUserJson));
           } else {
             // If only token exists, fetch profile to ensure data is fresh
-            const profileRes = await api.get<User>("/users/profile");
-            setUser(profileRes.data);
-            await AsyncStorage.setItem("user", JSON.stringify(profileRes.data));
+            await fetchUserProfile();
           }
         }
       } catch (e) {
-        // If profile fetch fails (e.g., bad token, network issue), clear session
-        console.error("Failed to load session or fetch profile", e);
-        await AsyncStorage.multiRemove(["token", "role", "user"]);
-        setToken(null);
-        setUser(null);
+        console.error("Failed to load session", e);
+        await logout();
       } finally {
         setIsLoading(false);
       }
@@ -67,27 +59,61 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadState();
   }, []);
 
-  // --- Login Function (CRITICAL FIXES HERE) ---
+  // Helper to fetch profile if missing from login response
+  const fetchUserProfile = async () => {
+    try {
+       const profileRes = await api.get<User>("/users/profile");
+       setUser(profileRes.data);
+       await AsyncStorage.setItem("user", JSON.stringify(profileRes.data));
+       return profileRes.data;
+    } catch (e) {
+       console.error("Error fetching profile", e);
+       return null;
+    }
+  };
+
+  // --- Login Function (FIXED & ROBUST) ---
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      // 1. API Call: Post credentials and get back token and user data
+      // 1. API Call
       const res = await api.post<LoginResponse>("/auth/login", { email, password });
       
-      // Destructure response data based on LoginResponse interface
-      const { token: newToken, user: userData } = res.data; 
+      console.log("Login API Response:", res.data); // Debugging log
 
-      // 2. Set State
-      setToken(newToken);
-      setUser(userData);
+      let { token: newToken, user: userData } = res.data; 
 
-      // 3. Persist Data
+      if (!newToken) {
+        throw new Error("Server response missing access token.");
+      }
+
+      // 2. Save Token FIRST (Required for subsequent requests)
       await AsyncStorage.setItem("token", newToken);
-      await AsyncStorage.setItem("user", JSON.stringify(userData)); // Save the user object
+      setToken(newToken);
+
+      // 3. ROBUST CHECK: If server didn't send user object, fetch it manually
+      if (!userData) {
+        console.log("⚠️ User object missing in login response. Fetching from /profile...");
+        const fetchedUser = await fetchUserProfile();
+        if (!fetchedUser) {
+           throw new Error("Login succeeded, but failed to load User Profile.");
+        }
+        userData = fetchedUser;
+      }
+
+      // 4. Save User Data (Only if we definitely have it)
+      if (userData) {
+        setUser(userData);
+        // SAFETY CHECK: Ensure we don't pass undefined to AsyncStorage
+        await AsyncStorage.setItem("user", JSON.stringify(userData));
+      }
 
     } catch (error) {
-        // 4. CRITICAL FIX: Throw the error so the login.tsx screen can catch it
-        // and display the appropriate error message (Alert.alert).
-        throw error; 
+        console.error("Login Flow Error:", error);
+        // Clean up if anything failed
+        await AsyncStorage.multiRemove(["token", "user"]);
+        setToken(null);
+        setUser(null);
+        throw error; // Propagate error to Login Screen
     }
   };
 
@@ -95,9 +121,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setToken(null);
     setUser(null);
-    // Clear all relevant keys from storage
-    await AsyncStorage.multiRemove(["token", "user"]); 
-  };
+    try {
+        await AsyncStorage.multiRemove(["token", "user"]); 
+    } catch (e) {
+        console.log("Error clearing storage on logout", e);
+    }
 
   return (
     <AuthContext.Provider value={{ token, user, isLoading, login, logout }}>
@@ -106,7 +134,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Custom hook to use the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
