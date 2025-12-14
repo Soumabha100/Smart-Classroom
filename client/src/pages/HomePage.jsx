@@ -22,20 +22,53 @@ const dynamicBackgrounds = [
 ];
 
 const facilities = [
-  { img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp", title: "State-of-the-Art Library" },
-  { img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif", title: "Advanced Computer Labs" },
-  { img: "https://i.ibb.co/VYZ316xG/AV-room.webp", title: "Creative & AV Rooms" },
-  { img: "https://i.ibb.co/j9n5fNVr/automate.jpg", title: "Collaborative Study Zones" },
-  { img: "https://i.ibb.co/Mkp1wBpL/facility5.jpg", title: "Robotics & Tech Hub" },
-  { img: "https://i.ibb.co/7JcB1jgM/facility6.jpg", title: "Outdoor Learning Spaces" },
-  { img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp", title: "State-of-the-Art Library" },
-  { img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif", title: "Advanced Computer Labs" },
+  {
+    img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp",
+    title: "State-of-the-Art Library",
+  },
+  {
+    img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif",
+    title: "Advanced Computer Labs",
+  },
+  {
+    img: "https://i.ibb.co/VYZ316xG/AV-room.webp",
+    title: "Creative & AV Rooms",
+  },
+  {
+    img: "https://i.ibb.co/j9n5fNVr/automate.jpg",
+    title: "Collaborative Study Zones",
+  },
+  {
+    img: "https://i.ibb.co/Mkp1wBpL/facility5.jpg",
+    title: "Robotics & Tech Hub",
+  },
+  {
+    img: "https://i.ibb.co/7JcB1jgM/facility6.jpg",
+    title: "Outdoor Learning Spaces",
+  },
+  {
+    img: "https://i.ibb.co/sJHmK8sY/State-of-the-Art-Library.webp",
+    title: "State-of-the-Art Library",
+  },
+  {
+    img: "https://i.ibb.co/C5Zrj1JK/advanced-computers.avif",
+    title: "Advanced Computer Labs",
+  },
 ];
 
 const classrooms = [
-  { img: "https://images.squarespace-cdn.com/content/v1/643215ef28a64f0e27d147d8/494c17cf-8be4-4a11-b343-40040f2dc77c/2023-05-21+22.49.24.gif?format=750w", title: "Interactive Learning" },
-  { img: "https://i.ibb.co/Pb4mgqb/real-time-colabo.gif", title: "Real-time Collaboration" },
-  { img: "https://i.ibb.co/sJCDkMS7/data-driven2.gif", title: "Data-Driven Insights" },
+  {
+    img: "https://images.squarespace-cdn.com/content/v1/643215ef28a64f0e27d147d8/494c17cf-8be4-4a11-b343-40040f2dc77c/2023-05-21+22.49.24.gif?format=750w",
+    title: "Interactive Learning",
+  },
+  {
+    img: "https://i.ibb.co/Pb4mgqb/real-time-colabo.gif",
+    title: "Real-time Collaboration",
+  },
+  {
+    img: "https://i.ibb.co/sJCDkMS7/data-driven2.gif",
+    title: "Data-Driven Insights",
+  },
 ];
 
 export default function HomePage() {
