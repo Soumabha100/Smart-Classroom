@@ -22,6 +22,15 @@ exports.generateDashboard = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const CACHE_DURATION_HOURS = 24;
 
+  // --- 🛡️ INPUT VALIDATION: Prevent map explosion attacks ---
+  const validModes = ["learning", "career", "planning"];
+  if (!validModes.includes(mode)) {
+    res.status(400);
+    throw new Error(
+      "Invalid dashboard mode selected. Valid modes: learning, career, planning."
+    );
+  }
+
   // 1. Fetch User to check Cache
   const student = await User.findById(userId).select("-password");
   if (!student) {
@@ -51,26 +60,26 @@ exports.generateDashboard = asyncHandler(async (req, res) => {
     `⚡️ [API CALL] Generating new ${mode} dashboard for ${student.name}.`
   );
 
-  const attendanceRecords = await Attendance.find({ studentId: userId })
-    .sort({ timestamp: -1 })
-    .limit(5);
+  // --- 🚀 PERFORMANCE OPTIMIZATION: Parallel queries with Promise.all ---
+  const [
+    attendanceRecords,
+    studentClasses,
+    submissions,
+    totalAttendance,
+    presentAttendance,
+  ] = await Promise.all([
+    Attendance.find({ studentId: userId }).sort({ timestamp: -1 }).limit(5),
+    Class.find({ students: userId }),
+    Submission.find({ studentId: userId }),
+    Attendance.countDocuments({ studentId: userId }),
+    Attendance.countDocuments({ studentId: userId, status: "Present" }),
+  ]);
 
-  const studentClasses = await Class.find({ students: userId });
+  // Dependent query (needs studentClasses from above)
   const classIds = studentClasses.map((c) => c._id);
-
   const assignments = await Assignment.find({ classId: { $in: classIds } })
     .sort({ dueDate: 1 })
     .limit(5);
-
-  const submissions = await Submission.find({ studentId: userId });
-
-  const totalAttendance = await Attendance.countDocuments({
-    studentId: userId,
-  });
-  const presentAttendance = await Attendance.countDocuments({
-    studentId: userId,
-    status: "Present",
-  });
   const attendancePercentage =
     totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 0;
 
@@ -215,7 +224,21 @@ exports.ask = asyncHandler(async (req, res) => {
     });
   }
 
+  // --- 🆕 FIX: Convert DB History to Gemini Format for AI Memory ---
+  const historyForGemini = chatHistory.history.map((msg) => ({
+    role: msg.role === "user" ? "user" : "model",
+    parts: msg.parts.map((p) => ({ text: p.text })),
+  }));
+
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+  // --- 🆕 USE startChat WITH HISTORY (AI Now Has Memory!) ---
+  const chat = model.startChat({
+    history: historyForGemini,
+    generationConfig: {
+      maxOutputTokens: 1000,
+    },
+  });
 
   const inputParts = [];
   let fileLog = ""; // For storing in DB history
@@ -272,8 +295,8 @@ exports.ask = asyncHandler(async (req, res) => {
     inputParts.push(prompt);
   }
 
-  // 4. Generate Content
-  const result = await model.generateContent(inputParts);
+  // 4. Generate Content using chat.sendMessage (NOT model.generateContent)
+  const result = await chat.sendMessage(inputParts);
   const response = await result.response;
   const text = response.text();
 

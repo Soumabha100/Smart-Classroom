@@ -6,6 +6,8 @@ const { Server } = require("socket.io");
 const os = require("os");
 require("dotenv").config();
 
+const errorHandler = require("./middlewares/errorMiddleware");
+
 // --- 1. Dynamic Local IP Logic ---
 function getLocalIpAddress() {
   const interfaces = os.networkInterfaces();
@@ -132,6 +134,8 @@ io.on("connection", (socket) => {
 app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
+
+app.use(errorHandler);
 
 // Start Server
 server.listen(PORT, () => {
