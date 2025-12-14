@@ -50,6 +50,9 @@ mongoose
   .catch((err) => console.error("DB Connection Error:", err));
 
 const app = express();
+
+app.set("trust proxy", 1);
+
 const server = http.createServer(app);
 
 // --- 4. Socket.IO Configuration ---
