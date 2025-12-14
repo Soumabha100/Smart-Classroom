@@ -203,7 +203,7 @@ exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Email not sent" }); // Generic message for security
+      return res.status(404).json({ message: "Email not sent" });
     }
 
     // Generate Reset Token
@@ -220,15 +220,28 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    // Create Reset URL
-    // NOTE: Change localhost to your frontend domain in production
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    // -------------------------------------------------------------------------
+    // 🔗 DYNAMIC URL GENERATION LOGIC
+    // -------------------------------------------------------------------------
+    // 1. Check if we have a specific CLIENT_URL set in .env (Best for Production)
+    // 2. If not, use the 'Origin' header from the request (Best for Local/Network)
+    // 3. Fallback to localhost if all else fails
+    const clientUrl =
+      process.env.CLIENT_URL || req.get("origin") || "http://localhost:5173";
+
+    // Construct the full link
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+    // -------------------------------------------------------------------------
 
     const message = `
-      <h1>Password Reset Request</h1>
-      <p>Please click the link below to reset your password:</p>
-      <a href="${resetUrl}" clicktracking=off>${resetUrl}</a>
-      <p>If you did not request this, please ignore this email.</p>
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+        <h1 style="color: #2563eb;">Password Reset Request</h1>
+        <p>You requested a password reset for your IntelliClass account.</p>
+        <p>Please click the button below to reset your password. This link expires in 10 minutes.</p>
+        <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">If you did not request this, please ignore this email.</p>
+        <p style="font-size: 12px; color: #aaa;">Link: ${resetUrl}</p>
+      </div>
     `;
 
     try {
@@ -240,6 +253,7 @@ exports.forgotPassword = async (req, res) => {
 
       res.status(200).json({ success: true, data: "Email sent" });
     } catch (err) {
+      console.error("❌ Email Send Error:", err);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save();
@@ -251,7 +265,33 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// --- 🔑 RESET PASSWORD (User sets new password) ---
+// --- � VERIFY TOKEN (Check validity before showing form) ---
+exports.verifyResetToken = async (req, res) => {
+  try {
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resetToken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Token is invalid or has expired." });
+    }
+
+    res.status(200).json({ success: true, message: "Token is valid." });
+  } catch (error) {
+    console.error("Token Verify Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// --- �🔑 RESET PASSWORD (User sets new password) ---
 exports.resetPassword = async (req, res) => {
   const resetPasswordToken = crypto
     .createHash("sha256")

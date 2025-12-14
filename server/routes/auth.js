@@ -9,6 +9,7 @@ const {
   completeGoogleSignup,
   forgotPassword,
   resetPassword,
+  verifyResetToken,
 } = require("../controllers/authController");
 // Import validation tools from express-validator
 const { body, validationResult } = require("express-validator");
@@ -104,5 +105,10 @@ router.post("/forgot-password", forgotPassword);
 // @desc    Reset password with token
 // @access  Public
 router.put("/reset-password/:resetToken", resetPassword);
+
+// @route   GET api/auth/verify-token/:resetToken
+// @desc    Verify if reset token is still valid
+// @access  Public
+router.get("/verify-token/:resetToken", verifyResetToken);
 
 module.exports = router;
