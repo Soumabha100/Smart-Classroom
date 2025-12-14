@@ -1,145 +1,107 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
+import { auth, googleProvider } from "../firebaseConfig";
+import { signInWithPopup } from "firebase/auth";
+import api from "../api/apiService";
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
-  <div className="text-center">
-    <svg
-      className="w-48 h-48 mx-auto text-blue-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1}
-        d="M9.75 3.104l7.5 4.388-7.5 4.388-7.5-4.388 7.5-4.388zM17.25 11.896l-7.5 4.388-7.5-4.388"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1}
-        d="M17.25 7.51l-7.5 4.388-7.5-4.388"
-      />
-    </svg>
-    <h2 className="mt-6 text-3xl font-extrabold tracking-tight">
-      Unlock Your Potential
+  <div className="text-center relative z-10">
+    <div className="w-48 h-48 mx-auto bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-8 backdrop-blur-sm animate-pulse-slow">
+      <svg
+        className="w-24 h-24 text-blue-400 drop-shadow-lg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+        />
+      </svg>
+    </div>
+    <h2 className="text-4xl font-extrabold tracking-tight text-white mb-4">
+      Unlock Your{" "}
+      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+        Potential
+      </span>
     </h2>
-    <p className="mt-4 text-lg text-slate-400">
+    <p className="text-lg text-slate-300 max-w-sm mx-auto leading-relaxed">
       Welcome to the future of learning. Your smart classroom awaits.
     </p>
   </div>
 );
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Clear errors when component mounts
     setErrors({});
   }, []);
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      // Check with backend
+      const res = await api.post("/auth/google-login", { idToken });
+
+      // If status is 202, it means New User -> Go to Complete Profile
+      if (res.status === 202) {
+        navigate("/complete-profile", {
+          state: {
+            googleData: res.data.googleData,
+            idToken: idToken,
+          },
+        });
+        return;
+      }
+
+      // Normal Login Success
+      const { token, user } = res.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", user.role);
+      window.location.href = "/dashboard";
+    } catch (error) {
+      console.error(error);
+      toast.error("Google Sign-In failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error("Please check all required fields");
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
       return;
     }
-
     setLoading(true);
-    // Don't clear errors immediately, wait for successful login
-
     try {
       await login(formData.email, formData.password);
-      // Only clear errors and form data on successful login
       setErrors({});
-      setFormData({ email: "", password: "" });
     } catch (err) {
-      // Get the error message from the response, with fallbacks
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Login failed. Please try again.";
-
-      console.error("Login error details:", err);
-
-      // Handle specific error cases based on HTTP status
-      switch (err.response?.status) {
-        case 404:
-          setErrors((prev) => ({
-            ...prev,
-            email: "No account found with this email",
-          }));
-          toast.error("No account found with this email");
-          break;
-        case 401:
-          setErrors((prev) => ({ ...prev, password: "Incorrect password" }));
-          toast.error("Incorrect password");
-          break;
-        case 400:
-          // Handle validation errors
-          if (err.response.data.errors) {
-            const validationErrors = {};
-            err.response.data.errors.forEach((error) => {
-              validationErrors[error.param] = error.msg;
-            });
-            setErrors((prev) => ({ ...prev, ...validationErrors }));
-            toast.error("Please check your input");
-          } else {
-            setErrors((prev) => ({ ...prev, general: errorMessage }));
-            toast.error(errorMessage);
-          }
-          break;
-        default:
-          setErrors((prev) => ({ ...prev, general: errorMessage }));
-          toast.error(errorMessage);
-      }
+      const errorMessage = err.response?.data?.message || "Login failed.";
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -317,6 +279,29 @@ export default function Login() {
                     "Sign In"
                   )}
                 </button>
+
+                <div className="relative flex py-5 items-center">
+                  <div className="flex-grow border-t border-slate-600"></div>
+                  <span className="flex-shrink-0 mx-4 text-slate-400">
+                    Or continue with
+                  </span>
+                  <div className="flex-grow border-t border-slate-600"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  className="w-full h-12 bg-white text-slate-900 font-bold rounded-lg hover:bg-slate-200 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <img
+                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    alt="Google"
+                    className="w-6 h-6"
+                  />
+                  Sign in with Google
+                </button>
+
                 <p className="text-center text-slate-400 text-sm pt-4">
                   Don't have an account?{" "}
                   <Link
