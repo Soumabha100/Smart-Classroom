@@ -5,8 +5,9 @@ import "./index.css";
 import App from "./App.jsx";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter as Router } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext.jsx"; // keep if you need auth
+import { AuthProvider } from "./context/AuthContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import QueryProvider from "./context/QueryProvider.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -15,7 +16,9 @@ root.render(
     <Router>
       <AuthProvider>
         <ThemeProvider>
-          <App />
+          <QueryProvider>
+            <App />
+          </QueryProvider>
         </ThemeProvider>
       </AuthProvider>
     </Router>

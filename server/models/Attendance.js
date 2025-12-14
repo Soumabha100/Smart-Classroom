@@ -27,4 +27,12 @@ const AttendanceSchema = new mongoose.Schema(
   }
 );
 
+// --- 🆕 NEW CODE START: Database Indexes for Performance ---
+// Index on studentId: Speeds up queries like "Get all attendance records for a student"
+AttendanceSchema.index({ studentId: 1 });
+
+// Compound index on classId and timestamp: Speeds up "Get attendance for a class, sorted by date"
+AttendanceSchema.index({ classId: 1, timestamp: -1 });
+// --- 🆕 NEW CODE END ---
+
 module.exports = mongoose.model("Attendance", AttendanceSchema);
