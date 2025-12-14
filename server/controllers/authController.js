@@ -4,6 +4,52 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const admin = require("../config/firebase"); // Import the firebase setup
 const InvitationCode = require("../models/InvitationCode");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
+
+// --- 🛠️ HELPER: Track Login & Generate Token ---
+const handleLoginSuccess = async (user, req, res, statusCode = 200) => {
+  try {
+    // 1. Capture Device Info
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    const device = req.headers["user-agent"];
+
+    // 2. Update Login History (Limit to last 10 entries to save space)
+    // We use $push to add to array, and $slice to keep only the last 10
+    await User.findByIdAndUpdate(user._id, {
+      $push: {
+        loginHistory: {
+          $each: [{ ip, device, loginAt: new Date() }],
+          $position: 0, // Add to top
+          $slice: 10, // Keep only top 10
+        },
+      },
+    });
+
+    // 3. Generate Token (Extended to 7 days)
+    const payload = {
+      id: user._id,
+      role: user.role,
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "7d", // ⏳ Extended from 24h to 7 days
+    });
+
+    // 4. Send Response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.loginHistory; // Don't send history to frontend on login
+
+    res.status(statusCode).json({
+      token,
+      user: userResponse,
+    });
+  } catch (err) {
+    console.error("Login Success Handler Error:", err);
+    res.status(500).json({ message: "Failed to complete login." });
+  }
+};
 
 exports.register = async (req, res) => {
   const { name, email, password, invitationCode } = req.body;
@@ -75,25 +121,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
-    // Create JWT payload
-    const payload = {
-      id: user._id,
-      role: user.role,
-      ...(isParent && { students: user.students }),
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "24h", // Extended to 24h for better UX
-    });
-
-    // --- FIX: Send the full user object (excluding password) ---
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.status(200).json({
-      token,
-      user: userResponse, // <--- This was missing! The app needs this.
-    });
+    // ✅ USE THE HELPER
+    await handleLoginSuccess(user, req, res, 200);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
@@ -127,14 +156,8 @@ exports.googleLogin = async (req, res) => {
     }
 
     // If user exists, proceed with normal login
-    const payload = { id: user._id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "24h",
-    });
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.status(200).json({ token, user: userResponse });
+    // ✅ USE THE HELPER
+    await handleLoginSuccess(user, req, res, 200);
   } catch (err) {
     console.error("Google Login Error:", err);
     res.status(401).json({ message: "Google authentication failed" });
@@ -165,17 +188,99 @@ exports.completeGoogleSignup = async (req, res) => {
 
     await user.save();
 
-    // Generate Token
-    const payload = { id: user._id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "24h",
-    });
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.status(201).json({ token, user: userResponse });
+    // ✅ USE THE HELPER (Use status 201 for creation)
+    await handleLoginSuccess(user, req, res, 201);
   } catch (err) {
     console.error("Google Signup Error:", err);
     res.status(500).json({ message: "Signup failed." });
+  }
+};
+
+// --- 🔑 FORGOT PASSWORD (User requests reset link) ---
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email not sent" }); // Generic message for security
+    }
+
+    // Generate Reset Token
+    const resetToken = crypto.randomBytes(20).toString("hex");
+
+    // Hash token and save to DB
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    // Set expire (10 minutes)
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    // Create Reset URL
+    // NOTE: Change localhost to your frontend domain in production
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    const message = `
+      <h1>Password Reset Request</h1>
+      <p>Please click the link below to reset your password:</p>
+      <a href="${resetUrl}" clicktracking=off>${resetUrl}</a>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Password Reset - IntelliClass",
+        message,
+      });
+
+      res.status(200).json({ success: true, data: "Email sent" });
+    } catch (err) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+      return res.status(500).json({ message: "Email could not be sent" });
+    }
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// --- 🔑 RESET PASSWORD (User sets new password) ---
+exports.resetPassword = async (req, res) => {
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.resetToken)
+    .digest("hex");
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    // Set new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
+
+    // Clear reset fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({ success: true, data: "Password Updated Success" });
+  } catch (err) {
+    console.error("Reset Password Error:", err);
+    res.status(500).json({ message: "Server Error" });
   }
 };

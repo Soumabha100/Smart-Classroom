@@ -1,14 +1,28 @@
 // server/routes/auth.js
 const router = require("express").Router();
+const rateLimit = require("express-rate-limit");
 // Import controller functions
 const {
   register,
   login,
   googleLogin,
   completeGoogleSignup,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 // Import validation tools from express-validator
 const { body, validationResult } = require("express-validator");
+
+// Configure Rate Limiter for Login Attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login requests per window
+  message: {
+    message: "Too many login attempts. Please try again after 15 minutes.",
+  },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+});
 
 // --- Validation Middleware ---
 // This new middleware function checks the result of the validation rules
@@ -65,6 +79,7 @@ router.post(
 // @access  Public
 router.post(
   "/login",
+  loginLimiter, // Apply rate limiting
   loginValidationRules, // 1. Run these validation rules
   validate, // 2. Run our custom 'validate' middleware
   login // 3. If validation passes, run the 'login' controller
@@ -73,11 +88,21 @@ router.post(
 // @route   POST api/auth/google-login
 // @desc    Google Sign Up / Login (Check User)
 // @access  Public
-router.post("/google-login", googleLogin);
+router.post("/google-login", loginLimiter, googleLogin);
 
 // @route   POST api/auth/google-complete
 // @desc    Complete Google Signup (Create User)
 // @access  Public
 router.post("/google-complete", completeGoogleSignup);
+
+// @route   POST api/auth/forgot-password
+// @desc    Request password reset email
+// @access  Public
+router.post("/forgot-password", forgotPassword);
+
+// @route   PUT api/auth/reset-password/:resetToken
+// @desc    Reset password with token
+// @access  Public
+router.put("/reset-password/:resetToken", resetPassword);
 
 module.exports = router;

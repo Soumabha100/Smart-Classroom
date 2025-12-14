@@ -67,6 +67,22 @@ const UserSchema = new mongoose.Schema(
       default: {},
     },
     // --- 🆕 NEW CODE END ---
+    // --- 🔐 LOGIN HISTORY TRACKING ---
+    loginHistory: [
+      {
+        ip: String,
+        device: String, // Stores User-Agent (Browser/OS info)
+        loginAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    // --- END LOGIN HISTORY ---
+    // --- 🔑 PASSWORD RESET FIELDS ---
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    // --- END PASSWORD RESET ---
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Parent",
