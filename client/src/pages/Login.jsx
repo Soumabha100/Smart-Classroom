@@ -9,7 +9,12 @@ import api from "../api/apiService";
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
-  <div className="text-center relative z-10">
+  <div
+  className="relative flex items-center justify-center bg-cover bg-center min-h-[300px]"
+  style={{ backgroundImage: "url('https://i.ibb.co/WWmgKLRV/login-image.jpg')" }}
+>
+
+  <div className="text-center relative z-10 ">
     <div className="w-48 h-48 mx-auto bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-8 backdrop-blur-sm animate-pulse-slow">
       <svg
         className="w-24 h-24 text-blue-400 drop-shadow-lg"
@@ -27,14 +32,14 @@ const AuthIllustration = () => (
     </div>
     <h2 className="text-4xl font-extrabold tracking-tight text-white mb-4">
       Unlock Your{" "}
-      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+      <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400">
         Potential
       </span>
     </h2>
-    <p className="text-lg text-slate-300 max-w-sm mx-auto leading-relaxed">
+    <b className="text-lg text-slate-300 max-w-sm mx-auto leading-relaxed">
       Welcome to the future of learning. Your smart classroom awaits.
-    </p>
-  </div>
+    </b>
+  </div></div>
 );
 
 export default function Login() {
