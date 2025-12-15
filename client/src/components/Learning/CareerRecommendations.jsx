@@ -36,7 +36,7 @@ export default function CareerRecommendations() {
     <motion.div
       className="mt-10 rounded-2xl p-6 text-white shadow-lg relative"
       style={{
-        background: "linear-gradient(135deg, #06D6A0, #118AB2)", // dark sweet teal-blue
+        background: "linear-gradient(135deg, #271b83ff, #118AB2)", // dark sweet teal-blue
       }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}

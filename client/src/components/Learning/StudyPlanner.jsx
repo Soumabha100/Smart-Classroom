@@ -36,7 +36,7 @@ export default function AIStudyPlanner() {
     <motion.div
       className="mt-10 rounded-2xl p-6 text-white shadow-lg relative"
       style={{
-        background: "linear-gradient(135deg, #7B2CBF, #5A189A)", // dark sweet purple
+        background: "linear-gradient(135deg, #2f2685ff, #5A189A)", // dark sweet purple
       }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}

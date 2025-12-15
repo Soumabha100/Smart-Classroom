@@ -67,7 +67,7 @@ export default function PeriodManagement() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-gradient-to-br from-pink-200 via-pink-300 to-pink-100 text-gray-800 p-6 rounded-xl shadow-xl"
+      className="bg-gradient-to-br from-blue-900 via-black-600 to-blue-600 text-gray-800 p-6 rounded-xl shadow-xl"
     >
       <h2 className="text-2xl font-bold mb-4 text-center">
         Free Period Management System With Smart Algorithm
@@ -83,7 +83,7 @@ export default function PeriodManagement() {
             className={`p-3 rounded-lg flex justify-between items-center ${
               checkConflict(index, periods)
                 ? "bg-red-300 hover:bg-red-200"
-                : "bg-pink-400 hover:bg-pink-300"
+                : "bg-blue-500 hover:bg-blue-300"
             }`}
           >
             <div className="flex-1 flex justify-between">
@@ -103,10 +103,10 @@ export default function PeriodManagement() {
       {/* Free Slots */}
       {freeSlots.length > 0 && (
         <div className="mb-4">
-          <h3 className="font-semibold mb-2 text-center text-green-600">Free Slots</h3>
+          <h3 className="font-bold mb-2 text-center text-cyan-600">Free Slots</h3>
           <ul className="space-y-1 text-center">
             {freeSlots.map((slot, idx) => (
-              <li key={idx} className="bg-pink-300 p-2 rounded-lg">
+              <li key={idx} className="bg-blue-400 p-2 rounded-lg">
                 {slot}
               </li>
             ))}
@@ -132,7 +132,7 @@ export default function PeriodManagement() {
         />
         <button
           onClick={addPeriod}
-          className="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-lg"
+          className="bg-blue-500 hover:bg-darkblue-600 text-white p-2 rounded-lg"
         >
           Add Period
         </button>

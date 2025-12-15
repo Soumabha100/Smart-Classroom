@@ -80,7 +80,7 @@ export default function QuizGenerator() {
         <motion.div
           className="mt-10 rounded-2xl p-6 text-white shadow-lg relative"
           style={{
-            background: "linear-gradient(135deg, #2F2F2F, #4B5563)", // medium dark sky-grey gradient
+            background: "linear-gradient(135deg, #5f30b7ff, #16384cff)", // medium dark sky-grey gradient
           }}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
