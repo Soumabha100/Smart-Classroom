@@ -28,7 +28,7 @@ export default function SmartProgressInsights() {
     <motion.div
       className="mt-10 rounded-2xl p-6 text-white shadow-lg"
       style={{
-        background: "linear-gradient(135deg, #0F4C75, #3282B8)", // medium dark sky-blue gradient
+        background: "linear-gradient(135deg, #0a3610ff, #280e63ff)", // medium dark sky-blue gradient
       }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
