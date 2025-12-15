@@ -27,36 +27,70 @@ export default function ChatBox({ user }) {
 
   const sendMessage = () => {
     if (input.trim() && socket) {
-      const msg = { user, text: input, timestamp: new Date().toLocaleTimeString() };
-      socket.emit("chat_message", msg);
+      socket.emit("chat_message", {
+        user,
+        text: input,
+        timestamp: new Date().toLocaleTimeString(),
+      });
       setInput("");
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-2xl font-semibold mb-4 text-slate-800">Central Chat</h2>
-      <div className="h-64 overflow-y-auto mb-4 border rounded-lg p-3 bg-slate-50">
-        {messages.map((msg, idx) => (
-          <div key={idx} className="mb-2">
-            <strong className="text-blue-600">{msg.user}:</strong> {msg.text}{" "}
-            <span className="text-xs text-gray-400">({msg.timestamp})</span>
-          </div>
-        ))}
+    <div className="mt-8 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 shadow-xl border border-slate-700">
+      <h2 className="text-xl font-semibold mb-4 text-slate-100">
+        Central Chat
+      </h2>
+
+      {/* Messages Area */}
+      <div className="h-72 overflow-y-auto rounded-lg bg-slate-900/80 p-4 border border-slate-700">
+        {messages.map((msg, idx) => {
+          const isMe = msg.user === user;
+
+          return (
+            <div
+              key={idx}
+              className={`mb-3 flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-xs md:max-w-sm px-4 py-2 rounded-lg text-sm
+                ${
+                  isMe
+                    ? "bg-indigo-600 text-white rounded-br-none"
+                    : "bg-slate-800 text-slate-200 rounded-bl-none"
+                }`}
+              >
+                {!isMe && (
+                  <div className="text-xs text-indigo-400 font-semibold mb-1">
+                    {msg.user}
+                  </div>
+                )}
+
+                <div>{msg.text}</div>
+
+                <div className="text-[10px] text-slate-400 text-right mt-1">
+                  {msg.timestamp}
+                </div>
+              </div>
+            </div>
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex">
+
+      {/* Input Area */}
+      <div className="flex mt-4">
         <input
           type="text"
           placeholder="Type a message..."
-          className="flex-grow p-2 border rounded-l-md focus:outline-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="flex-grow rounded-l-lg bg-slate-800 text-slate-100 px-4 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400"
         />
         <button
           onClick={sendMessage}
-          className="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700"
+          className="rounded-r-lg bg-indigo-600 px-5 py-2 text-white font-medium hover:bg-indigo-700 transition"
         >
           Send
         </button>

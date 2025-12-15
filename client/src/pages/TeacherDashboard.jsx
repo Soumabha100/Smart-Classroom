@@ -1,3 +1,5 @@
+// client/src/pages/TeacherDashboard.jsx 
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../components/DashboardLayout";
@@ -20,6 +22,7 @@ import {
   Expand,
   X,
   CheckCircle,
+  BookOpen, // NEW: Icon for Resource Planner
 } from "lucide-react";
 // --- END FIX ---
 import {
@@ -34,7 +37,11 @@ import AssingmentManager from "../components/AssingmentManager";
 import Hodfeed from "../components/Hodfeed";
 import ChatBox from "./ChatBox";
 
-// --- Reusable UI Components ---
+// --- NEW COMPONENT IMPORT ---
+import ResourcePlanner from "../components/ResourcePlanner"; // REQUIRED for Resource Planner feature
+
+
+// --- Reusable UI Components (StatCard, TabButton, QrFullscreenModal remain the same) ---
 
 const StatCard = ({ icon, label, value, color, delay }) => (
   <motion.div
@@ -98,6 +105,17 @@ const QrFullscreenModal = ({ qrCodeData, onClose }) => (
   </AnimatePresence>
 );
 
+// --- Helper for Teacher Role ---
+const getTeacherPosition = (user) => {
+    if (user?.roleDetails?.position) {
+        return user.roleDetails.position;
+    }
+    if (user?.name && user.name.toLowerCase().includes("head")) return "Head of Department (HOD)";
+    if (user?.name && user.name.toLowerCase().includes("coordinator")) return "Department Coordinator";
+    if (user?.name && user.name.toLowerCase().includes("admin")) return "Administrator";
+    return "Teacher"; // Default role
+}
+
 // --- Main Dashboard Component ---
 
 const TeacherDashboard = () => {
@@ -116,10 +134,11 @@ const TeacherDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(true);
 
+  const teacherPosition = getTeacherPosition(user); 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both in parallel for speed
         setIsAnalyticsLoading(true);
         const [classesRes, analyticsRes] = await Promise.all([
           getTeacherClasses(),
@@ -157,7 +176,7 @@ const TeacherDashboard = () => {
     setIsLoading(true);
     setError("");
     try {
-      const { data } = await generateQrCode(classId);
+      const { data } = await generateQrCode(classId); 
       setQrCodeDetails({ data: data.qrToken, classId });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to generate QR code.");
@@ -177,7 +196,8 @@ const TeacherDashboard = () => {
         onClose={() => setIsQrModalOpen(false)}
       />
       <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto bg-slate-100 dark:bg-slate-900 font-sans">
-        {/* --- HEADER --- */}
+        
+        {/* --- HEADER (UPDATED with Role) --- */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -185,14 +205,14 @@ const TeacherDashboard = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Dashboard
+            {teacherPosition} Dashboard
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            Welcome back, {user?.name}! Let's make today productive.
+            Welcome back, {user?.name}! Your role: <span className="font-semibold text-indigo-500 dark:text-indigo-400">{teacherPosition}</span>.
           </p>
         </motion.div>
 
-        {/* --- ANALYTICS BAR --- */}
+        {/* --- ANALYTICS BAR (remains the same) --- */}
         <div className="mb-8">
           {isAnalyticsLoading ? (
             <div className="flex justify-center items-center h-24">
@@ -221,7 +241,6 @@ const TeacherDashboard = () => {
                 color="bg-amber-500"
                 delay={0.3}
               />
-              {/* --- FIX START: Wrapped StatCard with Link and updated content --- */}
               <Link to="/teacher/attendance" className="flex-1">
                 <StatCard
                   icon={<BarChart2 size={24} className="text-white" />}
@@ -231,14 +250,13 @@ const TeacherDashboard = () => {
                   delay={0.4}
                 />
               </Link>
-              {/* --- FIX END --- */}
             </div>
           )}
         </div>
 
         {/* --- MAIN CONTENT GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* LEFT COLUMN: QUICK ACTIONS */}
+          {/* LEFT COLUMN: QR Code Generator */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -323,7 +341,7 @@ const TeacherDashboard = () => {
             )}
           </motion.div>
 
-          {/* RIGHT COLUMN: OTHER TOOLS */}
+          {/* RIGHT COLUMN: OTHER TOOLS (UPDATED TABS) */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -335,16 +353,22 @@ const TeacherDashboard = () => {
             </h2>
             <div className="space-y-2">
               <TabButton
-                label="Classes"
+                label="Classes" 
                 icon={<Presentation size={16} />}
                 isActive={activeTab === "classes"}
                 onClick={() => setActiveTab("classes")}
               />
               <TabButton
-                label="Assignments"
+                label="Assignments" 
                 icon={<ClipboardList size={16} />}
                 isActive={activeTab === "assignments"}
                 onClick={() => setActiveTab("assignments")}
+              />
+              <TabButton
+                label="Resources" 
+                icon={<BookOpen size={16} />}
+                isActive={activeTab === "resources"}
+                onClick={() => setActiveTab("resources")}
               />
               <TabButton
                 label="HOD Feed"
@@ -358,7 +382,6 @@ const TeacherDashboard = () => {
                 isActive={activeTab === "chat"}
                 onClick={() => setActiveTab("chat")}
               />
-              {/* --- FIX START: Added a Link styled like a TabButton for navigation --- */}
               <Link
                 to="/teacher/attendance"
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-300 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -366,12 +389,11 @@ const TeacherDashboard = () => {
                 <BarChart2 size={16} />
                 <span>Attendance Analytics</span>
               </Link>
-              {/* --- FIX END --- */}
             </div>
           </motion.div>
         </div>
 
-        {/* TAB CONTENT AREA */}
+        {/* TAB CONTENT AREA (Updated to include Resources) */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -388,6 +410,7 @@ const TeacherDashboard = () => {
             >
               {activeTab === "classes" && <ClassesManager />}
               {activeTab === "assignments" && <AssingmentManager />}
+              {activeTab === "resources" && <ResourcePlanner />}
               {activeTab === "hod" && <Hodfeed />}
               {activeTab === "chat" && <ChatBox user="Teacher" />}
             </motion.div>
