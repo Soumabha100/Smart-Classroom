@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+// Import the new modal [New Change]
+import LogoutModal from "./LogoutModal.jsx";
 import {
   LayoutDashboard,
   BookUser,
@@ -47,6 +49,17 @@ export default function Sidebar({
 }) {
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  // Modal States [New Change]
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [logoutAllDevices, setLogoutAllDevices] = useState(false);
+
+  const handleLogoutConfirm = () => {
+    // Pass 'logoutAllDevices' to your backend service here later
+    console.log("Logging out. All devices:", logoutAllDevices);
+    logout();
+    setIsLogoutModalOpen(false);
+  };
 
   const getLinks = (role) => {
     const commonLinks = [
@@ -165,7 +178,7 @@ export default function Sidebar({
           }
           ${collapsed ? "w-20" : "w-64"}`}
       >
-        {/* Header */}
+        {/* Header content... */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-4 dark:border-slate-800">
           {!collapsed && (
             <Link
@@ -180,13 +193,10 @@ export default function Sidebar({
               <span className="truncate">IntelliClass</span>
             </Link>
           )}
-
           <div className="flex items-center gap-2">
-            {/* Collapse Button - Desktop */}
             <button
               onClick={toggleCollapsed}
               className="hidden lg:flex rounded-lg p-2 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle sidebar"
             >
               {collapsed ? (
                 <ChevronRight className="h-5 w-5" />
@@ -194,12 +204,9 @@ export default function Sidebar({
                 <ChevronLeft className="h-5 w-5" />
               )}
             </button>
-
-            {/* Close Button - Mobile */}
             <button
               onClick={toggleSidebar}
               className="lg:hidden rounded-lg p-2 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Close sidebar"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -223,10 +230,10 @@ export default function Sidebar({
           </ul>
         </nav>
 
-        {/* Logout Button */}
+        {/* Updated Logout Button [New Change] */}
         <div className="border-t p-3 dark:border-slate-800">
           <button
-            onClick={logout}
+            onClick={() => setIsLogoutModalOpen(true)} // Opens Modal
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 w-full text-slate-600 transition-all whitespace-nowrap text-sm font-medium
               hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/50 dark:hover:text-red-400`}
             title={collapsed ? "Logout" : undefined}
@@ -236,6 +243,15 @@ export default function Sidebar({
           </button>
         </div>
       </aside>
+
+      {/* Render the Modal [New Change] */}
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogoutConfirm}
+        logoutAllDevices={logoutAllDevices}
+        setLogoutAllDevices={setLogoutAllDevices}
+      />
     </>
   );
 }
