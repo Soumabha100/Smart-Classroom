@@ -25,6 +25,11 @@ const loginLimiter = rateLimit({
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
 });
 
+const { refreshToken, logout } = require("../controllers/authController");
+
+router.post("/refresh", refreshToken);
+router.post("/logout", logout);
+
 // --- Validation Middleware ---
 // This new middleware function checks the result of the validation rules
 const validate = (req, res, next) => {

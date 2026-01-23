@@ -5,6 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const os = require("os");
 require("dotenv").config();
+const cookieParser = require("cookie-parser");
 
 const errorHandler = require("./middlewares/errorMiddleware");
 
@@ -84,6 +85,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 
 // Make `io` accessible to your routes
 app.use((req, res, next) => {

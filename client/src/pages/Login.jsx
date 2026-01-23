@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { auth, googleProvider } from "../firebaseConfig";
 import { signInWithPopup } from "firebase/auth";
 import api from "../api/apiService";
+import { LoaderCircle } from "lucide-react"; // Optional: Use your loader icon
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
@@ -42,10 +43,25 @@ const AuthIllustration = () => (
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  // Renamed local loading state to 'submitting' to avoid conflict with AuthContext 'loading'
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+
+  // 1. ✅ GET USER & LOADING FROM CONTEXT
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // 2. ✅ REDIRECT IF LOGGED IN
+  useEffect(() => {
+    // Only run if authentication check is finished (loading is false)
+    if (!loading && user) {
+      console.log("User already logged in, redirecting...");
+      if (user.role === "admin") navigate("/admin-dashboard");
+      else if (user.role === "teacher") navigate("/teacher-dashboard");
+      else if (user.role === "parent") navigate("/parent-dashboard");
+      else navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     setErrors({});
@@ -58,15 +74,13 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    setSubmitting(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      // Check with backend
       const res = await api.post("/auth/google-login", { idToken });
 
-      // If status is 202, it means New User -> Go to Complete Profile
       if (res.status === 202) {
         navigate("/complete-profile", {
           state: {
@@ -77,16 +91,14 @@ export default function Login() {
         return;
       }
 
-      // Normal Login Success
-      const { token, user } = res.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", user.role);
+      // 3. ✅ REMOVED LOCALSTORAGE (Cookies handle it now)
+      // Just force a reload or redirect to trigger AuthContext refresh
       window.location.href = "/dashboard";
     } catch (error) {
       console.error(error);
       toast.error("Google Sign-In failed. Please try again.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -96,7 +108,7 @@ export default function Login() {
       toast.error("Please fill in all fields");
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     try {
       await login(formData.email, formData.password);
       setErrors({});
@@ -105,15 +117,24 @@ export default function Login() {
       setErrors({ general: errorMessage });
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  // 4. ✅ PREVENT FLASH: If loading or user exists, show nothing (or spinner)
+  if (loading || user) {
+    return (
+      <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center">
+        <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-slate-900 text-white font-sans">
       <Navbar />
       <div className="flex w-full min-h-screen pt-20">
-        {/* Left Side: Illustration (hidden on small screens) */}
+        {/* Left Side: Illustration */}
         <div className="hidden lg:flex flex-col items-center justify-center w-1/2 p-12 bg-slate-800/50">
           <div className="animate-float">
             <AuthIllustration />
@@ -127,14 +148,12 @@ export default function Login() {
               <h1 className="text-3xl font-bold text-center">Welcome Back</h1>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* General error message */}
                 {errors.general && (
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
                     {errors.general}
                   </div>
                 )}
 
-                {/* Form fields with icons */}
                 <div className="space-y-4">
                   <div className="relative">
                     <input
@@ -152,12 +171,7 @@ export default function Login() {
                           : "focus:ring-blue-500"
                       } transition-all duration-200`}
                     />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.email}
-                      </p>
-                    )}
-                    {/* Email Icon */}
+                    {/* SVG Icon */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -189,11 +203,6 @@ export default function Login() {
                           : "focus:ring-blue-500"
                       } transition-all duration-200`}
                     />
-                    {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.password}
-                      </p>
-                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -253,7 +262,6 @@ export default function Login() {
                     </svg>
                   </div>
 
-                  {/* OPTIMIZED: Forgot Password Link */}
                   <div className="flex justify-end">
                     <Link
                       to="/forgot-password"
@@ -266,34 +274,10 @@ export default function Login() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-200 disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {loading ? (
-                    <div className="flex items-center justify-center">
-                      <svg
-                        className="animate-spin h-5 w-5 mr-3 text-white"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Signing In...
-                    </div>
-                  ) : (
-                    "Sign In"
-                  )}
+                  {submitting ? "Signing In..." : "Sign In"}
                 </button>
 
                 <div className="relative flex items-center py-2">
@@ -304,11 +288,10 @@ export default function Login() {
                   <div className="flex-grow border-t border-slate-700"></div>
                 </div>
 
-                {/* OPTIMIZED: Login with Google Button */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full h-12 bg-white text-slate-900 font-medium rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <img

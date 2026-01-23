@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useAuth } from "../context/AuthContext"; // Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bot, QrCode, ArrowRight } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -72,6 +74,23 @@ const classrooms = [
 ];
 
 export default function HomePage() {
+
+  const { user, loading } = useAuth(); // Get auth state
+  const navigate = useNavigate();
+
+  // 🛑 RESTORED LOGIC: If user is logged in, force them to Dashboard
+  useEffect(() => {
+    if (!loading && user) {
+        if (user.role === 'admin') navigate("/admin-dashboard");
+        else if (user.role === 'teacher') navigate("/teacher-dashboard");
+        else if (user.role === 'parent') navigate("/parent-dashboard");
+        else navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
+  // Prevent flashing the homepage while checking login
+  if (loading) return null;
+  
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
