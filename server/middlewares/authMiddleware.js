@@ -9,6 +9,10 @@ const verifyToken = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
+  if (!token || token === "undefined" || token === "null") {
+    return res.status(401).json({ message: "Token is missing or invalid." });
+  }
+
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error("JWT verify error:", err.message);
