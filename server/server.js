@@ -71,17 +71,33 @@ const PORT = process.env.PORT || 5001;
 // --- 5. Middleware ---
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+    origin: (origin, callback) => {
+      
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
+
+      // Allow Localhost
+      if (
+        origin.startsWith("http://localhost") || 
+        origin.startsWith("http://127.0.0.1") ||
+        origin.startsWith(`http://${localIp}`)
+      ) {
+        return callback(null, true);
       }
-      return callback(null, true);
+
+      // Allow Production Domain (Exact Match)
+      if (origin === "https://intelli-class-client-side.vercel.app") {
+        return callback(null, true);
+      }
+
+      // Allow ANY Vercel Preview Deployment (*.vercel.app)
+      if (origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+
+      console.error("🚫 CORS Blocked:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
-    credentials: true,
+    credentials: true, // Allow Cookies
   })
 );
 app.use(express.json());

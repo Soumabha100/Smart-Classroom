@@ -48,37 +48,35 @@ const createSession = async (user, req) => {
 const sendTokenResponse = (user, sessionId, statusCode, res) => {
   const { accessToken, refreshToken } = generateTokens(user, sessionId);
 
-  // We determine if we are in production
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // Cookie Options
-  const options = {
+  // 🛡️ SECURITY FIX:
+  // We force these settings to ensure Vercel (Frontend) can read Render (Backend) cookies.
+  const cookieOptions = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     httpOnly: true, // Security: JS cannot read this
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    secure: true, // REQUIRED for SameSite="none"
+    sameSite: "none", // REQUIRED for Cross-Site (Vercel -> Render)
   };
 
-  res.cookie("logged_in", "true", {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    httpOnly: false,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-  });
-
-  // Sanitize user object (remove sensitive data)
-  const userResponse = user.toObject ? user.toObject() : user;
-  delete userResponse.password;
-  delete userResponse.sessions; // Don't send entire session history on login
-  delete userResponse.loginHistory; // Remove legacy field if it exists
-  delete userResponse.resetPasswordToken;
-  delete userResponse.resetPasswordExpire;
-
-  res.status(statusCode).cookie("refreshToken", refreshToken, options).json({
-    success: true,
-    accessToken,
-    user: userResponse,
-  });
+  res
+    .status(statusCode)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    // We also set the 'logged_in' flag with the same cross-site rules
+    .cookie("logged_in", "true", {
+      ...cookieOptions,
+      httpOnly: false, // Allow Frontend to read this one
+    })
+    .json({
+      success: true,
+      accessToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        sessions: undefined, // Don't send session data in login response
+      },
+    });
 };
 
 // =============================================================================
