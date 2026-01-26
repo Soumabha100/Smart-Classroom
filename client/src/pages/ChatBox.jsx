@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 
-const SOCKET_PORT = 5001;
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
-const isSecure = window.location.protocol === "https:";
-
-const SOCKET_URL = window.location.hostname === "localhost" 
-  ? "http://localhost:5001" 
-  : window.location.origin;
+const SOCKET_URL = API_BASE.replace(/\/api\/?$/, "");
 
 export default function ChatBox({ user }) {
   const [socket, setSocket] = useState(null);
@@ -15,34 +11,37 @@ export default function ChatBox({ user }) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
+  // --- SOCKET CONNECTION EFFECT ---
   useEffect(() => {
-    // 🛑 Prevent connection if user isn't logged in yet
+    // 🛑 Security Check: Don't connect if user isn't logged in
     if (!user) return;
 
-    console.log(`🔌 Connecting to Socket at: ${SOCKET_URL}`);
+    console.log(`🔌 Connecting to Socket Server at: ${SOCKET_URL}`);
 
+    // 3. Initialize Socket Connection
     const socketInstance = io(SOCKET_URL, {
-      transports: ["websocket", "polling"], 
-      withCredentials: true, 
+      transports: ["websocket", "polling"], // Try optimized transport first
+      withCredentials: true, // Send cookies (Essential for Auth/Session)
+      reconnectionAttempts: 5, // Prevent infinite retry loops
+      reconnectionDelay: 1000, // Wait 1s between retries
     });
 
     setSocket(socketInstance);
 
-    // Connection Listeners
+    // --- Event Listeners ---
     socketInstance.on("connect", () => {
       console.log("✅ Socket Connected Successfully");
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.error("❌ Socket Connection Error:", err.message);
+      console.warn("❌ Socket Connection Error:", err.message);
     });
 
-    // Incoming Message Listener
     socketInstance.on("chat_message", (data) => {
       setMessages((prev) => [...prev, data]);
     });
 
-    // Cleanup on unmount
+    // Cleanup on unmount (Disconnects socket to save bandwidth)
     return () => {
       console.log("🔌 Disconnecting Socket...");
       socketInstance.disconnect();
@@ -58,7 +57,7 @@ export default function ChatBox({ user }) {
   const sendMessage = () => {
     if (input.trim() && socket) {
       const msgData = {
-        user, // The user's name (passed from props)
+        user, // The user's name
         text: input,
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",

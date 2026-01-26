@@ -48,19 +48,22 @@ const createSession = async (user, req) => {
 const sendTokenResponse = (user, sessionId, statusCode, res) => {
   const { accessToken, refreshToken } = generateTokens(user, sessionId);
 
+  // We determine if we are in production
+  const isProduction = process.env.NODE_ENV === "production";
+
   // Cookie Options
   const options = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     httpOnly: true, // Security: JS cannot read this
-    secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   };
 
   res.cookie("logged_in", "true", {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   });
 
   // Sanitize user object (remove sensitive data)
