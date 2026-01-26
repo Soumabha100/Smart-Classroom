@@ -10,12 +10,7 @@ const {
   forgotPassword,
   resetPassword,
   verifyResetToken,
-  getSessions, 
-  revokeSession, 
-  revokeAllSessions
 } = require("../controllers/authController");
-
-const { protect } = require("../middlewares/authMiddleware");
 // Import validation tools from express-validator
 const { body, validationResult } = require("express-validator");
 
@@ -60,6 +55,8 @@ const registerValidationRules = [
     min: 6,
   }),
 
+  // role must be one of these specific values
+  body("role", "Role is required").isIn(["student", "teacher", "admin"]),
 ];
 
 // Define the rules for the '/login' route
@@ -118,10 +115,5 @@ router.put("/reset-password/:resetToken", resetPassword);
 // @desc    Verify if reset token is still valid
 // @access  Public
 router.get("/verify-token/:resetToken", verifyResetToken);
-
-// 🆕 Session Management Routes (Protected)
-router.get("/sessions", protect, getSessions);
-router.delete("/sessions/:sessionId", protect, revokeSession);
-router.delete("/sessions", protect, revokeAllSessions); // Delete all except current
 
 module.exports = router;

@@ -143,9 +143,4 @@ export const createParent = (data) => api.post("/parents/register", data);
 export const getInviteCodes = () => api.get("/invites");
 export const generateInviteCode = () => api.post("/invites/generate");
 
-// --- 🔐 Session Management ---
-export const getSessions = () => api.get("/auth/sessions");
-export const revokeSession = (sessionId) => api.delete(`/auth/sessions/${sessionId}`);
-export const revokeAllSessions = () => api.delete("/auth/sessions"); // "Logout from all devices"
-
 export default api;

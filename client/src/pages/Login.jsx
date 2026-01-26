@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { auth, googleProvider } from "../firebaseConfig";
 import { signInWithPopup } from "firebase/auth";
 import api from "../api/apiService";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react"; // Optional: Use your loader icon
 
 // A simple, modern SVG for branding
 const AuthIllustration = () => (
@@ -43,6 +43,7 @@ const AuthIllustration = () => (
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  // Renamed local loading state to 'submitting' to avoid conflict with AuthContext 'loading'
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -50,9 +51,11 @@ export default function Login() {
   const { login, user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // 2. ✅ REDIRECT IF LOGGED IN (Stops the Loop)
+  // 2. ✅ REDIRECT IF LOGGED IN
   useEffect(() => {
+    // Only run if authentication check is finished (loading is false)
     if (!loading && user) {
+      console.log("User already logged in, redirecting...");
       if (user.role === "admin") navigate("/admin-dashboard");
       else if (user.role === "teacher") navigate("/teacher-dashboard");
       else if (user.role === "parent") navigate("/parent-dashboard");
@@ -88,9 +91,8 @@ export default function Login() {
         return;
       }
 
-      // 3. ✅ FORCE RELOAD FOR COOKIES
-      // After Google login success, the cookie is set.
-      // We force a full page load to ensure all sockets/contexts pick it up fresh.
+      // 3. ✅ REMOVED LOCALSTORAGE (Cookies handle it now)
+      // Just force a reload or redirect to trigger AuthContext refresh
       window.location.href = "/dashboard";
     } catch (error) {
       console.error(error);
@@ -108,10 +110,8 @@ export default function Login() {
     }
     setSubmitting(true);
     try {
-      // login() from AuthContext handles state update
       await login(formData.email, formData.password);
       setErrors({});
-      // Navigation is handled by the useEffect above
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Login failed.";
       setErrors({ general: errorMessage });
@@ -121,7 +121,7 @@ export default function Login() {
     }
   };
 
-  // 4. ✅ PREVENT FLASH: If loading or user exists, show spinner
+  // 4. ✅ PREVENT FLASH: If loading or user exists, show nothing (or spinner)
   if (loading || user) {
     return (
       <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center">
@@ -134,12 +134,14 @@ export default function Login() {
     <div className="min-h-screen w-full bg-slate-900 text-white font-sans">
       <Navbar />
       <div className="flex w-full min-h-screen pt-20">
+        {/* Left Side: Illustration */}
         <div className="hidden lg:flex flex-col items-center justify-center w-1/2 p-12 bg-slate-800/50">
           <div className="animate-float">
             <AuthIllustration />
           </div>
         </div>
 
+        {/* Right Side: Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
           <div className="w-full max-w-md animate-slide-in-fade">
             <div className="p-8 space-y-6 bg-slate-800/50 rounded-2xl border border-slate-700">
@@ -161,8 +163,15 @@ export default function Login() {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className={`w-full h-12 bg-slate-700/50 text-white placeholder-slate-400 border ${errors.email ? "border-red-500" : "border-slate-600"} rounded-xl py-2 px-4 pl-12 focus:outline-none focus:ring-2 ${errors.email ? "focus:ring-red-500" : "focus:ring-blue-500"} transition-all duration-200`}
+                      className={`w-full h-12 bg-slate-700/50 text-white placeholder-slate-400 border ${
+                        errors.email ? "border-red-500" : "border-slate-600"
+                      } rounded-xl py-2 px-4 pl-12 focus:outline-none focus:ring-2 ${
+                        errors.email
+                          ? "focus:ring-red-500"
+                          : "focus:ring-blue-500"
+                      } transition-all duration-200`}
                     />
+                    {/* SVG Icon */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -186,7 +195,13 @@ export default function Login() {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className={`w-full h-12 bg-slate-700/50 text-white placeholder-slate-400 border ${errors.password ? "border-red-500" : "border-slate-600"} rounded-xl py-2 px-4 pl-12 pr-12 focus:outline-none focus:ring-2 ${errors.password ? "focus:ring-red-500" : "focus:ring-blue-500"} transition-all duration-200`}
+                      className={`w-full h-12 bg-slate-700/50 text-white placeholder-slate-400 border ${
+                        errors.password ? "border-red-500" : "border-slate-600"
+                      } rounded-xl py-2 px-4 pl-12 pr-12 focus:outline-none focus:ring-2 ${
+                        errors.password
+                          ? "focus:ring-red-500"
+                          : "focus:ring-blue-500"
+                      } transition-all duration-200`}
                     />
                     <button
                       type="button"
@@ -230,6 +245,7 @@ export default function Login() {
                         </svg>
                       )}
                     </button>
+                    {/* Lock Icon */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -241,10 +257,11 @@ export default function Login() {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25 2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
                       />
                     </svg>
                   </div>
+
                   <div className="flex justify-end">
                     <Link
                       to="/forgot-password"
@@ -281,7 +298,7 @@ export default function Login() {
                     src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                     alt="Google"
                     className="w-5 h-5"
-                  />{" "}
+                  />
                   Sign in with Google
                 </button>
 
