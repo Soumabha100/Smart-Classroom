@@ -1,228 +1,320 @@
-// src/pages/SettingsPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Moon,
-  Sun,
-  Bell,
-  Lock,
   ArrowLeft,
   Monitor,
+  Sun,
+  Moon,
+  Bell,
+  Lock,
+  Laptop,
+  Smartphone,
+  ShieldAlert,
+  Trash2,
+  LogOut,
+  LoaderCircle,
   X,
   Eye,
   EyeOff,
-  Loader2,
+  Globe,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import DashboardLayout from "../components/DashboardLayout";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { useAuth } from "../context/AuthContext.jsx"; // ✅ IMPORT ADDED
-import { toast } from "react-hot-toast";
-import { changePassword } from "../api/apiService"; 
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  changePassword,
+  getSessions,
+  revokeSession,
+  revokeAllSessions,
+} from "../api/apiService";
 
-const SettingsPage = () => {
-  // ✅ GET updateTheme from AuthContext
-  const { updateTheme } = useAuth(); 
-  const { theme, themeSource, toggleTheme, setSystemTheme, setTheme } = useTheme();
-  
-  const isDarkMode = theme === "dark";
+// --- Utility Helpers ---
+const parseUserAgent = (ua) => {
+  if (!ua) return "Unknown Device";
+  const lower = ua.toLowerCase();
+  if (lower.includes("windows")) return "Windows PC";
+  if (lower.includes("macintosh") || lower.includes("mac os")) return "Mac OS";
+  if (lower.includes("iphone")) return "iPhone";
+  if (lower.includes("ipad")) return "iPad";
+  if (lower.includes("android")) return "Android Device";
+  if (lower.includes("linux")) return "Linux Machine";
+  return "Unknown Device";
+};
+
+const formatLastActive = (dateString) => {
+  if (!dateString) return "Unknown";
+  return new Date(dateString).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+export default function SettingsPage() {
+  const navigate = useNavigate();
+  const { updateTheme } = useAuth();
+  const { theme, themeSource, setSystemTheme, setTheme } = useTheme();
+
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const navigate = useNavigate();
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-    toast.success(
-      `Notifications ${notificationsEnabled ? "disabled" : "enabled"}`
-    );
-  };
-
-  // ✅ FIXED: Handle explicit theme selection (Light/Dark cards)
+  // --- Theme Handler ---
   const handleThemeChange = (newSource) => {
     if (newSource === "system") {
       setSystemTheme();
-      toast.success("Using system theme preferences");
-      // Note: We don't save 'system' to DB as schema only supports 'light'/'dark'
+      toast.success("Using system theme");
     } else {
-      setTheme(newSource); // Update Local
-      
-      // Update Database
-      if (updateTheme) {
-        console.log(`⚙️ Settings: Saving ${newSource} mode to DB...`);
-        updateTheme(newSource);
-      }
-      
+      setTheme(newSource);
+      if (updateTheme) updateTheme(newSource);
       toast.success(
-        `${newSource === "dark" ? "Dark" : "Light"} mode activated`
+        `${newSource === "dark" ? "Dark" : "Light"} mode activated`,
       );
     }
   };
 
-  // ✅ FIXED: Handle the Toggle Switch
-  const handleQuickToggle = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    
-    toggleTheme(); // Update Local via Context
-    
-    // Update Database
-    if (updateTheme) {
-      console.log(`⚙️ Settings: Toggling to ${newTheme} mode in DB...`);
-      updateTheme(newTheme);
+  // --- Session Management ---
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const { data } = await getSessions();
+        setSessions(data);
+      } catch (error) {
+        console.error("Failed to load sessions", error);
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  const handleRevoke = async (sessionId) => {
+    try {
+      await revokeSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s._id !== sessionId));
+      toast.success("Device logged out");
+    } catch {
+      toast.error("Failed to remove device");
     }
+  };
+
+  const handleRevokeAll = async () => {
+    if (!window.confirm("Are you sure? This will log out everyone except you."))
+      return;
+    try {
+      await revokeAllSessions();
+      setSessions((prev) => prev.filter((s) => s.isCurrent));
+      toast.success("All other devices logged out");
+    } catch {
+      toast.error("Failed to log out devices");
+    }
+  };
+
+  const getDeviceIcon = (deviceName) => {
+    const lower = deviceName.toLowerCase();
+    if (lower.includes("phone") || lower.includes("android"))
+      return <Smartphone className="w-5 h-5 text-teal-500" />;
+    if (
+      lower.includes("mac") ||
+      lower.includes("windows") ||
+      lower.includes("linux")
+    )
+      return <Laptop className="w-5 h-5 text-indigo-500" />;
+    return <Globe className="w-5 h-5 text-slate-500" />;
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto p-4 space-y-8 pb-20">
         {/* Header */}
-        <div className="flex items-center mb-8">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 mr-4 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Go back"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
-            <ArrowLeft className="h-6 w-6 dark:text-white text-gray-800" />
+            <ArrowLeft className="w-6 h-6 text-slate-700 dark:text-slate-200" />
           </button>
-          <h1 className="text-3xl font-bold dark:text-white text-gray-900">
-            Settings
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              Settings
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">
+              Manage preferences and security
+            </p>
+          </div>
         </div>
 
-        {/* Settings Card */}
-        <div className="rounded-2xl shadow-lg p-8 transition-all duration-300 dark:bg-gray-800 bg-white dark:text-white text-gray-900">
-          {/* General Section */}
-          <h2 className="text-xl font-semibold mb-6">General</h2>
-
-          {/* Theme Settings */}
-          <div className="space-y-6">
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-              <h3 className="text-lg font-medium mb-4">Appearance</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {/* System Theme Option */}
+        {/* --- APPEARANCE --- */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+              Appearance
+            </h2>
+          </div>
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { id: "system", icon: Monitor, label: "System" },
+                { id: "light", icon: Sun, label: "Light" },
+                { id: "dark", icon: Moon, label: "Dark" },
+              ].map(({ id, icon: Icon, label }) => (
                 <button
-                  onClick={() => handleThemeChange("system")}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center ${
-                    themeSource === "system"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-700"
+                  key={id}
+                  onClick={() => handleThemeChange(id)}
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center transition-all ${
+                    (
+                      id === "system"
+                        ? themeSource === "system"
+                        : theme === id && themeSource !== "system"
+                    )
+                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
+                      : "border-slate-200 dark:border-slate-700 hover:border-indigo-200"
                   }`}
                 >
-                  <Monitor className="h-8 w-8 mb-2 text-gray-600 dark:text-gray-300" />
-                  <p className="text-sm font-medium">System</p>
+                  <Icon className="w-6 h-6 mb-2 text-slate-600 dark:text-slate-300" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {label}
+                  </span>
                 </button>
-
-                {/* Light Theme Option */}
-                <button
-                  onClick={() => handleThemeChange("light")}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center ${
-                    theme === "light" && themeSource !== "system"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-700"
-                  }`}
-                >
-                  <Sun className="h-8 w-8 mb-2 text-gray-600 dark:text-gray-300" />
-                  <p className="text-sm font-medium">Light</p>
-                </button>
-
-                {/* Dark Theme Option */}
-                <button
-                  onClick={() => handleThemeChange("dark")}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center ${
-                    theme === "dark" && themeSource !== "system"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-700"
-                  }`}
-                >
-                  <Moon className="h-8 w-8 mb-2 text-gray-600 dark:text-gray-300" />
-                  <p className="text-sm font-medium">Dark</p>
-                </button>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                {themeSource === "system"
-                  ? "Using system preferences"
-                  : `Currently using ${theme} mode`}
-              </p>
+              ))}
             </div>
 
-            {/* Quick Theme Toggle */}
-            <div className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center">
-                {isDarkMode ? (
-                  <Moon className="h-6 w-6 mr-3 text-gray-400" />
-                ) : (
-                  <Sun className="h-6 w-6 mr-3 text-gray-500" />
-                )}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <Bell className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
                 <div>
-                  <span className="font-medium">Quick Theme Toggle</span>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Switch between light and dark mode
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    Notifications
                   </p>
+                  <p className="text-xs text-slate-500">Manage push alerts</p>
                 </div>
               </div>
               <button
-                onClick={handleQuickToggle} // ✅ CHANGED from toggleTheme to handleQuickToggle
-                className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"
-                aria-label="Toggle theme"
+                onClick={() => {
+                  setNotificationsEnabled(!notificationsEnabled);
+                  toast.success(
+                    `Notifications ${!notificationsEnabled ? "enabled" : "disabled"}`,
+                  );
+                }}
+                className={`w-11 h-6 flex items-center rounded-full transition-colors ${
+                  notificationsEnabled
+                    ? "bg-indigo-600"
+                    : "bg-slate-300 dark:bg-slate-600"
+                }`}
               >
                 <span
-                  className={`${
-                    isDarkMode ? "bg-blue-600" : "bg-gray-300"
-                  } absolute w-full h-full rounded-full transition-colors duration-300`}
-                />
-                <span
-                  className={`${
-                    isDarkMode ? "translate-x-6" : "translate-x-1"
-                  } inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 shadow-lg`}
+                  className={`w-4 h-4 bg-white rounded-full shadow transform transition-transform ${
+                    notificationsEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
                 />
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Notifications Toggle */}
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center">
-              <Bell className="h-6 w-6 mr-3 text-gray-500 dark:text-gray-400" />
-              <span>Enable Notifications</span>
+        {/* --- SECURITY --- */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white px-2">
+            Security
+          </h2>
+
+          {/* Password Change */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white">
+                  Password
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Update your login credentials
+                </p>
+              </div>
             </div>
             <button
-              onClick={toggleNotifications}
-              className="relative inline-flex items-center h-6 w-11 rounded-full focus:outline-none"
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
-              <span
-                className={`${
-                  notificationsEnabled ? "bg-blue-600" : "bg-gray-300"
-                } absolute w-full h-full rounded-full transition-colors duration-300`}
-              />
-              <span
-                className={`${
-                  notificationsEnabled ? "translate-x-6" : "translate-x-1"
-                } inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300`}
-              />
+              Change
             </button>
           </div>
 
-          {/* Security Section - Change Password */}
-          <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold mb-6">Security</h2>
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-4">
-                  <Lock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <span className="font-bold text-gray-900 dark:text-white">
-                    Change Password
-                  </span>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Update your password securely
-                  </p>
-                </div>
+          {/* Active Sessions */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-indigo-500" />
+                <h3 className="font-bold text-slate-800 dark:text-white">
+                  Active Sessions
+                </h3>
               </div>
-              <button
-                onClick={() => setIsPasswordModalOpen(true)}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95"
-              >
-                Change
-              </button>
+              {sessions.length > 1 && (
+                <button
+                  onClick={handleRevokeAll}
+                  className="text-xs flex items-center gap-1 text-red-500 hover:text-red-600 font-medium px-3 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-3 h-3" /> Log out all others
+                </button>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {loadingSessions ? (
+                <div className="p-8 flex justify-center">
+                  <LoaderCircle className="w-6 h-6 animate-spin text-slate-400" />
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">
+                  No session data found.
+                </div>
+              ) : (
+                sessions.map((s) => {
+                  const cleanDeviceName = parseUserAgent(s.device);
+                  return (
+                    <div
+                      key={s._id}
+                      className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-full">
+                          {getDeviceIcon(cleanDeviceName)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                              {cleanDeviceName}
+                            </span>
+                            {s.isCurrent && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold bg-green-500/10 text-green-500 rounded-full border border-green-500/20">
+                                THIS DEVICE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5 font-mono">
+                            {s.ip} • {formatLastActive(s.lastActive)}
+                          </p>
+                        </div>
+                      </div>
+                      {!s.isCurrent && (
+                        <button
+                          onClick={() => handleRevoke(s._id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                          title="Log out device"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -234,190 +326,100 @@ const SettingsPage = () => {
       )}
     </DashboardLayout>
   );
-};
+}
 
-// --- Sub-Component: Change Password Modal ---
+// --- Change Password Modal ---
 const ChangePasswordModal = ({ onClose }) => {
-  const [formData, setFormData] = useState({
+  const [data, setData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-  const [showPassword, setShowPassword] = useState({
+  const [show, setShow] = useState({
     current: false,
     new: false,
     confirm: false,
   });
   const [loading, setLoading] = useState(false);
 
-  const toggleShow = (field) => {
-    setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validation
-    if (formData.newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters.");
-      return;
-    }
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New passwords do not match.");
-      return;
-    }
-    if (formData.currentPassword === formData.newPassword) {
-      toast.error("New password cannot be the same as current.");
-      return;
-    }
+    if (data.newPassword !== data.confirmPassword)
+      return toast.error("Passwords do not match");
+    if (data.newPassword.length < 6) return toast.error("Password too short");
 
     setLoading(true);
     try {
       await changePassword({
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
       });
-      toast.success("Password changed successfully!");
-      onClose(); // Close modal on success
-    } catch (error) {
-      console.error("Change password error:", error);
-      // Backend error message usually in error.response.data.message
-      const msg = error.response?.data?.message || "Failed to update password.";
-      toast.error(msg);
+      toast.success("Password updated");
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update");
     } finally {
       setLoading(false);
     }
   };
 
+  const toggle = (field) =>
+    setShow((prev) => ({ ...prev, [field]: !prev[field] }));
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div
-        className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white">
             Change Password
           </h3>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose}>
+            <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
           </button>
         </div>
-
-        {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Current Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Current Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword.current ? "text" : "password"}
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                required
-                className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
-                placeholder="Enter current password"
-              />
-              <button
-                type="button"
-                onClick={() => toggleShow("current")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword.current ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
+          {["current", "new", "confirm"].map((field) => (
+            <div key={field}>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 capitalize">
+                {field === "confirm" ? "Confirm Password" : `${field} Password`}
+              </label>
+              <div className="relative">
+                <input
+                  type={show[field] ? "text" : "password"}
+                  value={data[`${field}Password`]}
+                  onChange={(e) =>
+                    setData({ ...data, [`${field}Password`]: e.target.value })
+                  }
+                  className="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => toggle(field)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                >
+                  {show[field] ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* New Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword.new ? "text" : "password"}
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                required
-                className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
-                placeholder="Enter new password"
-              />
-              <button
-                type="button"
-                onClick={() => toggleShow("new")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Confirm New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword.confirm ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
-                placeholder="Confirm new password"
-              />
-              <button
-                type="button"
-                onClick={() => toggleShow("confirm")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword.confirm ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Actions */}
+          ))}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
+              className="flex-1 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-70 flex justify-center items-center"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Updating...
-                </>
+                <LoaderCircle className="w-5 h-5 animate-spin" />
               ) : (
-                "Update Password"
+                "Update"
               )}
             </button>
           </div>
@@ -426,5 +428,3 @@ const ChangePasswordModal = ({ onClose }) => {
     </div>
   );
 };
-
-export default SettingsPage;

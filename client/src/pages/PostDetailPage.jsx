@@ -8,7 +8,14 @@ import DashboardLayout from "../components/DashboardLayout";
 import CreateComment from "../components/Forum/CreateComment";
 import CommentList from "../components/Forum/CommentList";
 
-const socket = io("http://localhost:5000");
+const SOCKET_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:5001" 
+  : window.location.origin;
+
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  transports: ["websocket", "polling"],
+});
 
 const PostDetailPage = () => {
   const { postId } = useParams();

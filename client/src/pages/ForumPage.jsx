@@ -7,7 +7,16 @@ import PostList from "../components/Forum/PostList";
 import CreatePost from "../components/Forum/CreatePost";
 import DashboardLayout from "../components/DashboardLayout";
 
-const socket = io("http://localhost:5000");
+
+const SOCKET_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5001"
+    : window.location.origin;
+
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  transports: ["websocket", "polling"],
+});
 
 const ForumPage = () => {
   const navigate = useNavigate();
