@@ -1,6 +1,14 @@
 // Example Parent.js model
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+
+const sessionSchema = new mongoose.Schema({
+  device: { type: String, default: "Unknown Device" },
+  ip: { type: String, default: "Unknown IP" },
+  lastActive: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const ParentSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -8,8 +16,10 @@ const ParentSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, default: "parent" },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    sessions: [sessionSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 ParentSchema.pre("save", async function (next) {

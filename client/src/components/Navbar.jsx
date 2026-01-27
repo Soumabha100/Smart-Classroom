@@ -1,68 +1,67 @@
 import React, { useState } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const location = useLocation();
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
 
-  // Determine the correct dashboard path
-  let dashboardPath = "/dashboard"; // Default for students
-  if (role === "admin") {
-    dashboardPath = "/admin-dashboard";
-  } else if (role === "teacher") {
-    dashboardPath = "/teacher-dashboard";
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/login");
+  const getDashboardPath = (role) => {
+    const paths = {
+      admin: "/admin-dashboard",
+      teacher: "/teacher-dashboard",
+      parent: "/parent-dashboard",
+      student: "/dashboard",
+    };
+    return paths[role] || "/dashboard";
   };
 
-  const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/register";
+  const dashboardPath = user ? getDashboardPath(user.role) : "/dashboard";
+  const isAuthPage = ["/login", "/register"].includes(location.pathname);
+
+  // Styles
   const activeLinkStyle = { color: "#3b82f6", fontWeight: "600" };
+  const navLinkClass =
+    "text-gray-300 hover:text-white transition-colors duration-200";
+  const mobileLinkClass =
+    "text-gray-300 hover:text-white py-2 block transition-colors duration-200";
 
   return (
-    <header className="absolute top-0 left-0 w-full z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
+    <header className="absolute top-0 left-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          {/* FIX: Changed 'user' to 'token' to correctly check login state */}
           <NavLink
-            to={token ? dashboardPath : "/"}
+            to={user ? dashboardPath : "/"}
             className="flex items-center"
           >
-            {/* FIX: Changed file extension to .png as requested */}
             <img src="/logos/logotext.png" alt="IntelliClass" className="h-8" />
           </NavLink>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <NavLink
               to="/"
-              className="text-gray-300 hover:text-white"
+              className={navLinkClass}
               style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
             >
               Home
             </NavLink>
             <NavLink
               to="/about"
-              className="text-gray-300 hover:text-white"
+              className={navLinkClass}
               style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
             >
               About
             </NavLink>
 
             {!isAuthPage &&
-              (token ? (
+              (user ? (
                 <>
                   <NavLink
                     to={dashboardPath}
-                    className="text-gray-300 hover:text-white"
+                    className={navLinkClass}
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -70,8 +69,8 @@ export default function Navbar() {
                     Dashboard
                   </NavLink>
                   <button
-                    onClick={handleLogout}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                    onClick={logout}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-md hover:shadow-red-500/20"
                   >
                     Logout
                   </button>
@@ -79,7 +78,7 @@ export default function Navbar() {
               ) : (
                 <NavLink
                   to="/login"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-md hover:shadow-blue-500/20"
                 >
                   Login
                 </NavLink>
@@ -90,7 +89,7 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white p-2"
+              className="text-white p-2 focus:outline-none"
             >
               {isMenuOpen ? (
                 <svg
@@ -130,11 +129,11 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-slate-800/90 backdrop-blur-sm p-4">
+        <div className="md:hidden bg-slate-900/95 backdrop-blur-xl border-t border-white/10 p-4 absolute w-full">
           <nav className="flex flex-col space-y-4 text-center">
             <NavLink
               to="/"
-              className="text-gray-300 hover:text-white py-2"
+              className={mobileLinkClass}
               style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -142,7 +141,7 @@ export default function Navbar() {
             </NavLink>
             <NavLink
               to="/about"
-              className="text-gray-300 hover:text-white py-2"
+              className={mobileLinkClass}
               style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -150,11 +149,11 @@ export default function Navbar() {
             </NavLink>
 
             {!isAuthPage &&
-              (token ? (
+              (user ? (
                 <>
                   <NavLink
                     to={dashboardPath}
-                    className="text-gray-300 hover:text-white py-2"
+                    className={mobileLinkClass}
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -164,10 +163,10 @@ export default function Navbar() {
                   </NavLink>
                   <button
                     onClick={() => {
-                      handleLogout();
+                      logout();
                       setIsMenuOpen(false);
                     }}
-                    className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg"
+                    className="bg-red-600 text-white font-bold py-2 px-4 rounded-xl w-full"
                   >
                     Logout
                   </button>
@@ -175,7 +174,7 @@ export default function Navbar() {
               ) : (
                 <NavLink
                   to="/login"
-                  className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
+                  className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl w-full block"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Login

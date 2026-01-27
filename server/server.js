@@ -4,8 +4,8 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const os = require("os");
-const cookieParser = require("cookie-parser");
 require("dotenv").config();
+const cookieParser = require("cookie-parser");
 
 const errorHandler = require("./middlewares/errorMiddleware");
 
@@ -14,6 +14,7 @@ function getLocalIpAddress() {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
+      // Find IPv4 address that is not internal (like 127.0.0.1)
       if (iface.family === "IPv4" && !iface.internal) {
         return iface.address;
       }
@@ -23,40 +24,25 @@ function getLocalIpAddress() {
 }
 
 const localIp = getLocalIpAddress();
+const clientPort = 5173; // Standard frontend port
+
+// --- 2. Centralized Allowed Origins ---
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://localhost:5173",
+  // Dynamic local network origins
+  `http://${localIp}:${clientPort}`,
+  `https://${localIp}:${clientPort}`,
+];
+
+// Add production URL from environment variables if it exists
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
 console.log(`📡 Local Network IP detected: ${localIp}`);
-
-// --- 2. Centralized Origin Validation ---
-// This function checks if an origin is allowed. Used by both Express and Socket.IO
-const checkOrigin = (origin, callback) => {
-  // Allow requests with no origin (like mobile apps or curl requests)
-  if (!origin) return callback(null, true);
-
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://localhost:5173",
-    `http://${localIp}:5173`, // Allow dynamic local IP
-    process.env.CORS_ORIGIN, // Production Main Domain
-  ];
-
-  // Check against static allowed list
-  if (allowedOrigins.includes(origin)) {
-    return callback(null, true);
-  }
-
-  // Allow Vercel Preview Deployments (Wildcard)
-  if (origin.endsWith(".vercel.app")) {
-    return callback(null, true);
-  }
-
-  // Allow Render Backend to talk to itself (optional)
-  if (origin.includes("onrender.com")) {
-    return callback(null, true);
-  }
-
-  console.error("🚫 CORS Blocked:", origin);
-  return callback(new Error("Not allowed by CORS"));
-};
+console.log(`🔓 Allowed Origins:`, allowedOrigins);
 
 // --- 3. Database Connection ---
 mongoose
@@ -65,16 +51,17 @@ mongoose
   .catch((err) => console.error("DB Connection Error:", err));
 
 const app = express();
-app.set("trust proxy", 1); // Trust Render's proxy for secure cookies
+
+app.set("trust proxy", 1);
 
 const server = http.createServer(app);
 
 // --- 4. Socket.IO Configuration ---
+// Now uses the same allowedOrigins list as Express
 const io = new Server(server, {
   cors: {
-    // [CRITICAL] We pass the FUNCTION here, not the array
-    origin: checkOrigin,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
     credentials: true,
   },
 });
@@ -82,14 +69,37 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 5001;
 
 // --- 5. Middleware ---
-// Apply the SAME origin check to Express
 app.use(
   cors({
-    origin: checkOrigin,
-    credentials: true,
-  }),
-);
+    origin: (origin, callback) => {
+      
+      if (!origin) return callback(null, true);
 
+      // Allow Localhost
+      if (
+        origin.startsWith("http://localhost") || 
+        origin.startsWith("http://127.0.0.1") ||
+        origin.startsWith(`http://${localIp}`)
+      ) {
+        return callback(null, true);
+      }
+
+      // Allow Production Domain (Exact Match)
+      if (origin === "https://intelli-class-client-side.vercel.app") {
+        return callback(null, true);
+      }
+
+      // Allow ANY Vercel Preview Deployment (*.vercel.app)
+      if (origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+
+      console.error("🚫 CORS Blocked:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true, // Allow Cookies
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -128,23 +138,27 @@ app.use("/api/hodfeed", hodFeedRoutes);
 
 // --- 7. Socket Logic ---
 io.on("connection", (socket) => {
-  console.log("🔌 A user connected to WebSocket", socket.id);
+  console.log("🔌 A user connected to WebSocket");
 
+  // Listen for chat messages from any client
   socket.on("chat_message", (msg) => {
+    // Broadcast received message to all connected clients
     io.emit("chat_message", msg);
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected", socket.id);
+    console.log("❌ User disconnected");
   });
 });
 
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
 
 app.use(errorHandler);
 
+// Start Server
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
