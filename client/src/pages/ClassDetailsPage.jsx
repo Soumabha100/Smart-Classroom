@@ -7,7 +7,7 @@ import {
 } from "../api/apiService";
 import DashboardLayout from "../components/DashboardLayout";
 import {
-  LoaderCircle,
+  Loader2,
   AlertCircle,
   ArrowLeft,
   BookOpen,
@@ -106,7 +106,7 @@ const ClassDetailsPage = () => {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-full">
-          <LoaderCircle className="w-10 h-10 animate-spin text-indigo-500" />
+          <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
         </div>
       </DashboardLayout>
     );
@@ -244,7 +244,7 @@ const ClassDetailsPage = () => {
                     >
                       {isEnrolling ? (
                         <>
-                          <LoaderCircle className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                           Enrolling...
                         </>
                       ) : (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle, AlertCircle, LoaderCircle, ArrowLeft } from "lucide-react";
+import { PlusCircle, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 // Import updateClass from your apiService
 import {
   getTeacherClasses,
@@ -121,7 +121,7 @@ const ManageClassesPage = () => {
 
           {loading && (
             <div className="text-center p-8">
-              <LoaderCircle className="w-8 h-8 mx-auto animate-spin text-indigo-500" />
+              <Loader2 className="w-8 h-8 mx-auto animate-spin text-indigo-500" />
             </div>
           )}
           {error && (

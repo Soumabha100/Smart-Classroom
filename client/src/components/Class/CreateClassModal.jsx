@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, LoaderCircle, Presentation, BookCopy } from "lucide-react";
+import { X, Loader2, Presentation, BookCopy } from "lucide-react";
 import InputWithIcon from "../ui/InputWithIcon";
 
 const CreateClassModal = ({ isOpen, onClose, onSave }) => {
@@ -93,7 +93,7 @@ const CreateClassModal = ({ isOpen, onClose, onSave }) => {
             >
               {isSaving ? (
                 <>
-                  <LoaderCircle className="w-5 h-5 animate-spin" /> Saving...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Saving...
                 </>
               ) : (
                 "Create"

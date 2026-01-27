@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; // Import Link
+import { Link } from "react-router-dom";
 import { getPosts } from "../../api/apiService";
-import { MessageSquareText } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 const PostList = ({ activeSection, setActiveSection }) => {
   const [posts, setPosts] = useState([]);
@@ -28,13 +28,12 @@ const PostList = ({ activeSection, setActiveSection }) => {
       }`}
     >
       <h2 className="flex items-center gap-3 pb-4 mb-4 text-xl font-semibold border-b border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
-        <MessageSquareText className="w-6 h-6 text-indigo-500" />
+        <MessageSquare className="w-6 h-6 text-indigo-500" />
         Recent Discussions
       </h2>
       <div className="space-y-4">
         {posts.length > 0 ? (
           posts.map((post) => (
-            // Wrap each post in a Link component
             <Link
               to={`/forum/post/${post._id}`}
               key={post._id}

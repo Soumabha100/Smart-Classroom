@@ -1,9 +1,7 @@
-// src/index.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter as Router } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
@@ -13,7 +11,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ThemeProvider>
           <QueryProvider>
@@ -22,7 +20,5 @@ root.render(
         </ThemeProvider>
       </AuthProvider>
     </Router>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
-
-reportWebVitals();

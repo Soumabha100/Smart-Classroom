@@ -11,7 +11,7 @@ import {
   ShieldAlert,
   Trash2,
   LogOut,
-  LoaderCircle,
+  Loader2,
   X,
   Eye,
   EyeOff,
@@ -268,7 +268,7 @@ export default function SettingsPage() {
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {loadingSessions ? (
                 <div className="p-8 flex justify-center">
-                  <LoaderCircle className="w-6 h-6 animate-spin text-slate-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
                 </div>
               ) : sessions.length === 0 ? (
                 <div className="p-8 text-center text-slate-500">
@@ -417,7 +417,7 @@ const ChangePasswordModal = ({ onClose }) => {
               className="flex-1 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-70 flex justify-center items-center"
             >
               {loading ? (
-                <LoaderCircle className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 "Update"
               )}

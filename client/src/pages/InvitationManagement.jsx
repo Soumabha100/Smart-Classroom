@@ -4,7 +4,7 @@ import { getInviteCodes, generateInviteCode } from "../api/apiService"; // Using
 import DashboardLayout from "../components/DashboardLayout";
 import { formatDistanceToNow } from "date-fns";
 import {
-  LoaderCircle,
+  Loader2,
   AlertTriangle,
   MailPlus,
   Copy,
@@ -176,7 +176,7 @@ const InvitationManagement = () => {
             >
               {isGenerating ? (
                 <>
-                  <LoaderCircle className="w-5 h-5 animate-spin" />{" "}
+                  <Loader2 className="w-5 h-5 animate-spin" />{" "}
                   Generating...
                 </>
               ) : (

@@ -1,11 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
 const os = require("os");
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken"); // Added for Socket Auth
 require("dotenv").config();
 
 const errorHandler = require("./middlewares/errorMiddleware");
@@ -26,6 +23,7 @@ function getLocalIpAddress() {
 const localIp = getLocalIpAddress();
 console.log(`📡 Local Network IP detected: ${localIp}`);
 
+
 // --- 2. Centralized Origin Validation ---
 const checkOrigin = (origin, callback) => {
   // Allow requests with no origin (like mobile apps or curl requests)
@@ -35,9 +33,11 @@ const checkOrigin = (origin, callback) => {
     "http://localhost:3000",
     "http://localhost:5173",
     "https://localhost:5173",
-    `http://${localIp}:5173`, // Allow dynamic local IP
+    `http://${localIp}:5173`,
+    `https://${localIp}:5173`, // Allow dynamic local IP
     process.env.CORS_ORIGIN, // Production Main Domain
   ];
+
 
   // Check against static allowed list
   if (allowedOrigins.includes(origin)) {
@@ -67,20 +67,9 @@ mongoose
 const app = express();
 app.set("trust proxy", 1); // Trust Render's proxy for secure cookies
 
-const server = http.createServer(app);
-
-// --- 4. Socket.IO Configuration ---
-const io = new Server(server, {
-  cors: {
-    origin: checkOrigin, // Use the shared function
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
-
 const PORT = process.env.PORT || 5001;
 
-// --- 5. Middleware ---
+// --- 4. Middleware ---
 app.use(
   cors({
     origin: checkOrigin,
@@ -91,13 +80,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Make `io` accessible to your routes
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
-// --- 6. Routes ---
+// --- 5. Routes ---
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/userRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
@@ -124,48 +107,6 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/hodfeed", hodFeedRoutes);
 
-// --- 7. Socket.IO Security Middleware [NEW] ---
-// This runs BEFORE a socket is allowed to connect
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-
-  if (!token) {
-    return next(new Error("Authentication error: No token provided"));
-  }
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      return next(new Error("Authentication error: Invalid token"));
-    }
-    // Attach the decoded user data (e.g., id, role) to the socket object
-    socket.user = decoded;
-    next();
-  });
-});
-
-// --- 8. Socket Connection Logic ---
-io.on("connection", (socket) => {
-  // Now we can safely log the user's ID because middleware passed
-  console.log(
-    `🔌 User connected via WebSocket: ${socket.user?.id || socket.id}`,
-  );
-
-  // Example: Join a room based on User ID for private notifications
-  if (socket.user?.id) {
-    socket.join(socket.user.id);
-  }
-
-  socket.on("chat_message", (msg) => {
-    // Optional: Attach sender info automatically
-    const messageWithUser = { ...msg, sender: socket.user?.id };
-    io.emit("chat_message", messageWithUser);
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`❌ User disconnected: ${socket.user?.id || socket.id}`);
-  });
-});
-
 app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
@@ -173,6 +114,7 @@ app.get("/api/test", (req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-server.listen(PORT, () => {
+// --- 6. Start Server ---
+app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });

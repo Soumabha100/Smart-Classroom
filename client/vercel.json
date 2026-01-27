@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://intelli-class-project.onrender.com/api/:path*"
-    }
-  ]
-}

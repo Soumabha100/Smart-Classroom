@@ -9,13 +9,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
-import {
-  Menu,
-  MenuButton,
-  MenuItems,
-  MenuItem,
-  Transition,
-} from "@headlessui/react";
+import { Menu, Transition } from "@headlessui/react";
 
 const Stat = ({ icon, count, label }) => (
   <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -34,12 +28,11 @@ const ClassCard = ({ cls, onDelete, onEdit }) => {
     navigate(`/class/${cls._id}`);
   };
 
-  // This logic handles both old and new data structures
   const teacherCount = Array.isArray(cls.teachers)
-    ? cls.teachers.length // If 'teachers' is an array, use its length
+    ? cls.teachers.length
     : cls.teacher
-    ? 1
-    : 0; // Otherwise, check if the single 'teacher' exists
+      ? 1
+      : 0;
 
   return (
     <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 dark:bg-slate-800 dark:border-slate-700">
@@ -61,9 +54,10 @@ const ClassCard = ({ cls, onDelete, onEdit }) => {
 
         {/* Advanced Options Menu */}
         <Menu as="div" className="relative">
-          <MenuButton className="p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+          <Menu.Button className="p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
             <MoreVertical size={20} />
-          </MenuButton>
+          </Menu.Button>
+
           <Transition
             enter="transition ease-out duration-100"
             enterFrom="transform opacity-0 scale-95"
@@ -72,29 +66,36 @@ const ClassCard = ({ cls, onDelete, onEdit }) => {
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <MenuItems
-              anchor="bottom end"
-              className="w-40 origin-top-right bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-            >
+            {/* ✅ FIX: Use Menu.Items and manual positioning classes instead of 'anchor' prop */}
+            <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
               <div className="py-1">
-                <MenuItem>
-                  <button
-                    onClick={onEdit}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
-                    <Edit size={16} /> Edit Class
-                  </button>
-                </MenuItem>
-                <MenuItem>
-                  <button
-                    onClick={() => onDelete(cls._id)}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50"
-                  >
-                    <Trash2 size={16} /> Delete Class
-                  </button>
-                </MenuItem>
+                {/* ✅ FIX: Use Menu.Item */}
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={onEdit}
+                      className={`${
+                        active ? "bg-slate-100 dark:bg-slate-700" : ""
+                      } flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-300`}
+                    >
+                      <Edit size={16} /> Edit Class
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => onDelete(cls._id)}
+                      className={`${
+                        active ? "bg-red-50 dark:bg-red-900/50" : ""
+                      } flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400`}
+                    >
+                      <Trash2 size={16} /> Delete Class
+                    </button>
+                  )}
+                </Menu.Item>
               </div>
-            </MenuItems>
+            </Menu.Items>
           </Transition>
         </Menu>
       </div>
@@ -109,7 +110,7 @@ const ClassCard = ({ cls, onDelete, onEdit }) => {
           />
           <Stat
             icon={<User size={16} />}
-            count={teacherCount} // Use the new calculated count
+            count={teacherCount}
             label="Teachers"
           />
         </div>

@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api/apiService";
 import { useAuth } from "../context/AuthContext";
-import { LoaderCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Reusing same optimized illustration component
 const AuthIllustration = () => (
@@ -41,7 +41,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false); // Renamed to differentiate from global loading
+  const [submitting, setSubmitting] = useState(false);
 
   // ✅ 1. Get Auth State
   const { user, loading } = useAuth();
@@ -66,8 +66,9 @@ export default function Register() {
       if (invitationCode) payload.invitationCode = invitationCode;
 
       // 1. Call Register
-      const res = await api.post("/auth/register", payload);
+      await api.post("/auth/register", payload);
 
+      // 2. Redirect to dashboard
       window.location.href = "/dashboard";
     } catch (err) {
       const msg =
@@ -83,7 +84,7 @@ export default function Register() {
   if (loading || user) {
     return (
       <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center">
-        <LoaderCircle className="w-10 h-10 animate-spin text-teal-500" />
+        <Loader2 className="w-10 h-10 animate-spin text-teal-500" />
       </div>
     );
   }

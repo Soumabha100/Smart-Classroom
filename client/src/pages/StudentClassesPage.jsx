@@ -1,9 +1,7 @@
-// client/src/pages/StudentClassesPage.jsx
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Scanner } from "@yudiel/react-qr-scanner";
+import { QrScanner } from "@yudiel/react-qr-scanner";
 import {
   QrCode,
   BookOpen,
@@ -26,6 +24,8 @@ export default function StudentClassesPage() {
   const [scanResult, setScanResult] = useState(null);
   const [scannerError, setScannerError] = useState(null);
 
+  const scanLock = useRef(false);
+
   useEffect(() => {
     const fetchClasses = async () => {
       setIsLoading(true);
@@ -47,24 +47,26 @@ export default function StudentClassesPage() {
   const openScannerForClass = (classInfo) => {
     setSelectedClass(classInfo);
     setScannerError(null);
+    scanLock.current = false;
     setShowScanner(true);
   };
 
-  // --- THIS IS THE FIX ---
-  // The 'result' from the scanner is an array of detected codes.
-  // We need to take the first one and get its raw string value.
-  const handleScan = async (detectedCodes) => {
-    if (!detectedCodes || detectedCodes.length === 0 || !selectedClass) return;
+  const handleScan = async (result) => {
 
-    // Extract the actual QR code text from the first detected code object
-    const qrToken = detectedCodes[0].rawValue;
+    if (!result || !selectedClass || scanLock.current) return;
+
+    
+    scanLock.current = true;
+
+    // In v1, 'result' is the string QR code itself
+    const qrToken = result;
 
     setShowScanner(false);
-    console.log(`[FRONTEND] Scanned QR Token: ${qrToken}`); // For verification
+    console.log(`[FRONTEND] Scanned QR Token: ${qrToken}`);
 
     try {
       const res = await api.post("/attendance/mark", {
-        qrToken: qrToken, // Send the extracted string, not the whole object
+        qrToken: qrToken,
         classId: selectedClass._id,
       });
       setScanResult({ type: "success", message: res.data.message });
@@ -77,7 +79,13 @@ export default function StudentClassesPage() {
       setTimeout(() => setScanResult(null), 5000);
     }
   };
-  // --- END OF FIX ---
+
+  const handleError = (error) => {
+    // Ignore minor camera errors to prevent UI flickering
+    if (error?.message?.includes("No video input devices found")) {
+      setScannerError("Camera not found");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -97,45 +105,36 @@ export default function StudentClassesPage() {
             >
               <button
                 onClick={() => setShowScanner(false)}
-                className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-transform transform hover:scale-110"
+                className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-transform transform hover:scale-110 z-10"
               >
-                {" "}
-                <X size={20} />{" "}
+                <X size={20} />
               </button>
-              <div className="w-full overflow-hidden rounded-lg aspect-square bg-slate-900 flex items-center justify-center">
+
+              <div className="w-full overflow-hidden rounded-lg aspect-square bg-slate-900 flex items-center justify-center relative">
                 {scannerError ? (
                   <div className="text-center text-red-400 p-4">
-                    {" "}
-                    <CameraOff size={48} className="mx-auto" />{" "}
-                    <p className="mt-4 font-semibold">Camera Error</p>{" "}
+                    <CameraOff size={48} className="mx-auto" />
+                    <p className="mt-4 font-semibold">Camera Error</p>
                     <p className="text-xs text-slate-400 mt-1">
                       {scannerError}
-                    </p>{" "}
+                    </p>
                   </div>
                 ) : (
-                  <Scanner
-                    onScan={handleScan}
-                    onError={(e) => setScannerError(e.message)}
-                    components={{ finder: false }}
-                    constraints={{ facingMode: "environment" }}
-                    styles={{
-                      container: {
-                        width: "100%",
-                        paddingTop: "100%",
-                        position: "relative",
-                      },
-                      video: {
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      },
+                  <QrScanner
+                    onDecode={handleScan}
+                    onError={handleError}
+                    containerStyle={{ width: "100%", height: "100%" }}
+                    videoStyle={{
+                      objectFit: "cover",
+                      width: "100%",
+                      height: "100%",
                     }}
+                    hideCount={true} // Optimization: Hide scan count overlay
+                    scanDelay={500} // Optimization: Slow down scanning interval
                   />
                 )}
               </div>
+
               <p className="text-center text-slate-400 mt-4 text-sm font-semibold">
                 {scannerError
                   ? "Please try again."
