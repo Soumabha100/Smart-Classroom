@@ -5,7 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const os = require("os");
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken"); // Added for Socket Auth
+const jwt = require("jsonwebtoken"); // Required for Socket Auth
 require("dotenv").config();
 
 const errorHandler = require("./middlewares/errorMiddleware");
@@ -37,6 +37,8 @@ const checkOrigin = (origin, callback) => {
     "https://localhost:5173",
     `http://${localIp}:5173`, // Allow dynamic local IP
     process.env.CORS_ORIGIN, // Production Main Domain
+    // [CRITICAL UPDATE] Add your Vercel Domain explicitly here if env var fails
+    "https://intelli-class-client-side.vercel.app",
   ];
 
   // Check against static allowed list
@@ -44,7 +46,7 @@ const checkOrigin = (origin, callback) => {
     return callback(null, true);
   }
 
-  // Allow Vercel Preview Deployments (Wildcard)
+  // Allow Vercel Preview Deployments (Wildcard *.vercel.app)
   if (origin.endsWith(".vercel.app")) {
     return callback(null, true);
   }
@@ -72,7 +74,7 @@ const server = http.createServer(app);
 // --- 4. Socket.IO Configuration ---
 const io = new Server(server, {
   cors: {
-    origin: checkOrigin, // Use the shared function
+    origin: checkOrigin, // Uses the smart checkOrigin function above
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -124,7 +126,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/hodfeed", hodFeedRoutes);
 
-// --- 7. Socket.IO Security Middleware [NEW] ---
+// --- 7. Socket.IO Security Middleware ---
 // This runs BEFORE a socket is allowed to connect
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -145,18 +147,17 @@ io.use((socket, next) => {
 
 // --- 8. Socket Connection Logic ---
 io.on("connection", (socket) => {
-  // Now we can safely log the user's ID because middleware passed
   console.log(
     `🔌 User connected via WebSocket: ${socket.user?.id || socket.id}`,
   );
 
-  // Example: Join a room based on User ID for private notifications
+  // Join a room based on User ID for private notifications
   if (socket.user?.id) {
     socket.join(socket.user.id);
   }
 
   socket.on("chat_message", (msg) => {
-    // Optional: Attach sender info automatically
+    // Attach sender info automatically
     const messageWithUser = { ...msg, sender: socket.user?.id };
     io.emit("chat_message", messageWithUser);
   });
