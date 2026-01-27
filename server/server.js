@@ -5,6 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const os = require("os");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken"); // Added for Socket Auth
 require("dotenv").config();
 
 const errorHandler = require("./middlewares/errorMiddleware");
@@ -26,7 +27,6 @@ const localIp = getLocalIpAddress();
 console.log(`📡 Local Network IP detected: ${localIp}`);
 
 // --- 2. Centralized Origin Validation ---
-// This function checks if an origin is allowed. Used by both Express and Socket.IO
 const checkOrigin = (origin, callback) => {
   // Allow requests with no origin (like mobile apps or curl requests)
   if (!origin) return callback(null, true);
@@ -49,7 +49,7 @@ const checkOrigin = (origin, callback) => {
     return callback(null, true);
   }
 
-  // Allow Render Backend to talk to itself (optional)
+  // Allow Render Backend to talk to itself
   if (origin.includes("onrender.com")) {
     return callback(null, true);
   }
@@ -72,8 +72,7 @@ const server = http.createServer(app);
 // --- 4. Socket.IO Configuration ---
 const io = new Server(server, {
   cors: {
-    // [CRITICAL] We pass the FUNCTION here, not the array
-    origin: checkOrigin,
+    origin: checkOrigin, // Use the shared function
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -82,7 +81,6 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 5001;
 
 // --- 5. Middleware ---
-// Apply the SAME origin check to Express
 app.use(
   cors({
     origin: checkOrigin,
@@ -126,16 +124,45 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/hodfeed", hodFeedRoutes);
 
-// --- 7. Socket Logic ---
+// --- 7. Socket.IO Security Middleware [NEW] ---
+// This runs BEFORE a socket is allowed to connect
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error("Authentication error: No token provided"));
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return next(new Error("Authentication error: Invalid token"));
+    }
+    // Attach the decoded user data (e.g., id, role) to the socket object
+    socket.user = decoded;
+    next();
+  });
+});
+
+// --- 8. Socket Connection Logic ---
 io.on("connection", (socket) => {
-  console.log("🔌 A user connected to WebSocket", socket.id);
+  // Now we can safely log the user's ID because middleware passed
+  console.log(
+    `🔌 User connected via WebSocket: ${socket.user?.id || socket.id}`,
+  );
+
+  // Example: Join a room based on User ID for private notifications
+  if (socket.user?.id) {
+    socket.join(socket.user.id);
+  }
 
   socket.on("chat_message", (msg) => {
-    io.emit("chat_message", msg);
+    // Optional: Attach sender info automatically
+    const messageWithUser = { ...msg, sender: socket.user?.id };
+    io.emit("chat_message", messageWithUser);
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected", socket.id);
+    console.log(`❌ User disconnected: ${socket.user?.id || socket.id}`);
   });
 });
 
@@ -143,6 +170,7 @@ app.get("/api/test", (req, res) => {
   res.json({ message: "Hello from the backend! 👋" });
 });
 
+// Global Error Handler
 app.use(errorHandler);
 
 server.listen(PORT, () => {

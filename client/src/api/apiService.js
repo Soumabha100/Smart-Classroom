@@ -1,9 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
-
-
-const API_URL = BASE_URL ? `${BASE_URL}/api` : "/api";
+const API_URL = "/api";
 
 console.log("🚀 API Configured:", {
   mode: import.meta.env.MODE,
@@ -68,6 +65,7 @@ api.interceptors.response.use(
 
       try {
         // 1. Attempt to get a new Access Token (Browser sends HttpOnly cookie)
+        // This request now goes through the Proxy, so cookies are handled automatically.
         const { data } = await api.post("/auth/refresh");
 
         // 2. Update the token in memory

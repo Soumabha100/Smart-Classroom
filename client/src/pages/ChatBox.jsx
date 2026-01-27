@@ -1,52 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
-import io from "socket.io-client";
-
-const SOCKET_PORT = 5001;
-
-const isSecure = window.location.protocol === "https:";
-
-const SOCKET_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5001"
-    : window.location.origin;
+import { socket } from "../api/socket"; // ✅ Import the shared socket instance
 
 export default function ChatBox({ user }) {
-  const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // 🛑 Prevent connection if user isn't logged in yet
     if (!user) return;
 
-    console.log(`🔌 Connecting to Socket at: ${SOCKET_URL}`);
-
-    const socketInstance = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-    });
-
-    setSocket(socketInstance);
-
-    // Connection Listeners
-    socketInstance.on("connect", () => {
-      console.log("✅ Socket Connected Successfully");
-    });
-
-    socketInstance.on("connect_error", (err) => {
-      console.error("❌ Socket Connection Error:", err.message);
-    });
-
-    // Incoming Message Listener
-    socketInstance.on("chat_message", (data) => {
+    const handleMessage = (data) => {
       setMessages((prev) => [...prev, data]);
-    });
+    };
 
-    // Cleanup on unmount
+    // Attach listeners
+    socket.on("chat_message", handleMessage);
+
+    // Cleanup listeners on unmount
     return () => {
-      console.log("🔌 Disconnecting Socket...");
-      socketInstance.disconnect();
+      socket.off("chat_message", handleMessage);
     };
   }, [user]);
 
@@ -57,9 +29,9 @@ export default function ChatBox({ user }) {
 
   // --- SEND MESSAGE FUNCTION ---
   const sendMessage = () => {
-    if (input.trim() && socket) {
+    if (input.trim()) {
       const msgData = {
-        user, // The user's name (passed from props)
+        user: user.name || user, // Handle object or string
         text: input,
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
@@ -67,15 +39,12 @@ export default function ChatBox({ user }) {
         }),
       };
 
-      // Emit to server
+      // Emit using the shared socket
       socket.emit("chat_message", msgData);
-
-      // Clear input
       setInput("");
     }
   };
 
-  // --- RENDER ---
   return (
     <div className="mt-8 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 shadow-xl border border-slate-700">
       <h2 className="text-xl font-semibold mb-4 text-slate-100">
@@ -85,7 +54,7 @@ export default function ChatBox({ user }) {
       {/* Messages Area */}
       <div className="h-72 overflow-y-auto rounded-lg bg-slate-900/80 p-4 border border-slate-700">
         {messages.map((msg, idx) => {
-          const isMe = msg.user === user;
+          const isMe = msg.user === (user.name || user);
 
           return (
             <div
