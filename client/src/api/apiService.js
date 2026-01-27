@@ -1,8 +1,14 @@
 import axios from "axios";
 
-// --- Configuration ---
-// Use environment variable for base URL or default to /api for proxy
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+
+const API_URL = BASE_URL ? `${BASE_URL}/api` : "/api";
+
+console.log("🚀 API Configured:", {
+  mode: import.meta.env.MODE,
+  baseURL: API_URL,
+});
 
 // Create a single, configured instance of Axios
 const api = axios.create({
@@ -15,6 +21,10 @@ const api = axios.create({
 // [CRITICAL] Allow cookies to be sent with every request (for Refresh Token)
 api.defaults.withCredentials = true;
 
+// ==========================================================
+//  2. Token Management & Interceptors
+// ==========================================================
+
 // --- Token Management (Memory Only) ---
 let validAccessToken = null;
 
@@ -22,19 +32,24 @@ export const setClientToken = (token) => {
   validAccessToken = token;
 };
 
-// --- 1. Request Interceptor ---
+// --- Request Interceptor ---
 // Automatically attaches the Access Token to headers if we have one.
 api.interceptors.request.use(
   (config) => {
-    if (validAccessToken && validAccessToken !== "undefined" && validAccessToken !== "null") {
+    // Robust check to ensure we don't send "undefined" or "null" strings
+    if (
+      validAccessToken &&
+      validAccessToken !== "undefined" &&
+      validAccessToken !== "null"
+    ) {
       config.headers.Authorization = `Bearer ${validAccessToken}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
-// --- 2. Response Interceptor (Circuit Breaker Fixed) ---
+// --- Response Interceptor (Circuit Breaker Fixed) ---
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -63,7 +78,6 @@ api.interceptors.response.use(
 
         // 4. Retry the original request
         return api(originalRequest);
-
       } catch (refreshError) {
         // If the refresh attempt fails, we just let the app know the user is logged out.
         // We DO NOT force a reload here, as React state will handle the UI update.
@@ -73,18 +87,19 @@ api.interceptors.response.use(
 
     // Return all other errors normally
     return Promise.reject(error);
-  }
+  },
 );
 
 // ==========================================================
-//  API Function Definitions
+//  3. API Function Definitions (PRESERVED)
 // ==========================================================
 
 // --- User & Dashboard ---
 export const getUserCount = (role) => api.get(`/users/count?role=${role}`);
 export const getTeachers = () => api.get("/users/teachers");
 export const getUserProfile = () => api.get("/users/profile");
-export const updateUserProfile = (profileData) => api.put("/users/profile", profileData);
+export const updateUserProfile = (profileData) =>
+  api.put("/users/profile", profileData);
 export const changePassword = (data) => api.put("/users/change-password", data);
 export const getTeacherAnalytics = () => api.get("/users/teacher/analytics");
 export const getAdminAnalytics = () => api.get("/analytics/summary");
@@ -101,17 +116,21 @@ export const getAllClassesForAdmin = () => api.get("/classes/all");
 
 // --- Students & Class Enrollment ---
 export const getAllStudents = () => api.get("/users/students");
-export const addStudentToClass = (classId, studentId) => api.post(`/classes/${classId}/students`, { studentId });
-export const removeStudentFromClass = (classId, studentId) => api.delete(`/classes/${classId}/students/${studentId}`);
+export const addStudentToClass = (classId, studentId) =>
+  api.post(`/classes/${classId}/students`, { studentId });
+export const removeStudentFromClass = (classId, studentId) =>
+  api.delete(`/classes/${classId}/students/${studentId}`);
 
 // --- Assignments ---
-export const getAssignments = (classId) => api.get(`/assignments${classId ? `?classId=${classId}` : ""}`);
+export const getAssignments = (classId) =>
+  api.get(`/assignments${classId ? `?classId=${classId}` : ""}`);
 export const createAssignment = (data) => api.post("/assignments", data);
 export const deleteAssignment = (id) => api.delete(`/assignments/${id}`);
 
 // --- Attendance ---
 export const getStudentAttendance = () => api.get("/attendance/student");
-export const generateQrCode = (classId) => api.post("/attendance/generate-qr", { classId });
+export const generateQrCode = (classId) =>
+  api.post("/attendance/generate-qr", { classId });
 export const getTeacherAttendanceAnalytics = (classId, from, to) => {
   let url = `/attendance/analytics?classId=${classId}`;
   if (from) url += `&from=${from}`;
@@ -122,20 +141,25 @@ export const getTeacherAttendanceAnalytics = (classId, from, to) => {
 // --- AI Chat ---
 export const askAI = (data, chatId) => {
   if (data instanceof FormData) {
-    return api.post("/ai/ask", data, { headers: { "Content-Type": "multipart/form-data" } });
+    return api.post("/ai/ask", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   }
   return api.post("/ai/ask", { prompt: data, chatId });
 };
 export const getChatHistories = () => api.get("/ai/history");
 export const getChatHistory = (chatId) => api.get(`/ai/history/${chatId}`);
-export const deleteChatHistory = (chatId) => api.delete(`/ai/history/${chatId}`);
-export const generateAIDashboard = (mode) => api.post("/ai/generate-dashboard", { mode });
+export const deleteChatHistory = (chatId) =>
+  api.delete(`/ai/history/${chatId}`);
+export const generateAIDashboard = (mode) =>
+  api.post("/ai/generate-dashboard", { mode });
 
 // --- Forum ---
 export const getPosts = () => api.get("/forum/posts");
 export const createPost = (data) => api.post("/forum/posts", data);
 export const getPostById = (id) => api.get(`/forum/posts/${id}`);
-export const createComment = (postId, data) => api.post(`/forum/posts/${postId}/comments`, data);
+export const createComment = (postId, data) =>
+  api.post(`/forum/posts/${postId}/comments`, data);
 
 // --- Parents & Invites ---
 export const getParents = () => api.get("/parents");
@@ -145,7 +169,8 @@ export const generateInviteCode = () => api.post("/invites/generate");
 
 // --- 🔐 Session Management ---
 export const getSessions = () => api.get("/auth/sessions");
-export const revokeSession = (sessionId) => api.delete(`/auth/sessions/${sessionId}`);
+export const revokeSession = (sessionId) =>
+  api.delete(`/auth/sessions/${sessionId}`);
 export const revokeAllSessions = () => api.delete("/auth/sessions"); // "Logout from all devices"
 
 export default api;
