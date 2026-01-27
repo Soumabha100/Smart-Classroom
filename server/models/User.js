@@ -1,5 +1,13 @@
 const mongoose = require("mongoose");
 
+// 1. Define the Session Schema (Sub-document)
+const sessionSchema = new mongoose.Schema({
+  device: { type: String, default: "Unknown Device" },
+  ip: { type: String, default: "Unknown IP" },
+  lastActive: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const UserSchema = new mongoose.Schema(
   {
     name: {
@@ -78,6 +86,8 @@ const UserSchema = new mongoose.Schema(
         },
       },
     ],
+
+    sessions: [sessionSchema],
     // --- END LOGIN HISTORY ---
     // --- 🔑 PASSWORD RESET FIELDS ---
     resetPasswordToken: String,

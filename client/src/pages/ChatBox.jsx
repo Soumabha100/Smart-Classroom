@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 
+const SOCKET_PORT = 5001;
+
 const isSecure = window.location.protocol === "https:";
-const SOCKET_URL = `${isSecure ? "wss" : "ws"}://${window.location.hostname}:5001`;
+
+const SOCKET_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5001"
+    : window.location.origin;
 
 export default function ChatBox({ user }) {
   const [socket, setSocket] = useState(null);
@@ -10,33 +16,66 @@ export default function ChatBox({ user }) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
-  // --- SOCKET CONNECTION EFFECT ---
   useEffect(() => {
-    const socketInstance = io(SOCKET_URL);
+    // 🛑 Prevent connection if user isn't logged in yet
+    if (!user) return;
+
+    console.log(`🔌 Connecting to Socket at: ${SOCKET_URL}`);
+
+    const socketInstance = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
     setSocket(socketInstance);
 
+    // Connection Listeners
+    socketInstance.on("connect", () => {
+      console.log("✅ Socket Connected Successfully");
+    });
+
+    socketInstance.on("connect_error", (err) => {
+      console.error("❌ Socket Connection Error:", err.message);
+    });
+
+    // Incoming Message Listener
     socketInstance.on("chat_message", (data) => {
       setMessages((prev) => [...prev, data]);
     });
 
-    return () => socketInstance.disconnect();
-  }, []);
+    // Cleanup on unmount
+    return () => {
+      console.log("🔌 Disconnecting Socket...");
+      socketInstance.disconnect();
+    };
+  }, [user]);
 
+  // --- AUTO-SCROLL EFFECT ---
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // --- SEND MESSAGE FUNCTION ---
   const sendMessage = () => {
     if (input.trim() && socket) {
-      socket.emit("chat_message", {
-        user,
+      const msgData = {
+        user, // The user's name (passed from props)
         text: input,
-        timestamp: new Date().toLocaleTimeString(),
-      });
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      // Emit to server
+      socket.emit("chat_message", msgData);
+
+      // Clear input
       setInput("");
     }
   };
 
+  // --- RENDER ---
   return (
     <div className="mt-8 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 shadow-xl border border-slate-700">
       <h2 className="text-xl font-semibold mb-4 text-slate-100">
@@ -54,7 +93,7 @@ export default function ChatBox({ user }) {
               className={`mb-3 flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-xs md:max-w-sm px-4 py-2 rounded-lg text-sm
+                className={`max-w-xs md:max-w-sm px-4 py-2 rounded-lg text-sm transition-all
                 ${
                   isMe
                     ? "bg-indigo-600 text-white rounded-br-none"
@@ -91,7 +130,8 @@ export default function ChatBox({ user }) {
         />
         <button
           onClick={sendMessage}
-          className="rounded-r-lg bg-indigo-600 px-5 py-2 text-white font-medium hover:bg-indigo-700 transition"
+          disabled={!input.trim()}
+          className="rounded-r-lg bg-indigo-600 px-5 py-2 text-white font-medium hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 transition"
         >
           Send
         </button>

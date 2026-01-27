@@ -54,23 +54,23 @@ api.interceptors.response.use(
       try {
         // 1. Attempt to get a new Access Token (Browser sends HttpOnly cookie)
         const { data } = await api.post("/auth/refresh");
-        
+
         // 2. Update the token in memory
         setClientToken(data.accessToken);
-        
+
         // 3. Update the Authorization header for the failed request
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-        
+
         // 4. Retry the original request
         return api(originalRequest);
-        
+
       } catch (refreshError) {
         // If the refresh attempt fails, we just let the app know the user is logged out.
         // We DO NOT force a reload here, as React state will handle the UI update.
         return Promise.reject(refreshError);
       }
     }
-    
+
     // Return all other errors normally
     return Promise.reject(error);
   }
@@ -142,5 +142,10 @@ export const getParents = () => api.get("/parents");
 export const createParent = (data) => api.post("/parents/register", data);
 export const getInviteCodes = () => api.get("/invites");
 export const generateInviteCode = () => api.post("/invites/generate");
+
+// --- 🔐 Session Management ---
+export const getSessions = () => api.get("/auth/sessions");
+export const revokeSession = (sessionId) => api.delete(`/auth/sessions/${sessionId}`);
+export const revokeAllSessions = () => api.delete("/auth/sessions"); // "Logout from all devices"
 
 export default api;
