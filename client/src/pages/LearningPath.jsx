@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Confetti from "react-dom-confetti";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Trophy, Zap, Award } from "lucide-react";
 
@@ -34,7 +33,7 @@ const PathStats = ({ percent, doneCount, totalCount }) => (
 const PathRewards = ({ modules }) => {
   const totalQuizzes = modules.filter((m) => m.type === "quiz").length;
   const completedQuizzes = modules.filter(
-    (m) => m.type === "quiz" && m.done
+    (m) => m.type === "quiz" && m.done,
   ).length;
 
   return (
@@ -77,7 +76,7 @@ export default function LearningPath() {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [activeModule, setActiveModule] = useState(null);
   const [quizResult, setQuizResult] = useState(null);
-  const [showCongrats, setShowCongrats] = useState(false);
+  // ❌ REMOVED: Confetti state logic (Optimization)
 
   useEffect(() => {
     learningService.getPath().then(setModules);
@@ -87,12 +86,6 @@ export default function LearningPath() {
   const percent = modules.length
     ? Math.round((doneCount / modules.length) * 100)
     : 0;
-
-  useEffect(() => {
-    if (modules.length > 0 && doneCount === modules.length && !showCongrats) {
-      setTimeout(() => setShowCongrats(true), 500);
-    }
-  }, [doneCount, modules.length, showCongrats]);
 
   function startModule(m) {
     if (m.type === "quiz") {
@@ -116,7 +109,7 @@ export default function LearningPath() {
 
   function completeModule(moduleId) {
     setModules((prev) =>
-      prev.map((x) => (x.id === moduleId ? { ...x, done: true } : x))
+      prev.map((x) => (x.id === moduleId ? { ...x, done: true } : x)),
     );
     setActiveModule(null);
   }
@@ -124,20 +117,12 @@ export default function LearningPath() {
   function onQuizFinish(score) {
     setModules((prev) =>
       prev.map((x) =>
-        x.id === activeQuiz.id ? { ...x, done: true, score } : x
-      )
+        x.id === activeQuiz.id ? { ...x, done: true, score } : x,
+      ),
     );
     setQuizResult({ title: activeQuiz.title, score });
     setActiveQuiz(null);
   }
-
-  const confettiConfig = {
-    angle: 90,
-    spread: 360,
-    startVelocity: 40,
-    elementCount: 70,
-    duration: 3000,
-  };
 
   const firstUnfinishedIndex = modules.findIndex((m) => !m.done);
 
@@ -165,9 +150,7 @@ export default function LearningPath() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Left Column: The Path */}
           <div className="lg:col-span-2 relative">
-            {/* The visual connector line */}
             <div className="absolute left-8 top-8 bottom-8 w-0.5 bg-slate-200 dark:bg-slate-700 -z-10"></div>
-
             <div className="space-y-6">
               {modules.map((m, index) => {
                 const isLocked = index > 0 && !modules[index - 1].done;
@@ -186,8 +169,8 @@ export default function LearningPath() {
                                     m.done
                                       ? "border-green-500"
                                       : isCurrent
-                                      ? "border-blue-500 animate-pulse"
-                                      : "border-slate-300 dark:border-slate-600"
+                                        ? "border-blue-500 animate-pulse"
+                                        : "border-slate-300 dark:border-slate-600"
                                   }`}
                     />
                     <ModuleCard
@@ -214,7 +197,7 @@ export default function LearningPath() {
         </div>
       </div>
 
-      {/* Modals (Lesson, Quiz, Results, etc.) */}
+      {/* Modals */}
       <AnimatePresence>
         {activeModule && (
           <motion.div
@@ -318,11 +301,6 @@ export default function LearningPath() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Confetti sits on top of everything */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100]">
-        <Confetti active={showCongrats} config={confettiConfig} />
-      </div>
     </DashboardLayout>
   );
 }

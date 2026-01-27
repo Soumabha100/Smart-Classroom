@@ -30,7 +30,7 @@ import {
 } from "date-fns";
 import {
   ChevronLeft,
-  LoaderCircle,
+  Loader2,
   AlertCircle,
   Calendar as CalendarIcon,
   Users,
@@ -183,7 +183,7 @@ export default function TeacherAttendancePage() {
 
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
-            <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
           </div>
         ) : classes.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-slate-800/60 rounded-lg shadow-sm">
@@ -260,7 +260,7 @@ export default function TeacherAttendancePage() {
                   exit={{ opacity: 0 }}
                   className="flex justify-center items-center h-96"
                 >
-                  <LoaderCircle className="w-10 h-10 animate-spin text-indigo-500" />
+                  <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
                 </motion.div>
               ) : error ? (
                 <motion.div

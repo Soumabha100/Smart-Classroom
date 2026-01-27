@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import api from "../api/apiService";
+import { useAuth } from "../context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 // Reusing same optimized illustration component
 const AuthIllustration = () => (
@@ -39,25 +41,53 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // ✅ 1. Get Auth State
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // ✅ 2. Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "admin") navigate("/admin-dashboard");
+      else if (user.role === "teacher") navigate("/teacher-dashboard");
+      else if (user.role === "parent") navigate("/parent-dashboard");
+      else navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     try {
       const payload = { name, email, password };
       if (invitationCode) payload.invitationCode = invitationCode;
 
-      await axios.post("/api/auth/register", payload);
-      navigate("/login");
+      // 1. Call Register
+      await api.post("/auth/register", payload);
+
+      // 2. Redirect to dashboard
+      window.location.href = "/dashboard";
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed!");
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        "Registration failed!";
+      setError(msg);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-teal-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-slate-900 text-white font-sans flex relative overflow-hidden">
@@ -84,6 +114,7 @@ export default function Register() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-4">
+                  {/* Name Input */}
                   <div className="relative group">
                     <input
                       type="text"
@@ -108,6 +139,7 @@ export default function Register() {
                     </svg>
                   </div>
 
+                  {/* Email Input */}
                   <div className="relative group">
                     <input
                       type="email"
@@ -132,6 +164,7 @@ export default function Register() {
                     </svg>
                   </div>
 
+                  {/* Password Input */}
                   <div className="relative group">
                     <input
                       type="password"
@@ -156,6 +189,7 @@ export default function Register() {
                     </svg>
                   </div>
 
+                  {/* Invitation Code Input */}
                   <div className="relative group">
                     <input
                       type="text"
@@ -178,10 +212,10 @@ export default function Register() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full h-12 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-teal-500/30 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  {submitting ? "Creating Account..." : "Create Account"}
                 </button>
 
                 <p className="text-center text-slate-400 text-sm">

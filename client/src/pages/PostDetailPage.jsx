@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import io from "socket.io-client";
 
 import { getPostById } from "../api/apiService";
 import DashboardLayout from "../components/DashboardLayout";
 import CreateComment from "../components/Forum/CreateComment";
 import CommentList from "../components/Forum/CommentList";
-
-const socket = io("http://localhost:5000");
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -29,23 +26,6 @@ const PostDetailPage = () => {
 
   useEffect(() => {
     fetchPost();
-
-    // Listen for new comments on this specific post
-    const handleCommentUpdate = (newComment) => {
-      if (newComment.post === postId) {
-        // Add the new comment to the state in real-time
-        setPost((prevPost) => ({
-          ...prevPost,
-          comments: [...prevPost.comments, newComment],
-        }));
-      }
-    };
-
-    socket.on("comment_update", handleCommentUpdate);
-
-    return () => {
-      socket.off("comment_update", handleCommentUpdate);
-    };
   }, [postId]);
 
   if (loading) {

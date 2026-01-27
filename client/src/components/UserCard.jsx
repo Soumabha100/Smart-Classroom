@@ -1,7 +1,7 @@
 // client/src/components/UserCard.jsx
 import React, { useState, useEffect } from "react";
 import { getUserCount } from "../api/apiService";
-import { Shield, User, GraduationCap, Users, LoaderCircle } from "lucide-react";
+import { Shield, User, GraduationCap, Users, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ICONS = {
@@ -61,7 +61,7 @@ const UserCard = ({ type }) => {
       </div>
       <div>
         {loading ? (
-          <LoaderCircle className="w-6 h-6 animate-spin text-slate-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
         ) : (
           <p className="text-2xl font-bold text-slate-800 dark:text-white">
             {count}

@@ -1,11 +1,9 @@
-// client/src/components/Dashboard/AIDrivenDashboard.jsx
-
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { generateAIDashboard } from "../../api/apiService";
 import WidgetRenderer from "./WidgetRenderer";
 import DashboardSkeleton from "./DashboardSkeleton";
-import Masonry from "react-masonry-css"; // <-- Import the new library
-import { FiZap, FiBriefcase, FiCalendar } from "react-icons/fi";
+import Masonry from "react-masonry-css";
+import { Zap, Briefcase, Calendar } from "lucide-react";
 
 const AIDrivenDashboard = () => {
   const [dashboardMode, setDashboardMode] = useState("learning");
@@ -70,17 +68,28 @@ const AIDrivenDashboard = () => {
     ));
   }, [dashboardContent]);
 
-  // Define breakpoints for the masonry layout
   const breakpointColumnsObj = {
-    default: 3, // 3 columns by default
-    1280: 2, // 2 columns on screens < 1280px
-    768: 1, // 1 column on screens < 768px
+    default: 3,
+    1280: 2,
+    768: 1,
   };
 
   const modeButtons = [
-    { mode: "learning", label: "Learning Focus", icon: <FiZap /> },
-    { mode: "planning", label: "Daily Planner", icon: <FiCalendar /> },
-    { mode: "career", label: "Career Prep", icon: <FiBriefcase /> },
+    {
+      mode: "learning",
+      label: "Learning Focus",
+      icon: <Zap className="w-4 h-4" />,
+    },
+    {
+      mode: "planning",
+      label: "Daily Planner",
+      icon: <Calendar className="w-4 h-4" />,
+    },
+    {
+      mode: "career",
+      label: "Career Prep",
+      icon: <Briefcase className="w-4 h-4" />,
+    },
   ];
 
   return (
@@ -111,7 +120,6 @@ const AIDrivenDashboard = () => {
           </div>
         )}
         {!isLoading && !error && dashboardContent && (
-          // --- THE MASONRY LAYOUT IMPLEMENTATION ---
           <Masonry
             breakpointCols={breakpointColumnsObj}
             className="my-masonry-grid"

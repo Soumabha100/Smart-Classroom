@@ -10,7 +10,7 @@ import {
     Trash2,
     BookOpen,
     Edit,
-    LoaderCircle,
+    Loader2,
     AlertCircle 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -259,7 +259,7 @@ const AddResourceForm = ({ classes, onSubmit }) => {
                     className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
                     {isSubmitting ? (
-                        <LoaderCircle size={18} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin" />
                     ) : (
                         <PlusCircle size={18} />
                     )}

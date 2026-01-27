@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 // ✨ THE FIX: Import the new admin-specific function
 import { getAllClassesForAdmin } from "../api/apiService";
-import { LoaderCircle, Book, Users, ArrowRight } from "lucide-react";
+import { Loader2, Book, Users, ArrowRight } from "lucide-react";
 
 const ClassList = () => {
   const [classes, setClasses] = useState([]);
@@ -31,7 +31,7 @@ const ClassList = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <LoaderCircle className="w-6 h-6 animate-spin text-indigo-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
       </div>
     );
   }

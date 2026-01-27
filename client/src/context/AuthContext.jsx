@@ -12,12 +12,13 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// --- UI Component: Full Page Loader ---
+// --- Loader Component ---
 const FullPageLoader = () => (
   <div className="flex items-center justify-center h-screen w-full bg-slate-900 text-white">
     <div className="flex flex-col items-center gap-4">
+      <div className="w-10 h-10 border-4 border-slate-600 border-t-indigo-500 rounded-full animate-spin"></div>
       <span className="text-lg font-medium text-slate-300">
-        Authenticating...
+        Loading IntelliClass...
       </span>
     </div>
   </div>
@@ -25,35 +26,40 @@ const FullPageLoader = () => (
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // --- 1. INITIALIZATION: Silent Refresh on Load ---
+  // --- 1. INITIALIZATION: Check Session on Load ---
   useEffect(() => {
     const checkLoggedIn = async () => {
+      // Optimization: Check for 'logged_in' flag cookie first to avoid unnecessary API calls
+      // This makes the initial load much faster if the user is already logged out.
+      const hasAuthCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("logged_in="));
+
+      if (!hasAuthCookie) {
+        setLoading(false);
+        return; // User definitely not logged in
+      }
+
       try {
-        // Attempt to refresh the token (browser sends HttpOnly cookie automatically)
+        // 1. Hit the Proxy Endpoint. Browser sends HttpOnly Cookie automatically.
         const { data } = await api.post("/auth/refresh");
-        
-        // If successful, save Access Token to memory
-        setAccessToken(data.accessToken);
-        setClientToken(data.accessToken); // Update the API interceptor
 
-        // Now fetch the user's full profile using the new Access Token
-        const profileRes = await api.get("/users/profile", {
-           headers: { Authorization: `Bearer ${data.accessToken}` }
-        });
-        
+        // 2. Success! We have the Access Token.
+        setClientToken(data.accessToken);
+
+        // 3. Get User Profile
+        const profileRes = await api.get("/users/profile");
         setUser(profileRes.data);
-        console.log("✅ Auth: Session restored for", profileRes.data.name);
-
       } catch (err) {
-        // If refresh fails (401), user is simply not logged in. 
-        console.log("ℹ️ Auth: No active session found.");
+        // Silent cleanup on failure
         setUser(null);
-        setAccessToken(null);
         setClientToken(null);
+        // Force clear the flag cookie if server rejected the refresh token
+        document.cookie =
+          "logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       } finally {
         setLoading(false);
       }
@@ -62,22 +68,18 @@ export const AuthProvider = ({ children }) => {
     checkLoggedIn();
   }, []);
 
-  // --- 2. LOGIN FUNCTION ---
+  // --- 2. Login Action ---
   const login = async (email, password) => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
-      
-      const { accessToken: newAccessToken, user: userData } = res.data;
-      
-      // Update State
-      setAccessToken(newAccessToken);
-      setUser(userData);
-      
-      // Update API Service Interceptor
-      setClientToken(newAccessToken);
+      const { accessToken, user: userData } = res.data;
 
-      // Navigate based on Role
+      // Update State
+      setUser(userData);
+      setClientToken(accessToken);
+
+      // Handle Role-Based Navigation
       const role = userData.role;
       switch (role) {
         case "admin":
@@ -95,59 +97,59 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Login failed", err);
-      throw err; // Allow component to handle error UI
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 3. LOGOUT FUNCTION ---
+  // --- 3. Logout Action ---
   const logout = useCallback(async () => {
     try {
-      // Tell server to clear the HttpOnly cookie
-      await api.post("/auth/logout");
+      await api.post("/auth/logout"); // Clears cookie on Server (via Proxy)
     } catch (err) {
-      console.error("Logout error", err);
+      console.error("Logout warning", err);
     } finally {
-      // Clear Client State
-      setAccessToken(null);
+      // Cleanup Client State immediately
       setUser(null);
-      setClientToken(null); 
+      setClientToken(null);
+
+      // FORCE CLEAR the flag cookie manually to prevent "flicker" on next load
+      document.cookie =
+        "logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
       navigate("/login");
     }
   }, [navigate]);
 
-  // --- 4. UPDATE USER (Local Helper) ---
+  // --- 4. Profile & Theme Updates ---
   const updateUser = (updatedUserData) => {
     setUser(updatedUserData);
   };
 
-  // --- 5. UPDATE THEME (Optimistic UI) ---
   const updateTheme = async (newTheme) => {
     if (!user) return;
 
+    // Optimistic UI Update (Updates screen instantly, then saves to DB)
     const oldUser = { ...user };
     const newUser = {
       ...user,
       profile: { ...(user.profile || {}), theme: newTheme },
     };
-
-    // Optimistic Update (Update UI immediately)
     setUser(newUser);
 
     try {
       const response = await api.put("/users/profile", { theme: newTheme });
-      // Confirm with server data
       setUser(response.data.user);
     } catch (error) {
       console.error("❌ Failed to update theme", error);
-      setUser(oldUser); // Revert if server fails
+      // Revert on failure to prevent UI desync
+      setUser(oldUser);
     }
   };
 
   const value = {
     user,
-    accessToken, // Expose token if needed, but 'api' handles it mostly
     loading,
     login,
     logout,

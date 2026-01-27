@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   QrCode,
-  LoaderCircle,
+  Loader2,
   AlertCircle,
   Clock,
   Presentation,
@@ -216,7 +216,7 @@ const TeacherDashboard = () => {
         <div className="mb-8">
           {isAnalyticsLoading ? (
             <div className="flex justify-center items-center h-24">
-              <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-4">
@@ -331,7 +331,7 @@ const TeacherDashboard = () => {
             )}
             {isLoading && (
               <div className="flex justify-center mt-4">
-                <LoaderCircle className="w-6 h-6 animate-spin text-indigo-500" />
+                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
               </div>
             )}
             {error && (
