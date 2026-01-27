@@ -18,7 +18,7 @@ import {
   TrendingUp,
   Calendar,
   ClipboardList,
-  LoaderCircle,
+  Loader2,
   List,
   BarChart2,
 } from "lucide-react";
@@ -392,7 +392,7 @@ const AttendancePage = () => {
             <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
               {isLoading ? (
                 <div className="flex justify-center items-center h-full">
-                  <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
                 </div>
               ) : recordsForSelectedDay.length > 0 ? (
                 recordsForSelectedDay.map((record) => (

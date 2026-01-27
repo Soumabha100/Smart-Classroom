@@ -1,8 +1,7 @@
-import React, {useEffect} from "react";
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { useTheme } from "./context/ThemeContext.jsx";
 import { Toaster } from "react-hot-toast";
-import { socket } from "./api/socket.js";
 
 // --- Page Imports ---
 // Public Pages
@@ -50,31 +49,9 @@ import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
-  // Use the hook to get the current theme for the Toaster
   const { theme } = useTheme();
 
-  useEffect(() => {
-    // Connect to socket when App loads
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    socket.on("connect", () => {
-      console.log("✅ WebSocket Connected:", socket.id);
-    });
-
-    socket.on("connect_error", (err) => {
-      console.error("❌ WebSocket Error:", err.message);
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("connect_error");
-    };
-  }, []);
-
   return (
-    // Clean wrapper: Rely on Tailwind 'dark:' classes which listen to <html class="dark">
     <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
       <Toaster
         position="top-right"
@@ -128,7 +105,7 @@ function App() {
           }
         />
         <Route
-          path="/student/classes" // Correct path for student classes
+          path="/student/classes"
           element={
             <ProtectedRoute role="student">
               <StudentClassesPage />
@@ -247,7 +224,6 @@ function App() {
         {/* ================================================================== */}
         {/* SHARED ROUTES (All Authenticated Users)                */}
         {/* ================================================================== */}
-        {/* ✨ CLEANUP: A single route for class details, accessible by any authenticated user */}
         <Route
           path="/class/:classId"
           element={

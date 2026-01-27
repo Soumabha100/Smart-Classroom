@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { setClientToken } from "../api/apiService.js";
-import { socket } from "../api/socket";
 
 const AuthContext = createContext();
 
@@ -19,7 +18,7 @@ const FullPageLoader = () => (
     <div className="flex flex-col items-center gap-4">
       <div className="w-10 h-10 border-4 border-slate-600 border-t-indigo-500 rounded-full animate-spin"></div>
       <span className="text-lg font-medium text-slate-300">
-        Authenticating...
+        Loading IntelliClass...
       </span>
     </div>
   </div>
@@ -30,58 +29,35 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // --- HELPER: Connect Socket ---
-  // [CRITICAL FIX] Ensures we only connect when we have a valid token.
-  // It also prevents duplicate connections by disconnecting first if needed.
-  const connectSocket = (token) => {
-    if (!token) return;
-
-    if (socket.connected) {
-      socket.disconnect(); // Clean slate before reconnecting
-    }
-
-    socket.auth = { token }; // Attach the fresh token
-    socket.connect();
-
-    // Debugging listener for connection errors
-    socket.on("connect_error", (err) => {
-      console.error("❌ Socket Auth Fail:", err.message);
-    });
-  };
-
   // --- 1. INITIALIZATION: Check Session on Load ---
   useEffect(() => {
     const checkLoggedIn = async () => {
-      // Optimization: Check for 'logged_in' flag cookie first.
-      // If missing, we know the user is a guest, so we skip the API call.
+      // Optimization: Check for 'logged_in' flag cookie first to avoid unnecessary API calls
+      // This makes the initial load much faster if the user is already logged out.
       const hasAuthCookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith("logged_in="));
 
       if (!hasAuthCookie) {
         setLoading(false);
-        return;
+        return; // User definitely not logged in
       }
 
       try {
-        // Step A: Call the Proxy to refresh the session.
-        // Browser sends the HttpOnly cookie automatically.
+        // 1. Hit the Proxy Endpoint. Browser sends HttpOnly Cookie automatically.
         const { data } = await api.post("/auth/refresh");
 
-        // Step B: Set Token for future API calls immediately
+        // 2. Success! We have the Access Token.
         setClientToken(data.accessToken);
 
-        // Step C: Get Profile Data
+        // 3. Get User Profile
         const profileRes = await api.get("/users/profile");
         setUser(profileRes.data);
-
-        // Step D: NOW connect the socket (We have the token!)
-        connectSocket(data.accessToken);
       } catch (err) {
-        console.log("Session expired or invalid, cleaning up...");
+        // Silent cleanup on failure
         setUser(null);
         setClientToken(null);
-        // Clear flag cookie if server rejected us
+        // Force clear the flag cookie if server rejected the refresh token
         document.cookie =
           "logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       } finally {
@@ -92,23 +68,18 @@ export const AuthProvider = ({ children }) => {
     checkLoggedIn();
   }, []);
 
-  // --- 2. LOGIN FUNCTION ---
+  // --- 2. Login Action ---
   const login = async (email, password) => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
       const { accessToken, user: userData } = res.data;
 
-      // 1. Update User State
+      // Update State
       setUser(userData);
-
-      // 2. Set Token in API Service
       setClientToken(accessToken);
 
-      // 3. Connect Socket immediately
-      connectSocket(accessToken);
-
-      // 4. Role-based Redirect
+      // Handle Role-Based Navigation
       const role = userData.role;
       switch (role) {
         case "admin":
@@ -132,20 +103,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // --- 3. LOGOUT FUNCTION ---
+  // --- 3. Logout Action ---
   const logout = useCallback(async () => {
     try {
-      await api.post("/auth/logout"); // Clears cookie on Server
+      await api.post("/auth/logout"); // Clears cookie on Server (via Proxy)
     } catch (err) {
       console.error("Logout warning", err);
     } finally {
-      // Cleanup Client State
-      if (socket.connected) socket.disconnect();
-
+      // Cleanup Client State immediately
       setUser(null);
       setClientToken(null);
 
-      // Clear flag cookie manually
+      // FORCE CLEAR the flag cookie manually to prevent "flicker" on next load
       document.cookie =
         "logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
@@ -153,13 +122,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [navigate]);
 
-  // --- 4. Profile & Theme Updates (Preserved) ---
+  // --- 4. Profile & Theme Updates ---
   const updateUser = (updatedUserData) => {
     setUser(updatedUserData);
   };
 
   const updateTheme = async (newTheme) => {
     if (!user) return;
+
+    // Optimistic UI Update (Updates screen instantly, then saves to DB)
     const oldUser = { ...user };
     const newUser = {
       ...user,
@@ -172,6 +143,7 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
     } catch (error) {
       console.error("❌ Failed to update theme", error);
+      // Revert on failure to prevent UI desync
       setUser(oldUser);
     }
   };

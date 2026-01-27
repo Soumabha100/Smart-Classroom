@@ -1,7 +1,7 @@
 // client/src/components/TeacherList.jsx
 import React, { useState, useEffect } from "react";
 import { getTeachers } from "../api/apiService";
-import { LoaderCircle, UserX } from "lucide-react";
+import { Loader2, UserX } from "lucide-react";
 
 const TeacherList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -33,7 +33,7 @@ const TeacherList = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <LoaderCircle className="w-6 h-6 animate-spin text-indigo-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
       </div>
     );
   }

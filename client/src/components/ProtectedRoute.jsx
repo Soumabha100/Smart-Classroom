@@ -1,12 +1,12 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; // 1. Import useAuth
-import { LoaderCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // A simple loading component for the transition
 const RouteLoader = () => (
   <div className="flex justify-center items-center h-screen w-full bg-slate-50 dark:bg-slate-900">
-    <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+    <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
   </div>
 );
 

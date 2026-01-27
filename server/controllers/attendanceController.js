@@ -145,6 +145,8 @@ async function markAttendance(req, res) {
         .json({ message: "QR token does not match selected class" });
     }
 
+    qrTokenStore.delete(qrToken);
+
     const targetClass = await Class.findOne({
       _id: classId,
       students: studentId,
@@ -178,7 +180,6 @@ async function markAttendance(req, res) {
     });
     await record.save();
 
-    qrTokenStore.delete(qrToken);
 
     try {
       const io = getIo();

@@ -6,7 +6,7 @@ import {
   UserPlus,
   ShieldCheck,
   X,
-  LoaderCircle,
+  Loader2,
   AlertTriangle,
   CheckCircle2,
   ArrowLeft,
@@ -131,7 +131,7 @@ const ParentManagementPage = () => {
       fetchData(); // Refresh the parent list
     } catch (err) {
       setError(
-        err.response?.data?.message || "Failed to create parent account."
+        err.response?.data?.message || "Failed to create parent account.",
       );
     } finally {
       setIsSubmitting(false);
@@ -242,7 +242,7 @@ const ParentManagementPage = () => {
                   >
                     {isSubmitting ? (
                       <>
-                        <LoaderCircle className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                         Creating Account...
                       </>
                     ) : (
@@ -261,7 +261,7 @@ const ParentManagementPage = () => {
               </h2>
               {isLoading ? (
                 <div className="text-center py-10">
-                  <LoaderCircle className="w-8 h-8 mx-auto animate-spin text-indigo-500" />
+                  <Loader2 className="w-8 h-8 mx-auto animate-spin text-indigo-500" />
                 </div>
               ) : parents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

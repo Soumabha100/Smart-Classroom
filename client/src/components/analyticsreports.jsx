@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import { getAdminAnalytics } from "../api/apiService";
-import { LoaderCircle, ServerCrash } from "lucide-react";
+import { Loader2, ServerCrash } from "lucide-react";
 
 const COLORS = ["#4f46e5", "#14b8a6", "#f59e0b", "#ec4899"];
 
@@ -69,7 +69,7 @@ export default function AnalyticsReports() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
-        <LoaderCircle className="w-8 h-8 animate-spin text-indigo-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
       </div>
     );
   }

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import ChatHistorySidebar from "../components/Ai/ChatHistorySidebar";
 import AiChat from "../components/Ai/AiChat";
-import { MessageSquareText, Maximize2, X } from "lucide-react";
+import { MessageSquare, Maximize2, X } from "lucide-react";
 
 /**
  * Empty State Component - Displayed when no chat is selected
@@ -11,7 +11,7 @@ const ChatEmptyState = () => (
   <div className="flex flex-col items-center justify-center h-full text-center p-8">
     <div className="mb-6">
       <div className="bg-indigo-50 dark:bg-indigo-900/30 p-6 rounded-full inline-block">
-        <MessageSquareText className="w-16 h-16 text-indigo-600 dark:text-indigo-400" />
+        <MessageSquare className="w-16 h-16 text-indigo-600 dark:text-indigo-400" />
       </div>
     </div>
     <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">

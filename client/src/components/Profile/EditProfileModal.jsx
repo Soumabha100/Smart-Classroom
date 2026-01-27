@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, LoaderCircle, CheckCircle } from "lucide-react";
+import { X, Loader2, CheckCircle } from "lucide-react";
 import { updateUserProfile } from "../../api/apiService";
 
 const EditProfileModal = ({ user, onClose, onSave }) => {
@@ -138,7 +138,7 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
             >
               {saveState === "saving" && (
                 <>
-                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Saving...
                 </>
               )}

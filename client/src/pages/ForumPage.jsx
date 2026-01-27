@@ -1,35 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import io from "socket.io-client";
 import { ArrowLeft } from "lucide-react";
 
 import PostList from "../components/Forum/PostList";
 import CreatePost from "../components/Forum/CreatePost";
 import DashboardLayout from "../components/DashboardLayout";
 
-const SOCKET_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5001"
-    : window.location.origin;
-
-const socket = io(SOCKET_URL, {
-  withCredentials: true,
-  transports: ["websocket", "polling"],
-});
 
 const ForumPage = () => {
   const navigate = useNavigate();
   // State to track which section is expanded. 'discussions' is expanded by default.
   const [activeSection, setActiveSection] = useState("discussions");
 
-  useEffect(() => {
-    socket.on("post_update", (newPost) => {
-      console.log("New post received, refresh to see update:", newPost);
-    });
-    return () => {
-      socket.off("post_update");
-    };
-  }, []);
 
   return (
     <DashboardLayout>

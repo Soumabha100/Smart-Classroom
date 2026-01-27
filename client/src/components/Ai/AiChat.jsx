@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FiSend } from "react-icons/fi";
+import { Send } from "lucide-react";
 import { askAI, getChatHistory } from "../../api/apiService";
 import ReactMarkdown from "react-markdown";
 import { v4 as uuidv4 } from "uuid";
@@ -17,7 +17,6 @@ const Message = ({ message }) => {
             : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
         }`}
       >
-        {/* The 'prose' class applies all the beautiful formatting */}
         <div className="prose prose-sm dark:prose-invert max-w-none">
           <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
         </div>
@@ -26,7 +25,6 @@ const Message = ({ message }) => {
   );
 };
 
-// Main AI Chat Component
 const AiChat = ({ selectedChatId, setSelectedChatId }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -118,7 +116,7 @@ const AiChat = ({ selectedChatId, setSelectedChatId }) => {
           className="bg-indigo-600 text-white p-3 rounded-r-lg hover:bg-indigo-700 disabled:bg-indigo-400 transition-colors"
           disabled={isLoading || !input.trim()}
         >
-          <FiSend size={20} />
+          <Send size={20} />
         </button>
       </form>
     </div>
