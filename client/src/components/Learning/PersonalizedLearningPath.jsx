@@ -14,7 +14,10 @@ export default function PersonalizedLearningPath({ onOpenLesson }) {
     <motion.div
       className="mt-10 rounded-2xl p-6 text-white shadow-lg"
       style={{
-        background: "linear-gradient(135deg, #231635ff, #16243dff)", // medium dark purple gradient
+        background: "linear-gradient(135deg, rgb(17, 24, 39), rgb(22, 42, 62))", // medium dark purple gradient
+        borderRadius: "12px",
+        padding: "20px",
+        border: "1px solid rgba(255,255,255,0.1)"
       }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}

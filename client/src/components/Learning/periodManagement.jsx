@@ -67,7 +67,7 @@ export default function PeriodManagement() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-gradient-to-br from-blue-900 via-black-600 to-blue-600 text-gray-800 p-6 rounded-xl shadow-xl"
+      className="bg-gradient-to-br from-[#0b1120] via-[#0f172a] to-[#1e293b] text-white p-6 rounded-xl shadow-xl"
     >
       <h2 className="text-2xl font-bold mb-4 text-center">
         Free Period Management System With Smart Algorithm
@@ -83,7 +83,7 @@ export default function PeriodManagement() {
             className={`p-3 rounded-lg flex justify-between items-center ${
               checkConflict(index, periods)
                 ? "bg-red-300 hover:bg-red-200"
-                : "bg-blue-500 hover:bg-blue-300"
+                : "bg-[#1e293b] hover:bg-blue-600"
             }`}
           >
             <div className="flex-1 flex justify-between">
@@ -106,7 +106,7 @@ export default function PeriodManagement() {
           <h3 className="font-bold mb-2 text-center text-cyan-600">Free Slots</h3>
           <ul className="space-y-1 text-center">
             {freeSlots.map((slot, idx) => (
-              <li key={idx} className="bg-blue-400 p-2 rounded-lg">
+              <li key={idx} className="bg-[#1e293b] p-2 rounded-lg">
                 {slot}
               </li>
             ))}
@@ -121,18 +121,18 @@ export default function PeriodManagement() {
           placeholder="Subject"
           value={newSubject}
           onChange={(e) => setNewSubject(e.target.value)}
-          className="p-2 rounded-lg text-gray-800 flex-1"
+          className="p-2 rounded-lg text-[gray-800] flex-1"
         />
         <input
           type="text"
           placeholder="Time (e.g., 13:00 - 14:00)"
           value={newTime}
           onChange={(e) => setNewTime(e.target.value)}
-          className="p-2 rounded-lg text-gray-800 flex-1"
+          className="p-2 rounded-lg text-[geay-800] flex-1"
         />
         <button
           onClick={addPeriod}
-          className="bg-blue-500 hover:bg-darkblue-600 text-white p-2 rounded-lg"
+          className="bg-[#0b1120] hover:bg-darkblue-600 text-white p-2 rounded-lg"
         >
           Add Period
         </button>

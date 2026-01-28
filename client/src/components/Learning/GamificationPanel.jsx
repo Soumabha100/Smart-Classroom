@@ -14,7 +14,7 @@ export default function GamificationPanel({ xp = 420, badges = ["Streak", "QuizP
     <motion.div
       className="p-6 rounded-2xl shadow border text-white"
       style={{
-        background: "linear-gradient(135deg, #6A0DAD, #1E3A8A)", // Dark sweet purple-blue gradient
+        background: "linear-gradient(135deg, rgb(17, 24, 39), rgb(22, 42, 62))", // Dark sweet purple-blue gradient
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -24,10 +24,10 @@ export default function GamificationPanel({ xp = 420, badges = ["Streak", "QuizP
 
       <div className="mb-4">
         <div className="text-sm text-purple-200">Level {level}</div>
-        <div className="w-full bg-purple-800/30 rounded-full h-3 mt-2 overflow-hidden">
+        <div className="w-full bg-blue-800/30 rounded-full h-3 mt-2 overflow-hidden">
           <div
             className="h-3 rounded-full"
-            style={{ width: `${progress}%`, background: "#FBBF24" }} // Gold-like XP bar
+            style={{ width: `${progress}%`, background: "#e9edef" }} // Gold-like XP bar
           />
         </div>
         <div className="text-sm text-purple-100 mt-2">{xp} XP</div>
@@ -39,7 +39,7 @@ export default function GamificationPanel({ xp = 420, badges = ["Streak", "QuizP
           {badges.map((b, i) => (
             <motion.span
               key={i}
-              className="px-2 py-1 bg-yellow-400/20 text-yellow-300 rounded"
+              className="px-2 py-1 bg-blue-400/20 text-sky-300 rounded"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: i * 0.2 }}
