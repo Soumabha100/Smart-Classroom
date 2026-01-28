@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+
+
+
 // --- ICONS ---
 import {
   CheckCircle2,
@@ -38,7 +41,7 @@ import { getStudentAttendance, getStudentClasses } from "../api/apiService.js";
 import StudentAssignments from "../components/StudentAssignments.jsx";
 import AnnouncementsList from "../components/AnnouncementsList";
 
-// --- Reusable UI Components (No Changes Needed Here) ---
+// --- Reusable UI Components(No Changes Needed Here) ---
 
 const StatCardSkeleton = () => (
   <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 animate-pulse h-28">
@@ -209,7 +212,7 @@ export default function StudentDashboard() {
                 label="Assignments Due"
                 value={dashboardData.stats.assignmentsDue}
                 color="purple"
-                // This correctly links to the classes page where assignments are shown
+                
                 to={{ path: "/student/classes" }}
               />
               <StatCard
@@ -283,14 +286,14 @@ export default function StudentDashboard() {
                 <Link
                   to="/student/classes"
                   state={{ openScanner: true }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-slate-700 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
                 >
                   <QrCode className="w-5 h-5" />
                   <span>Scan Attendance</span>
                 </Link>
                 <Link
                   to="/learning-path"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
+                  className="w-full bg-slate-700 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-300 transform hover:scale-105"
                 >
                   <GraduationCap className="w-5 h-5" />
                   <span>My Learning Path</span>

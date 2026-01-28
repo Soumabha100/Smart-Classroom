@@ -80,7 +80,7 @@ export default function QuizGenerator() {
         <motion.div
           className="mt-10 rounded-2xl p-6 text-white shadow-lg relative"
           style={{
-            background: "linear-gradient(135deg, #5f30b7ff, #16384cff)", // medium dark sky-grey gradient
+            background: "linear-gradient(135deg, rgb(17, 24, 39), rgb(22, 42, 62))", // medium dark sky-grey gradient
           }}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function QuizGenerator() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleGenerateQuiz}
-            className="px-5 py-2 bg-yellow-400 text-black font-semibold rounded-lg shadow-md hover:bg-yellow-300 transition"
+            className="px-5 py-2 bg-blue-500 text-black font-semibold rounded-lg shadow-md hover:bg-blue-200 transition"
           >
             {loading ? (
               <div className="flex items-center gap-2">
